@@ -28,8 +28,7 @@ export const createUserValidation = [
     .isLength({ max: 200 })
     .withMessage('Address cannot exceed 200 characters'),
   
-
-  body('identificationNumber')
+   body('identificationNumber')
     .optional()
     .isLength({ max: 50 })
     .withMessage('Identification number cannot exceed 50 characters'),
@@ -72,6 +71,11 @@ export const createUserValidation = [
     .optional()
     .isFloat({ min: 0 })
     .withMessage('Monthly income must be a positive number'),
+    
+  body('userType')
+    .optional()
+    .isIn(['SB', 'BB', 'MB'])
+    .withMessage('User type must be one of: SB, BB, MB'),
   
   body('isActive')
     .optional()
@@ -153,6 +157,11 @@ export const updateUserValidation = [
     .optional()
     .isFloat({ min: 0 })
     .withMessage('Monthly income must be a positive number'),
+    
+  body('userType')
+    .optional()
+    .isIn(['SB', 'BB', 'MB'])
+    .withMessage('User type must be one of: SB, BB, MB'),
   
   body('isActive')
     .optional()

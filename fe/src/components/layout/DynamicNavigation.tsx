@@ -155,6 +155,12 @@ const DynamicNavigation: React.FC = () => {
               current: router.pathname === '/office/dashboard',
             },
             { 
+              name: 'Users', 
+              href: '/users', 
+              icon: UsersIcon, 
+              current: router.pathname.startsWith('/users'),
+            },
+            { 
               name: 'Profile', 
               href: '/office/profile', 
               icon: UserCircleIcon, 

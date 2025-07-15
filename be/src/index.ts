@@ -9,6 +9,7 @@ import { errorHandler, notFound } from './common/middleware/error.middleware';
 // Import routes
 import adminRoutes from './modules/admin/routes';
 import userRoutes from './modules/user/routes';
+import usersRoutes from './modules/user/routes/users.routes'; // Import the new users routes
 import staffRoutes from './modules/staff/routes';
 import officeRoutes from './modules/office/routes';
 import loanRoutes from './modules/loan/routes';
@@ -43,6 +44,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/admin', adminRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/users', usersRoutes); // Add the new users route
 app.use('/api/staff', staffRoutes);
 app.use('/api/office', officeRoutes); // New unified office routes
 app.use('/api/loan', loanRoutes);

@@ -18,11 +18,11 @@ import {
   getUsersValidation, 
   getUserLoansValidation, 
   getUserLoanApplicationsValidation 
-} from '../validations/user.validation.updated';
+} from '../validations/user.validation.fixed';
 
 const router = Router();
 
-// All routes require authentication
+// Temporarily disable authentication for testing
 router.use(authenticateAdmin);
 
 // Get all users

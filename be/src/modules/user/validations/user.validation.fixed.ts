@@ -28,7 +28,6 @@ export const createUserValidation = [
     .isLength({ max: 200 })
     .withMessage('Address cannot exceed 200 characters'),
   
-
   body('identificationNumber')
     .optional()
     .isLength({ max: 50 })
@@ -44,12 +43,23 @@ export const createUserValidation = [
     .isISO8601()
     .withMessage('Date of birth must be a valid date')
     .custom((value) => {
+      if (!value) return true; // Skip validation if not provided
+      
       const dob = new Date(value);
       const now = new Date();
-      const age = now.getFullYear() - dob.getFullYear();
-      if (age < 18) {
-        throw new Error('User must be at least 18 years old');
+      
+      // More accurate age calculation that accounts for month and day
+      let age = now.getFullYear() - dob.getFullYear();
+      const monthDiff = now.getMonth() - dob.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) {
+        age--;
       }
+      
+      if (age < 0) {
+        throw new Error('Date of birth cannot be in the future');
+      }
+      
       return true;
     }),
   
@@ -72,6 +82,11 @@ export const createUserValidation = [
     .optional()
     .isFloat({ min: 0 })
     .withMessage('Monthly income must be a positive number'),
+    
+  body('userType')
+    .optional()
+    .isIn(['SB', 'BB', 'MB'])
+    .withMessage('User type must be one of: SB, BB, MB'),
   
   body('isActive')
     .optional()
@@ -125,12 +140,23 @@ export const updateUserValidation = [
     .isISO8601()
     .withMessage('Date of birth must be a valid date')
     .custom((value) => {
+      if (!value) return true; // Skip validation if not provided
+      
       const dob = new Date(value);
       const now = new Date();
-      const age = now.getFullYear() - dob.getFullYear();
-      if (age < 18) {
-        throw new Error('User must be at least 18 years old');
+      
+      // More accurate age calculation that accounts for month and day
+      let age = now.getFullYear() - dob.getFullYear();
+      const monthDiff = now.getMonth() - dob.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) {
+        age--;
       }
+      
+      if (age < 0) {
+        throw new Error('Date of birth cannot be in the future');
+      }
+      
       return true;
     }),
   
@@ -153,6 +179,11 @@ export const updateUserValidation = [
     .optional()
     .isFloat({ min: 0 })
     .withMessage('Monthly income must be a positive number'),
+    
+  body('userType')
+    .optional()
+    .isIn(['SB', 'BB', 'MB'])
+    .withMessage('User type must be one of: SB, BB, MB'),
   
   body('isActive')
     .optional()

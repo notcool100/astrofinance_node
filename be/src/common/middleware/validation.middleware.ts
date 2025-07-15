@@ -17,7 +17,10 @@ export const validate = (validations: ValidationChain[]) => {
     }
 
     // Return validation errors
-    const formattedErrors = errors.array().map((err: ValidationError) => {
+    const errorsArray = errors.array();
+    console.log('Validation errors:', JSON.stringify(errorsArray, null, 2));
+    
+    const formattedErrors = errorsArray.map((err: ValidationError) => {
       if ('path' in err) {
         // For newer versions of express-validator
         return {

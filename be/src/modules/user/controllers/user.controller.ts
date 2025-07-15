@@ -113,19 +113,19 @@ export const getUserById = async (req: Request, res: Response) => {
  */
 export const createUser = async (req: Request, res: Response) => {
   try {
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
     const { 
       fullName, 
       email, 
       contactNumber, 
       address, 
-      password, 
       identificationNumber, 
       identificationType, 
       dateOfBirth, 
       gender, 
-      occupation, 
-      employerName, 
-      monthlyIncome, 
+   
+      userType,
       isActive = true 
     } = req.body;
 
@@ -147,8 +147,6 @@ export const createUser = async (req: Request, res: Response) => {
       }
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
 
     // Create new user
     const user = await prisma.user.create({
@@ -163,7 +161,7 @@ export const createUser = async (req: Request, res: Response) => {
         gender,
         // occupation, employerName, and monthlyIncome are not in the schema
         isActive,
-        userType: 'SB' // Default to SB (Savings Bank) user type
+        userType: userType || 'SB' // Default to SB (Savings Bank) user type
       }
     });
 
@@ -201,9 +199,7 @@ export const updateUser = async (req: Request, res: Response) => {
       identificationType, 
       dateOfBirth, 
       gender, 
-      occupation, 
-      employerName, 
-      monthlyIncome, 
+    
       isActive 
     } = req.body;
 
@@ -381,6 +377,59 @@ export const getUserLoans = async (req: Request, res: Response) => {
     logger.error(`Get user loans error: ${error}`);
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, 'Failed to fetch user loans');
+  }
+};
+
+/**
+ * Delete user
+ */
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            loans: true,
+            loanApplications: true,
+            accounts: true
+          }
+        }
+      }
+    });
+
+    if (!existingUser) {
+      throw new ApiError(404, 'User not found');
+    }
+
+    // Check if user has any active loans, applications, or accounts
+    if (existingUser._count.loans > 0 || existingUser._count.loanApplications > 0 || existingUser._count.accounts > 0) {
+      throw new ApiError(400, 'Cannot delete user with active loans, applications, or accounts');
+    }
+
+    // Delete user
+    await prisma.user.delete({
+      where: { id }
+    });
+
+    // Create audit log
+    await createAuditLog(
+      req,
+      'User',
+      id,
+      AuditAction.DELETE,
+      existingUser,
+      null
+    );
+
+    return res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    logger.error(`Delete user error: ${error}`);
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(500, 'Failed to delete user');
   }
 };
 
