@@ -3,8 +3,8 @@ import authService from './authService';
 
 const navigationService = {
   /**
-   * Get navigation items for the current user
-   * @returns Array of navigation items
+   * Get navigation groups for the current user
+   * @returns Array of navigation groups, each containing navigation items
    */
   getUserNavigation: async () => {
     try {
@@ -18,9 +18,9 @@ const navigationService = {
   },
 
   /**
-   * Get navigation items for a specific role (debug only)
+   * Get navigation groups for a specific role (debug only)
    * @param roleName Role name
-   * @returns Array of navigation items
+   * @returns Array of navigation groups, each containing navigation items
    */
   getNavigationByRole: async (roleName: string) => {
     try {
@@ -34,40 +34,37 @@ const navigationService = {
   },
 
   /**
-   * Process navigation items to match the format expected by the UI
-   * @param items Raw navigation items from API
-   * @returns Processed navigation items
+   * Process navigation groups to match the format expected by the UI
+   * @param groups Raw navigation groups from API
+   * @returns Processed navigation groups
    */
-  processNavigationItems: (items: any[]) => {
-    if (!items || items.length === 0) {
+  processNavigationGroups: (groups: any[]) => {
+    if (!groups || groups.length === 0) {
       return [];
     }
 
-    // Group items by group name
-    const groupedItems = items.reduce((acc: Record<string, any[]>, item: any) => {
-      const groupName = item.groupName || 'Other';
-      if (!acc[groupName]) {
-        acc[groupName] = [];
-      }
-      acc[groupName].push(item);
-      return acc;
-    }, {});
+    // Sort groups by order
+    const sortedGroups = [...groups].sort((a, b) => a.order - b.order);
 
-    // Sort groups by groupOrder
-    const sortedGroups = Object.entries(groupedItems)
-      .sort(([groupNameA, itemsA], [groupNameB, itemsB]) => {
-        const groupOrderA = itemsA[0]?.groupOrder || 999;
-        const groupOrderB = itemsB[0]?.groupOrder || 999;
-        return groupOrderA - groupOrderB;
+    // Process each group
+    return sortedGroups.map(group => {
+      // Sort items within each group
+      const sortedItems = group.items.sort((a: any, b: any) => a.order - b.order);
+      
+      // Process each item
+      const processedItems = sortedItems.map((item: any) => {
+        // Sort children if they exist
+        if (item.children && item.children.length > 0) {
+          item.children = item.children.sort((a: any, b: any) => a.order - b.order);
+        }
+        return item;
       });
-
-    // Flatten the sorted groups back into a single array
-    const sortedItems = sortedGroups.flatMap(([groupName, items]) => {
-      // Sort items within each group by order
-      return items.sort((a, b) => a.order - b.order);
+      
+      return {
+        ...group,
+        items: processedItems
+      };
     });
-
-    return sortedItems;
   }
 };
 

@@ -85,9 +85,14 @@ interface ApiNavigationItem {
   order: number;
   parentId?: string;
   groupId?: string;
-  groupName?: string;
-  groupOrder?: number;
   children?: ApiNavigationItem[];
+}
+
+interface ApiNavigationGroup {
+  id: string;
+  name: string;
+  order: number;
+  items: ApiNavigationItem[];
 }
 
 interface NavigationItem {
@@ -104,7 +109,7 @@ function classNames(...classes: string[]) {
 const DynamicNavigation: React.FC = () => {
   const router = useRouter();
   const { user } = useAuth();
-  const [apiNavItems, setApiNavItems] = useState<ApiNavigationItem[]>([]);
+  const [apiNavGroups, setApiNavGroups] = useState<ApiNavigationGroup[]>([]);
   
   // Fetch navigation items directly from API
   useEffect(() => {
@@ -115,13 +120,13 @@ const DynamicNavigation: React.FC = () => {
         
         if (navFromAuth && navFromAuth.length > 0) {
           console.log('Using navigation from auth context:', navFromAuth);
-          setApiNavItems(navFromAuth);
+          setApiNavGroups(navFromAuth);
         } else {
           // If not available, fetch directly from API
           console.log('Fetching navigation from API...');
           const navFromApi = await navigationService.getUserNavigation();
           console.log('Navigation fetched from API:', navFromApi);
-          setApiNavItems(navFromApi);
+          setApiNavGroups(navFromApi);
         }
       } catch (error) {
         console.error('Error fetching navigation:', error);
@@ -131,113 +136,168 @@ const DynamicNavigation: React.FC = () => {
     fetchNavigation();
   }, [user?.id]);
   
-  // Convert API navigation items to our format
-  const navigation = useMemo(() => {
-    console.log('Processing navigation items:', apiNavItems);
+  // Convert API navigation groups to our format
+  const navigationGroups = useMemo(() => {
+    console.log('Processing navigation groups:', apiNavGroups);
     
-    if (!apiNavItems || apiNavItems.length === 0) {
-      console.log('No navigation items found, using fallback');
-      // Fallback navigation items
+    if (!apiNavGroups || apiNavGroups.length === 0) {
+      console.log('No navigation groups found, using fallback');
+      // Fallback navigation groups
       return [
-        { 
-          name: 'Dashboard', 
-          href: '/office/dashboard', 
-          icon: HomeIcon, 
-          current: router.pathname === '/office/dashboard',
-        },
-        { 
-          name: 'Profile', 
-          href: '/office/profile', 
-          icon: UserCircleIcon, 
-          current: router.pathname === '/office/profile',
-        },
+        {
+          id: 'fallback-group',
+          name: 'Main Menu',
+          items: [
+            { 
+              name: 'Dashboard', 
+              href: '/office/dashboard', 
+              icon: HomeIcon, 
+              current: router.pathname === '/office/dashboard',
+            },
+            { 
+              name: 'Profile', 
+              href: '/office/profile', 
+              icon: UserCircleIcon, 
+              current: router.pathname === '/office/profile',
+            },
+          ]
+        }
       ];
     }
     
-    // Group items by group name for better organization
-    const groupedItems = apiNavItems.reduce((acc: Record<string, ApiNavigationItem[]>, item: ApiNavigationItem) => {
-      const groupName = item.groupName || 'Other';
-      if (!acc[groupName]) {
-        acc[groupName] = [];
-      }
-      acc[groupName].push(item);
-      return acc;
-    }, {});
-    
-    // Sort groups by groupOrder
-    const sortedGroups = Object.entries(groupedItems)
-      .sort(([groupNameA, itemsA], [groupNameB, itemsB]) => {
-        const groupOrderA = itemsA[0]?.groupOrder || 999;
-        const groupOrderB = itemsB[0]?.groupOrder || 999;
-        return groupOrderA - groupOrderB;
+    // Process each navigation group
+    return apiNavGroups.map(group => {
+      // Process items in this group
+      const processedItems = group.items.map(item => {
+        // Convert API URL to our format (e.g., '/dashboard' to '/office/dashboard')
+        let href = item.url || '#';
+        if (href.startsWith('/') && !href.startsWith('/office/')) {
+          href = `/office${href}`;
+        }
+        
+        // Get icon component from map or use default
+        const iconName = item.icon?.toLowerCase() || '';
+        const IconComponent = iconMap[iconName] || DefaultIcon;
+        
+        console.log(`Processing nav item: ${item.label}, icon: ${iconName}, url: ${href}`);
+        
+        return {
+          id: item.id,
+          name: item.label,
+          href,
+          icon: IconComponent,
+          current: router.pathname === href || router.pathname.startsWith(`${href}/`),
+          children: item.children?.map(child => {
+            // Process child items
+            let childHref = child.url || '#';
+            if (childHref.startsWith('/') && !childHref.startsWith('/office/')) {
+              childHref = `/office${childHref}`;
+            }
+            
+            const childIconName = child.icon?.toLowerCase() || '';
+            const ChildIconComponent = iconMap[childIconName] || DefaultIcon;
+            
+            return {
+              id: child.id,
+              name: child.label,
+              href: childHref,
+              icon: ChildIconComponent,
+              current: router.pathname === childHref || router.pathname.startsWith(`${childHref}/`),
+            };
+          })
+        };
       });
-    
-    // Flatten the sorted groups back into a single array
-    const sortedItems = sortedGroups.flatMap(([groupName, items]) => {
-      // Sort items within each group by order
-      return items.sort((a, b) => a.order - b.order);
-    });
-    
-    console.log('Sorted navigation items:', sortedItems);
-    
-    return sortedItems.map((item: ApiNavigationItem) => {
-      // Convert API URL to our format (e.g., '/dashboard' to '/office/dashboard')
-      let href = item.url || '#';
-      if (href.startsWith('/') && !href.startsWith('/office/')) {
-        href = `/office${href}`;
-      }
-      
-      // Get icon component from map or use default
-      const iconName = item.icon?.toLowerCase() || '';
-      const IconComponent = iconMap[iconName] || DefaultIcon;
-      
-      console.log(`Processing nav item: ${item.label}, icon: ${iconName}, url: ${href}`);
       
       return {
-        name: item.label,
-        href,
-        icon: IconComponent,
-        current: router.pathname === href || router.pathname.startsWith(`${href}/`),
-        // Add additional properties for debugging
-        _original: {
-          id: item.id,
-          groupName: item.groupName,
-          groupOrder: item.groupOrder,
-          order: item.order
-        }
+        id: group.id,
+        name: group.name,
+        items: processedItems
       };
     });
-  }, [apiNavItems, router.pathname]);
+  }, [apiNavGroups, router.pathname]);
 
   return (
     <nav className="flex flex-1 flex-col">
       <ul role="list" className="flex flex-1 flex-col gap-y-7">
-        <li>
-          <ul role="list" className="-mx-2 space-y-1">
-            {navigation.map((item) => (
-              <li key={item.name}>
-                <Link
-                  href={item.href}
-                  className={classNames(
-                    item.current
-                      ? 'bg-primary-800 text-white'
-                      : 'text-primary-200 hover:text-white hover:bg-primary-800',
-                    'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+        {navigationGroups.map((group) => (
+          <li key={group.id}>
+            <div className="text-xs font-semibold leading-6 text-primary-400 uppercase px-2 mb-1">
+              {group.name}
+            </div>
+            <ul role="list" className="-mx-2 space-y-1">
+              {group.items.map((item) => (
+                <li key={item.id}>
+                  {!item.children || item.children.length === 0 ? (
+                    <Link
+                      href={item.href}
+                      className={classNames(
+                        item.current
+                          ? 'bg-primary-800 text-white'
+                          : 'text-primary-200 hover:text-white hover:bg-primary-800',
+                        'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                      )}
+                    >
+                      <item.icon
+                        className={classNames(
+                          item.current ? 'text-white' : 'text-primary-200 group-hover:text-white',
+                          'h-6 w-6 shrink-0'
+                        )}
+                        aria-hidden="true"
+                      />
+                      {item.name}
+                    </Link>
+                  ) : (
+                    <div>
+                      <button
+                        type="button"
+                        className={classNames(
+                          item.current
+                            ? 'bg-primary-800 text-white'
+                            : 'text-primary-200 hover:text-white hover:bg-primary-800',
+                          'group flex w-full items-center gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                        )}
+                      >
+                        <item.icon
+                          className={classNames(
+                            item.current ? 'text-white' : 'text-primary-200 group-hover:text-white',
+                            'h-6 w-6 shrink-0'
+                          )}
+                          aria-hidden="true"
+                        />
+                        {item.name}
+                      </button>
+                      {/* Submenu for children */}
+                      <ul className="mt-1 pl-8 space-y-1">
+                        {item.children.map((child) => (
+                          <li key={child.id}>
+                            <Link
+                              href={child.href}
+                              className={classNames(
+                                child.current
+                                  ? 'bg-primary-700 text-white'
+                                  : 'text-primary-300 hover:text-white hover:bg-primary-700',
+                                'group flex gap-x-3 rounded-md p-2 text-sm leading-6'
+                              )}
+                            >
+                              <child.icon
+                                className={classNames(
+                                  child.current ? 'text-white' : 'text-primary-300 group-hover:text-white',
+                                  'h-5 w-5 shrink-0'
+                                )}
+                                aria-hidden="true"
+                              />
+                              {child.name}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
-                >
-                  <item.icon
-                    className={classNames(
-                      item.current ? 'text-white' : 'text-primary-200 group-hover:text-white',
-                      'h-6 w-6 shrink-0'
-                    )}
-                    aria-hidden="true"
-                  />
-                  {item.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </li>
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
         <li className="mt-auto">
           <Link
             href="/office/help"

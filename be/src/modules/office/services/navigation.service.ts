@@ -1,7 +1,7 @@
 import prisma from '../../../config/database';
 import logger from '../../../config/logger';
 
-// Define interfaces for navigation items
+// Define interfaces for navigation items and groups
 interface NavigationItem {
   id: string;
   label: string;
@@ -10,16 +10,21 @@ interface NavigationItem {
   order: number;
   parentId?: string | null;
   groupId?: string | null;
-  groupName?: string;
-  groupOrder?: number;
   children: NavigationItem[];
 }
 
+interface NavigationGroup {
+  id: string;
+  name: string;
+  order: number;
+  items: NavigationItem[];
+}
+
 /**
- * Get navigation items for a user based on their roles
+ * Get navigation items for a user based on their roles, organized by navigation groups
  * @param userId User ID
  * @param userType User type (ADMIN or STAFF)
- * @returns Array of navigation items
+ * @returns Array of navigation groups, each containing navigation items
  */
 export const getUserNavigation = async (userId: string, userType: 'ADMIN' | 'STAFF') => {
   try {
@@ -127,33 +132,92 @@ export const getUserNavigation = async (userId: string, userType: 'ADMIN' | 'STA
           if (allNavItems.length > 0) {
             logger.debug(`Found ${allNavItems.length} active navigation items as final fallback`);
             
-            // Convert to the expected format and return
-            const result = allNavItems.map(item => ({
-              id: item.id,
-              label: item.label,
-              icon: item.icon || undefined,
-              url: item.url || undefined,
-              order: item.order,
-              parentId: item.parentId || undefined,
-              groupId: item.groupId || undefined,
-              groupName: item.group?.name,
-              groupOrder: item.group?.order,
-              children: []
-            }));
+            // Create maps for items and groups
+            const itemMap = new Map<string, NavigationItem>();
+            const groupMap = new Map<string, NavigationGroup>();
             
-            return result;
+            // Process all navigation items
+            allNavItems.forEach(item => {
+              // Create navigation item
+              itemMap.set(item.id, {
+                id: item.id,
+                label: item.label,
+                icon: item.icon || undefined,
+                url: item.url || undefined,
+                order: item.order,
+                parentId: item.parentId || undefined,
+                groupId: item.groupId || undefined,
+                children: []
+              });
+              
+              // Create or update group if this item belongs to a group
+              if (item.groupId && item.group) {
+                if (!groupMap.has(item.groupId)) {
+                  groupMap.set(item.groupId, {
+                    id: item.groupId,
+                    name: item.group.name,
+                    order: item.group.order,
+                    items: []
+                  });
+                }
+              }
+            });
+            
+            // Add children to parent items
+            itemMap.forEach(item => {
+              if (item.parentId && itemMap.has(item.parentId)) {
+                const parent = itemMap.get(item.parentId);
+                if (parent) {
+                  parent.children.push(item);
+                }
+              }
+            });
+            
+            // Organize items into their groups
+            itemMap.forEach(item => {
+              // Only process top-level items (not children)
+              if (!item.parentId) {
+                if (item.groupId && groupMap.has(item.groupId)) {
+                  // Add to group if it belongs to one
+                  const group = groupMap.get(item.groupId);
+                  if (group) {
+                    group.items.push(item);
+                  }
+                }
+              }
+            });
+            
+            // Sort items within each group
+            groupMap.forEach(group => {
+              group.items.sort((a, b) => a.order - b.order);
+              
+              // Sort children within each item
+              group.items.forEach(item => {
+                if (item.children.length > 0) {
+                  item.children.sort((a, b) => a.order - b.order);
+                }
+              });
+            });
+            
+            // Convert groups to array and sort by order
+            const navigationGroups = Array.from(groupMap.values())
+              .sort((a, b) => a.order - b.order);
+            
+            logger.debug(`Returning ${navigationGroups.length} navigation groups as fallback`);
+            return navigationGroups;
           }
         }
       }
       
-      // If we still have no items, return empty array
+      // If we still have no items, return empty array of navigation groups
       if (roleNavigation.length === 0) {
         return [];
       }
     }
     
-    // Extract unique navigation items
+    // Extract unique navigation items and organize by groups
     const navigationItemMap = new Map<string, NavigationItem>();
+    const navigationGroupMap = new Map<string, NavigationGroup>();
     
     // Log the raw data for debugging
     logger.debug(`Raw navigation data: ${JSON.stringify(roleNavigation.slice(0, 1))}`);
@@ -177,10 +241,6 @@ export const getUserNavigation = async (userId: string, userType: 'ADMIN' | 'STA
           // Debug log for each navigation item
           logger.debug(`Processing navigation item: ${item.label}, icon: ${item.icon}, url: ${item.url}, parentId: ${item.parentId}, groupId: ${item.groupId}`);
           
-          // Get group info if available
-          const groupName = item.group?.name;
-          const groupOrder = item.group?.order;
-          
           navigationItemMap.set(item.id, {
             id: item.id,
             label: item.label,
@@ -189,10 +249,20 @@ export const getUserNavigation = async (userId: string, userType: 'ADMIN' | 'STA
             order: item.order,
             parentId: item.parentId,
             groupId: item.groupId,
-            groupName,
-            groupOrder,
             children: []
           });
+          
+          // Create or update group if this item belongs to a group
+          if (item.groupId && item.group) {
+            if (!navigationGroupMap.has(item.groupId)) {
+              navigationGroupMap.set(item.groupId, {
+                id: item.groupId,
+                name: item.group.name,
+                order: item.group.order,
+                items: []
+              });
+            }
+          }
         }
       } catch (error) {
         logger.error(`Error processing navigation item: ${error}`);
@@ -209,28 +279,40 @@ export const getUserNavigation = async (userId: string, userType: 'ADMIN' | 'STA
       }
     });
     
-    // Filter out items that are children (they'll be included in their parents)
-    const topLevelItems = Array.from(navigationItemMap.values())
-      .filter(item => !item.parentId)
-      .sort((a: NavigationItem, b: NavigationItem) => {
-        // Sort by group order first, then by item order
-        if (a.groupOrder !== b.groupOrder && a.groupOrder !== undefined && b.groupOrder !== undefined) {
-          return a.groupOrder - b.groupOrder;
+    // Organize items into their groups
+    navigationItemMap.forEach(item => {
+      // Only process top-level items (not children)
+      if (!item.parentId) {
+        if (item.groupId && navigationGroupMap.has(item.groupId)) {
+          // Add to group if it belongs to one
+          const group = navigationGroupMap.get(item.groupId);
+          if (group) {
+            group.items.push(item);
+          }
         }
-        return a.order - b.order;
-      });
-    
-    // Sort children by order
-    topLevelItems.forEach(item => {
-      if (item.children.length > 0) {
-        item.children.sort((a: NavigationItem, b: NavigationItem) => a.order - b.order);
       }
     });
     
-    // Debug log
-    logger.debug(`Returning ${topLevelItems.length} top-level navigation items`);
+    // Sort items within each group
+    navigationGroupMap.forEach(group => {
+      group.items.sort((a, b) => a.order - b.order);
+      
+      // Sort children within each item
+      group.items.forEach(item => {
+        if (item.children.length > 0) {
+          item.children.sort((a, b) => a.order - b.order);
+        }
+      });
+    });
     
-    return topLevelItems;
+    // Convert groups to array and sort by order
+    const navigationGroups = Array.from(navigationGroupMap.values())
+      .sort((a, b) => a.order - b.order);
+    
+    // Debug log
+    logger.debug(`Returning ${navigationGroups.length} navigation groups with their items`);
+    
+    return navigationGroups;
   } catch (error) {
     logger.error('Error fetching user navigation:', error);
     throw error;
@@ -244,10 +326,11 @@ export const getUserNavigation = async (userId: string, userType: 'ADMIN' | 'STA
  * @returns Array of permission codes
  */
 /**
- * Get all navigation items for testing purposes
+ * Get all navigation items organized by groups for testing purposes
  * This is for internal use only
+ * @returns Array of navigation groups, each containing navigation items
  */
-const fetchAllNavigationItems = async () => {
+export const fetchAllNavigationItems = async () => {
   try {
     const navigationItems = await prisma.navigationItem.findMany({
       where: {
@@ -270,7 +353,79 @@ const fetchAllNavigationItems = async () => {
     
     logger.debug(`Found ${navigationItems.length} total navigation items in database`);
     
-    return navigationItems;
+    // Create maps for items and groups
+    const itemMap = new Map<string, NavigationItem>();
+    const groupMap = new Map<string, NavigationGroup>();
+    
+    // Process all navigation items
+    navigationItems.forEach(item => {
+      // Create navigation item
+      itemMap.set(item.id, {
+        id: item.id,
+        label: item.label,
+        icon: item.icon || undefined,
+        url: item.url || undefined,
+        order: item.order,
+        parentId: item.parentId || undefined,
+        groupId: item.groupId || undefined,
+        children: []
+      });
+      
+      // Create or update group if this item belongs to a group
+      if (item.groupId && item.group) {
+        if (!groupMap.has(item.groupId)) {
+          groupMap.set(item.groupId, {
+            id: item.groupId,
+            name: item.group.name,
+            order: item.group.order,
+            items: []
+          });
+        }
+      }
+    });
+    
+    // Add children to parent items
+    itemMap.forEach(item => {
+      if (item.parentId && itemMap.has(item.parentId)) {
+        const parent = itemMap.get(item.parentId);
+        if (parent) {
+          parent.children.push(item);
+        }
+      }
+    });
+    
+    // Organize items into their groups
+    itemMap.forEach(item => {
+      // Only process top-level items (not children)
+      if (!item.parentId) {
+        if (item.groupId && groupMap.has(item.groupId)) {
+          // Add to group if it belongs to one
+          const group = groupMap.get(item.groupId);
+          if (group) {
+            group.items.push(item);
+          }
+        }
+      }
+    });
+    
+    // Sort items within each group
+    groupMap.forEach(group => {
+      group.items.sort((a, b) => a.order - b.order);
+      
+      // Sort children within each item
+      group.items.forEach(item => {
+        if (item.children.length > 0) {
+          item.children.sort((a, b) => a.order - b.order);
+        }
+      });
+    });
+    
+    // Convert groups to array and sort by order
+    const navigationGroups = Array.from(groupMap.values())
+      .sort((a, b) => a.order - b.order);
+    
+    logger.debug(`Organized into ${navigationGroups.length} navigation groups`);
+    return navigationGroups;
   } catch (error) {
     logger.error('Error fetching all navigation items:', error);
     throw error;

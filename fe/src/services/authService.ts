@@ -12,6 +12,25 @@ export interface RegisterData {
   password: string;
 }
 
+// Navigation interfaces
+export interface NavigationItem {
+  id: string;
+  label: string;
+  icon?: string;
+  url?: string;
+  order: number;
+  parentId?: string | null;
+  groupId?: string | null;
+  children?: NavigationItem[];
+}
+
+export interface NavigationGroup {
+  id: string;
+  name: string;
+  order: number;
+  items: NavigationItem[];
+}
+
 export interface User {
   id: string;
   username?: string;
@@ -21,7 +40,7 @@ export interface User {
   isActive: boolean;
   roles?: { id: string; name: string }[];
   permissions?: string[];
-  navigation?: any[];
+  navigation?: NavigationGroup[];
   userType: 'ADMIN' | 'STAFF' | 'USER';
   department?: string;
   position?: string;
@@ -138,7 +157,7 @@ const authService = {
     return user.permissions.includes(permissionCode);
   },
   
-  getNavigation: (): any[] => {
+  getNavigation: (): NavigationGroup[] => {
     const user = authService.getCurrentUser();
     console.log('User in getNavigation:', user);
     if (!user || !user.navigation) {

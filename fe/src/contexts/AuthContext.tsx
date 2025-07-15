@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/router';
-import authService, { User, LoginCredentials, AuthResponse } from '@/services/authService';
+import authService, { User, LoginCredentials, AuthResponse, NavigationGroup } from '@/services/authService';
 
 interface AuthContextType {
   user: User | null;
@@ -14,7 +14,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateUser: (userData: User) => void;
   hasPermission: (permissionCode: string) => boolean;
-  getNavigation: () => any[];
+  getNavigation: () => NavigationGroup[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
