@@ -1,0 +1,1338 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== Admin Portal Module ====================
+
+model AdminUser {
+  id            String          @id @default(uuid())
+  username      String          @unique
+  email         String          @unique
+  passwordHash  String
+  fullName      String
+  isActive      Boolean         @default(true)
+  lastLogin     DateTime?
+  failedLoginAttempts Int       @default(0)
+  passwordChangedAt DateTime?
+  passwordResetToken String?
+  passwordResetExpires DateTime?
+  twoFactorEnabled Boolean      @default(false)
+  twoFactorSecret String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relations
+  roles         AdminUserRole[]
+  createdReports ReportTemplate[] @relation("CreatedByAdmin")
+  approvedBudgets Budget[] @relation("ApprovedByAdmin")
+  createdBudgets Budget[] @relation("CreatedByAdmin")
+  receivedPayments LoanPayment[] @relation("ReceivedByAdmin")
+  approvedLoans LoanApplication[] @relation("ApprovedByAdmin")
+  verifiedExemptions TdsExemption[] @relation("VerifiedByAdmin")
+  generatedCertificates TaxCertificate[] @relation("GeneratedByAdmin")
+  closedDayBooks DayBook[] @relation("ClosedByAdmin")
+  createdJournalEntries JournalEntry[] @relation("CreatedByAdmin")
+  approvedJournalEntries JournalEntry[] @relation("ApprovedByAdmin")
+
+  @@index([username])
+  @@index([email])
+  @@index([isActive])
+  @@map("admin_users")
+}
+
+model Role {
+  id            String          @id @default(uuid())
+  name          String          @unique
+  description   String?
+  isSystem      Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relations
+  permissions   RolePermission[]
+  adminUsers    AdminUserRole[]
+  navigation    RoleNavigation[]
+  staffRoles    StaffRole[]
+  approvalLevels ApprovalLevel[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id            String          @id @default(uuid())
+  code          String          @unique
+  description   String?
+  module        String
+  action        String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id            String         @id @default(uuid())
+  roleId        String
+  permissionId  String
+  createdAt     DateTime       @default(now())
+
+  // Relations
+  role          Role           @relation(fields: [roleId], references: [id])
+  permission    Permission     @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model AdminUserRole {
+  id            String         @id @default(uuid())
+  adminUserId   String
+  roleId        String
+  createdAt     DateTime       @default(now())
+
+  // Relations
+  adminUser     AdminUser      @relation(fields: [adminUserId], references: [id])
+  role          Role           @relation(fields: [roleId], references: [id])
+
+  @@unique([adminUserId, roleId])
+  @@map("admin_user_roles")
+}
+
+model NavigationItem {
+  id            String          @id @default(uuid())
+  label         String
+  icon          String?
+  url           String?
+  order         Int
+  parentId      String?
+  groupId       String?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relations
+  parent        NavigationItem?  @relation("NavigationItemToNavigationItem", fields: [parentId], references: [id])
+  children      NavigationItem[] @relation("NavigationItemToNavigationItem")
+  group         NavigationGroup? @relation(fields: [groupId], references: [id])
+  roleNavigation RoleNavigation[]
+
+  @@map("navigation_items")
+}
+
+model NavigationGroup {
+  id            String          @id @default(uuid())
+  name          String          @unique
+  description   String?
+  order         Int
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relations
+  navigationItems NavigationItem[]
+
+  @@map("navigation_groups")
+}
+
+model RoleNavigation {
+  id              String      @id @default(uuid())
+  roleId          String
+  navigationItemId String
+  createdAt       DateTime    @default(now())
+
+  // Relations
+  role            Role        @relation(fields: [roleId], references: [id])
+  navigationItem  NavigationItem @relation(fields: [navigationItemId], references: [id])
+
+  @@unique([roleId, navigationItemId])
+  @@map("role_navigation")
+}
+
+// ==================== User Management Module ====================
+
+model User {
+  id              String        @id @default(uuid())
+  fullName        String
+  dateOfBirth     DateTime
+  gender          String?
+  contactNumber   String
+  email           String?       @unique
+  address         String
+  idType          String
+  idNumber        String
+  userType        UserType
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  accounts        Account[]
+  loanApplications LoanApplication[]
+  loans           Loan[]
+  tdsCalculations TdsCalculation[]
+  tdsExemptions   TdsExemption[]
+  taxCertificates TaxCertificate[]
+  notificationPreferences UserNotificationPreference[]
+
+  @@index([contactNumber])
+  @@index([idNumber])
+  @@index([userType])
+  @@index([isActive])
+  @@map("users")
+}
+
+enum UserType {
+  SB
+  BB
+  MB
+}
+
+model Account {
+  id                String        @id @default(uuid())
+  accountNumber     String        @unique
+  userId            String
+  accountType       AccountType
+  balance           Decimal       @db.Decimal(15, 2) @default(0)
+  interestRate      Decimal       @db.Decimal(5, 2)
+  openingDate       DateTime
+  lastTransactionDate DateTime?
+  status            AccountStatus @default(ACTIVE)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  user              User          @relation(fields: [userId], references: [id])
+  bbAccountDetails  BbAccountDetails?
+  mbAccountDetails  MbAccountDetails?
+  tdsCalculations   TdsCalculation[]
+
+  @@index([userId])
+  @@index([accountType])
+  @@index([status])
+  @@index([openingDate])
+  @@map("accounts")
+}
+
+enum AccountType {
+  SAVINGS
+  LOAN
+  FIXED_DEPOSIT
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  CLOSED
+  FROZEN
+}
+
+model BbAccountDetails {
+  accountId         String        @id
+  guardianName      String
+  guardianRelation  String
+  guardianContact   String
+  guardianIdType    String
+  guardianIdNumber  String
+  maturityDate      DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  account           Account       @relation(fields: [accountId], references: [id])
+
+  @@map("bb_account_details")
+}
+
+model MbAccountDetails {
+  accountId         String        @id
+  monthlyDepositAmount Decimal    @db.Decimal(15, 2)
+  depositDay        Int
+  termMonths        Int
+  missedDeposits    Int           @default(0)
+  maturityDate      DateTime
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  account           Account       @relation(fields: [accountId], references: [id])
+
+  @@map("mb_account_details")
+}
+
+// ==================== Loan Module ====================
+
+model LoanType {
+  id                String        @id @default(uuid())
+  name              String
+  code              String        @unique
+  interestType      InterestType
+  minAmount         Decimal       @db.Decimal(15, 2)
+  maxAmount         Decimal       @db.Decimal(15, 2)
+  minTenure         Int
+  maxTenure         Int
+  interestRate      Decimal       @db.Decimal(5, 2)
+  processingFeePercent Decimal    @db.Decimal(5, 2) @default(0)
+  lateFeeAmount     Decimal       @db.Decimal(10, 2) @default(0)
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  loanApplications  LoanApplication[]
+  loans             Loan[]
+
+  @@map("loan_types")
+}
+
+enum InterestType {
+  FLAT
+  DIMINISHING
+}
+
+model LoanApplication {
+  id                String        @id @default(uuid())
+  applicationNumber String        @unique
+  userId            String
+  loanTypeId        String
+  amount            Decimal       @db.Decimal(15, 2)
+  tenure            Int
+  purpose           String
+  status            ApplicationStatus @default(PENDING)
+  appliedDate       DateTime      @default(now())
+  approvedDate      DateTime?
+  approvedById      String?
+  rejectionReason   String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  user              User          @relation(fields: [userId], references: [id])
+  loanType          LoanType      @relation(fields: [loanTypeId], references: [id])
+  approvedBy        AdminUser?    @relation("ApprovedByAdmin", fields: [approvedById], references: [id])
+  loan              Loan?
+
+  @@map("loan_applications")
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DISBURSED
+}
+
+model Loan {
+  id                String        @id @default(uuid())
+  loanNumber        String        @unique
+  applicationId     String        @unique
+  userId            String
+  loanTypeId        String
+  principalAmount   Decimal       @db.Decimal(15, 2)
+  interestRate      Decimal       @db.Decimal(5, 2)
+  tenure            Int
+  emiAmount         Decimal       @db.Decimal(15, 2)
+  disbursementDate  DateTime?
+  firstPaymentDate  DateTime?
+  lastPaymentDate   DateTime?
+  totalInterest     Decimal       @db.Decimal(15, 2)
+  totalAmount       Decimal       @db.Decimal(15, 2)
+  processingFee     Decimal       @db.Decimal(10, 2) @default(0)
+  outstandingPrincipal Decimal    @db.Decimal(15, 2)
+  outstandingInterest Decimal     @db.Decimal(15, 2)
+  status            LoanStatus    @default(ACTIVE)
+  closureDate       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  application       LoanApplication @relation(fields: [applicationId], references: [id])
+  user              User          @relation(fields: [userId], references: [id])
+  loanType          LoanType      @relation(fields: [loanTypeId], references: [id])
+  installments      LoanInstallment[]
+  payments          LoanPayment[]
+
+  @@index([userId])
+  @@index([loanTypeId])
+  @@index([status])
+  @@index([disbursementDate])
+  @@index([firstPaymentDate])
+  @@map("loans")
+}
+
+enum LoanStatus {
+  ACTIVE
+  CLOSED
+  DEFAULTED
+}
+
+model LoanInstallment {
+  id                String        @id @default(uuid())
+  loanId            String
+  installmentNumber Int
+  dueDate           DateTime
+  principalAmount   Decimal       @db.Decimal(15, 2)
+  interestAmount    Decimal       @db.Decimal(15, 2)
+  totalAmount       Decimal       @db.Decimal(15, 2)
+  paidAmount        Decimal       @db.Decimal(15, 2) @default(0)
+  remainingPrincipal Decimal      @db.Decimal(15, 2)
+  paymentDate       DateTime?
+  status            InstallmentStatus @default(PENDING)
+  lateFee           Decimal       @db.Decimal(10, 2) @default(0)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  loan              Loan          @relation(fields: [loanId], references: [id])
+  payments          LoanPayment[]
+
+  @@index([loanId])
+  @@index([dueDate])
+  @@index([status])
+  @@index([loanId, status]) // Composite index for common query pattern
+  @@index([loanId, installmentNumber]) // For ordered retrieval
+  @@map("loan_installments")
+}
+
+enum InstallmentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+}
+
+model LoanPayment {
+  id                String        @id @default(uuid())
+  loanId            String
+  installmentId     String?
+  paymentDate       DateTime
+  amount            Decimal       @db.Decimal(15, 2)
+  principalComponent Decimal      @db.Decimal(15, 2)
+  interestComponent Decimal       @db.Decimal(15, 2)
+  lateFeeComponent  Decimal       @db.Decimal(10, 2) @default(0)
+  paymentMethod     String
+  referenceNumber   String?
+  receivedById      String?
+  createdAt         DateTime      @default(now())
+
+  // Relations
+  loan              Loan          @relation(fields: [loanId], references: [id])
+  installment       LoanInstallment? @relation(fields: [installmentId], references: [id])
+  receivedBy        AdminUser?    @relation("ReceivedByAdmin", fields: [receivedById], references: [id])
+
+  @@map("loan_payments")
+}
+
+// ==================== Accounting Module ====================
+
+model Account_COA {
+  id                String        @id @default(uuid())
+  accountCode       String        @unique
+  name              String
+  accountType       AccountType_COA
+  parentId          String?
+  description       String?
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  parent            Account_COA?  @relation("AccountToAccount", fields: [parentId], references: [id])
+  children          Account_COA[] @relation("AccountToAccount")
+  journalEntryLines JournalEntryLine[]
+  accountBalances   AccountBalance[]
+
+  @@index([accountType])
+  @@index([isActive])
+  @@index([parentId])
+  @@map("accounts_coa")
+}
+
+enum AccountType_COA {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+model JournalEntry {
+  id                String        @id @default(uuid())
+  entryNumber       String        @unique
+  entryDate         DateTime
+  narration         String
+  reference         String?
+  isRecurring       Boolean       @default(false)
+  recurringInterval String?
+  recurringDay      Int?
+  status            JournalEntryStatus @default(POSTED)
+  createdById       String?
+  approvedById      String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  createdBy         AdminUser?    @relation("CreatedByAdmin", fields: [createdById], references: [id])
+  approvedBy        AdminUser?    @relation("ApprovedByAdmin", fields: [approvedById], references: [id])
+  journalEntryLines JournalEntryLine[]
+
+  @@index([entryDate])
+  @@index([status])
+  @@index([isRecurring])
+  @@index([createdById])
+  @@index([approvedById])
+  @@map("journal_entries")
+}
+
+enum JournalEntryStatus {
+  DRAFT
+  POSTED
+  REVERSED
+}
+
+model JournalEntryLine {
+  id                String        @id @default(uuid())
+  journalEntryId    String
+  accountId         String
+  debitAmount       Decimal       @db.Decimal(15, 2) @default(0)
+  creditAmount      Decimal       @db.Decimal(15, 2) @default(0)
+  description       String?
+  createdAt         DateTime      @default(now())
+
+  // Relations
+  journalEntry      JournalEntry  @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account           Account_COA   @relation(fields: [accountId], references: [id])
+
+  @@map("journal_entry_lines")
+}
+
+model DayBook {
+  id                String        @id @default(uuid())
+  transactionDate   DateTime
+  isReconciled      Boolean       @default(false)
+  isClosed          Boolean       @default(false)
+  systemCashBalance Decimal       @db.Decimal(15, 2)
+  physicalCashBalance Decimal?    @db.Decimal(15, 2)
+  discrepancyAmount Decimal?      @db.Decimal(15, 2)
+  discrepancyNotes  String?
+  closedById        String?
+  closedAt          DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  closedBy          AdminUser?    @relation("ClosedByAdmin", fields: [closedById], references: [id])
+
+  @@map("day_book")
+}
+
+model AccountBalance {
+  id                String        @id @default(uuid())
+  accountId         String
+  asOfDate          DateTime
+  debitBalance      Decimal       @db.Decimal(15, 2) @default(0)
+  creditBalance     Decimal       @db.Decimal(15, 2) @default(0)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  account           Account_COA   @relation(fields: [accountId], references: [id])
+
+  @@unique([accountId, asOfDate])
+  @@map("account_balances")
+}
+
+// ==================== SMS Notifications Module ====================
+
+model SmsGateway {
+  id                String        @id @default(uuid())
+  name              String
+  provider          String
+  apiUrl            String
+  apiKey            String?
+  senderId          String?
+  isActive          Boolean       @default(true)
+  isDefault         Boolean       @default(false)
+  priority          Int           @default(1)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  smsLogs           SmsLog[]
+
+  @@map("sms_gateways")
+}
+
+model SmsTemplate {
+  id                String        @id @default(uuid())
+  name              String
+  category          String
+  content           String
+  variables         Json?
+  characterCount    Int
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  smsEvents         SmsEvent[]
+  smsLogs           SmsLog[]
+
+  @@map("sms_templates")
+}
+
+model SmsEvent {
+  id                String        @id @default(uuid())
+  eventCode         String        @unique
+  description       String
+  templateId        String?
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  template          SmsTemplate?  @relation(fields: [templateId], references: [id])
+  smsLogs           SmsLog[]
+  userPreferences   UserNotificationPreference[]
+
+  @@map("sms_events")
+}
+
+model SmsLog {
+  id                String        @id @default(uuid())
+  recipient         String
+  message           String
+  eventId           String?
+  templateId        String?
+  gatewayId         String?
+  messageId         String?
+  status            SmsStatus     @default(PENDING)
+  errorMessage      String?
+  retryCount        Int           @default(0)
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  event             SmsEvent?     @relation(fields: [eventId], references: [id])
+  template          SmsTemplate?  @relation(fields: [templateId], references: [id])
+  gateway           SmsGateway?   @relation(fields: [gatewayId], references: [id])
+
+  @@map("sms_logs")
+}
+
+enum SmsStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+}
+
+model UserNotificationPreference {
+  id                String        @id @default(uuid())
+  userId            String
+  eventId           String
+  isEnabled         Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event             SmsEvent      @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
+  @@map("user_notification_preferences")
+}
+
+// ==================== Tax Calculation Module ====================
+
+model TaxType {
+  id                String        @id @default(uuid())
+  code              String        @unique
+  name              String
+  description       String?
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  taxRates          TaxRate[]
+  taxRules          TaxRule[]
+  taxCertificates   TaxCertificate[]
+  taxRemittances    TaxRemittance[]
+
+  @@map("tax_types")
+}
+
+model TaxRate {
+  id                String        @id @default(uuid())
+  taxTypeId         String
+  rate              Decimal       @db.Decimal(5, 2)
+  thresholdAmount   Decimal?      @db.Decimal(15, 2)
+  effectiveFrom     DateTime
+  effectiveTo       DateTime?
+  customerCategory  String?
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  taxType           TaxType       @relation(fields: [taxTypeId], references: [id])
+
+  @@map("tax_rates")
+}
+
+model TaxRule {
+  id                String        @id @default(uuid())
+  name              String
+  taxTypeId         String
+  productType       String?
+  transactionType   String?
+  customerCategory  String?
+  priority          Int           @default(1)
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  taxType           TaxType       @relation(fields: [taxTypeId], references: [id])
+
+  @@map("tax_rules")
+}
+
+model TdsCalculation {
+  id                String        @id @default(uuid())
+  userId            String
+  accountId         String
+  transactionId     Int?
+  calculationDate   DateTime
+  interestAmount    Decimal       @db.Decimal(15, 2)
+  tdsRate           Decimal       @db.Decimal(5, 2)
+  tdsAmount         Decimal       @db.Decimal(15, 2)
+  isExempted        Boolean       @default(false)
+  exemptionReference String?
+  status            TdsStatus     @default(CALCULATED)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  user              User          @relation(fields: [userId], references: [id])
+  account           Account       @relation(fields: [accountId], references: [id])
+
+  @@map("tds_calculations")
+}
+
+enum TdsStatus {
+  CALCULATED
+  DEDUCTED
+  ADJUSTED
+  REVERSED
+}
+
+model TdsExemption {
+  id                String        @id @default(uuid())
+  userId            String
+  exemptionType     String
+  referenceNumber   String?
+  validFrom         DateTime
+  validTo           DateTime?
+  documentPath      String?
+  isVerified        Boolean       @default(false)
+  verifiedById      String?
+  verifiedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  user              User          @relation(fields: [userId], references: [id])
+  verifiedBy        AdminUser?    @relation("VerifiedByAdmin", fields: [verifiedById], references: [id])
+
+  @@map("tds_exemptions")
+}
+
+model TaxCertificate {
+  id                String        @id @default(uuid())
+  certificateNumber String        @unique
+  userId            String
+  taxTypeId         String
+  financialYear     String
+  fromDate          DateTime
+  toDate            DateTime
+  totalIncome       Decimal       @db.Decimal(15, 2)
+  totalTax          Decimal       @db.Decimal(15, 2)
+  generatedById     String?
+  generatedAt       DateTime      @default(now())
+  documentPath      String?
+  status            CertificateStatus @default(GENERATED)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  user              User          @relation(fields: [userId], references: [id])
+  taxType           TaxType       @relation(fields: [taxTypeId], references: [id])
+  generatedBy       AdminUser?    @relation("GeneratedByAdmin", fields: [generatedById], references: [id])
+
+  @@map("tax_certificates")
+}
+
+enum CertificateStatus {
+  GENERATED
+  DELIVERED
+  DOWNLOADED
+}
+
+model TaxRemittance {
+  id                String        @id @default(uuid())
+  taxTypeId         String
+  periodFrom        DateTime
+  periodTo          DateTime
+  amount            Decimal       @db.Decimal(15, 2)
+  paymentDate       DateTime?
+  referenceNumber   String?
+  challanNumber     String?
+  remarks           String?
+  status            RemittanceStatus @default(PENDING)
+  createdById       String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  taxType           TaxType       @relation(fields: [taxTypeId], references: [id])
+
+  @@map("tax_remittances")
+}
+
+enum RemittanceStatus {
+  PENDING
+  PAID
+  VERIFIED
+}
+
+// ==================== Report Generation Module ====================
+
+model ReportTemplate {
+  id                String        @id @default(uuid())
+  name              String
+  description       String?
+  category          String
+  queryDefinition   Json
+  layoutDefinition  Json
+  parameterDefinition Json?
+  isSystem          Boolean       @default(false)
+  isActive          Boolean       @default(true)
+  createdById       String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  createdBy         AdminUser?    @relation("CreatedByAdmin", fields: [createdById], references: [id])
+  reportJobs        ReportJob[]
+  scheduledReports  ScheduledReport[]
+
+  @@map("report_templates")
+}
+
+model ReportJob {
+  id                String        @id @default(uuid())
+  templateId        String
+  parameters        Json?
+  status            ReportJobStatus @default(PENDING)
+  resultData        Json?
+  errorMessage      String?
+  requestedById     String?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  template          ReportTemplate @relation(fields: [templateId], references: [id])
+  exports           ReportExport[]
+
+  @@map("report_jobs")
+}
+
+enum ReportJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model ReportExport {
+  id                String        @id @default(uuid())
+  reportJobId       String
+  format            String
+  filePath          String?
+  fileSize          Int?
+  status            ReportExportStatus @default(PENDING)
+  errorMessage      String?
+  requestedById     String?
+  downloadCount     Int           @default(0)
+  lastDownloadedAt  DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  reportJob         ReportJob     @relation(fields: [reportJobId], references: [id])
+  deliveryHistory   ReportDeliveryHistory[]
+
+  @@map("report_exports")
+}
+
+enum ReportExportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model ScheduledReport {
+  id                String        @id @default(uuid())
+  templateId        String
+  name              String
+  parameters        Json?
+  frequency         ReportFrequency
+  dayOfWeek         Int?
+  dayOfMonth        Int?
+  timeOfDay         DateTime
+  format            String
+  recipients        Json?
+  isActive          Boolean       @default(true)
+  lastRunAt         DateTime?
+  nextRunAt         DateTime?
+  createdById       String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  template          ReportTemplate @relation(fields: [templateId], references: [id])
+  deliveryHistory   ReportDeliveryHistory[]
+
+  @@map("scheduled_reports")
+}
+
+enum ReportFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+model ReportDeliveryHistory {
+  id                String        @id @default(uuid())
+  scheduledReportId String?
+  exportId          String?
+  deliveryMethod    String
+  recipient         String?
+  status            DeliveryStatus @default(PENDING)
+  errorMessage      String?
+  retryCount        Int           @default(0)
+  deliveredAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  scheduledReport   ScheduledReport? @relation(fields: [scheduledReportId], references: [id])
+  export            ReportExport? @relation(fields: [exportId], references: [id])
+
+  @@map("report_delivery_history")
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+}
+
+// ==================== Expense Tracking Module ====================
+
+model ExpenseCategory {
+  id                String        @id @default(uuid())
+  name              String
+  description       String?
+  parentId          String?
+  categoryType      ExpenseCategoryType
+  budgetAllocationPercent Decimal? @db.Decimal(5, 2)
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  parent            ExpenseCategory? @relation("ExpenseCategoryToExpenseCategory", fields: [parentId], references: [id])
+  children          ExpenseCategory[] @relation("ExpenseCategoryToExpenseCategory")
+  expenses          Expense[]
+  budgetAllocations BudgetAllocation[]
+
+  @@map("expense_categories")
+}
+
+enum ExpenseCategoryType {
+  FIXED
+  VARIABLE
+  CAPITAL
+  OPERATIONAL
+}
+
+model Expense {
+  id                String        @id @default(uuid())
+  expenseNumber     String        @unique
+  categoryId        String
+  amount            Decimal       @db.Decimal(15, 2)
+  taxAmount         Decimal       @db.Decimal(15, 2) @default(0)
+  totalAmount       Decimal       @db.Decimal(15, 2)
+  expenseDate       DateTime
+  description       String
+  payee             String?
+  paymentMethod     String
+  referenceNumber   String?
+  isRecurring       Boolean       @default(false)
+  recurringFrequency String?
+  recurringDay      Int?
+  department        String?
+  project           String?
+  status            ExpenseStatus @default(PENDING)
+  createdById       String?
+  approvedById      String?
+  approvedAt        DateTime?
+  rejectionReason   String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  category          ExpenseCategory @relation(fields: [categoryId], references: [id])
+  receipts          ExpenseReceipt[]
+  approvals         ExpenseApproval[]
+
+  @@map("expenses")
+}
+
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+model ExpenseReceipt {
+  id                String        @id @default(uuid())
+  expenseId         String
+  fileName          String
+  filePath          String
+  fileType          String
+  fileSize          Int
+  uploadedById      String?
+  createdAt         DateTime      @default(now())
+
+  // Relations
+  expense           Expense       @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@map("expense_receipts")
+}
+
+model ApprovalLevel {
+  id                String        @id @default(uuid())
+  levelName         String
+  minAmount         Decimal       @db.Decimal(15, 2)
+  maxAmount         Decimal?      @db.Decimal(15, 2)
+  approverRoleId    String?
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  approverRole      Role?         @relation(fields: [approverRoleId], references: [id])
+  expenseApprovals  ExpenseApproval[]
+
+  @@map("approval_levels")
+}
+
+model ExpenseApproval {
+  id                String        @id @default(uuid())
+  expenseId         String
+  approvalLevelId   String
+  approverId        String?
+  status            ApprovalStatus @default(PENDING)
+  comments          String?
+  actionDate        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  expense           Expense       @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  approvalLevel     ApprovalLevel @relation(fields: [approvalLevelId], references: [id])
+
+  @@map("expense_approvals")
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Budget {
+  id                String        @id @default(uuid())
+  name              String
+  periodType        BudgetPeriodType
+  startDate         DateTime
+  endDate           DateTime
+  totalAmount       Decimal       @db.Decimal(15, 2)
+  department        String?
+  project           String?
+  status            BudgetStatus  @default(DRAFT)
+  createdById       String?
+  approvedById      String?
+  approvedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  createdBy         AdminUser?    @relation("CreatedByAdmin", fields: [createdById], references: [id])
+  approvedBy        AdminUser?    @relation("ApprovedByAdmin", fields: [approvedById], references: [id])
+  allocations       BudgetAllocation[]
+
+  @@map("budgets")
+}
+
+enum BudgetPeriodType {
+  ANNUAL
+  QUARTERLY
+  MONTHLY
+}
+
+enum BudgetStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+model BudgetAllocation {
+  id                String        @id @default(uuid())
+  budgetId          String
+  categoryId        String
+  allocatedAmount   Decimal       @db.Decimal(15, 2)
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  budget            Budget        @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category          ExpenseCategory @relation(fields: [categoryId], references: [id])
+
+  @@map("budget_allocations")
+}
+
+// ==================== Audit Logging ====================
+
+model AuditLog {
+  id                String        @id @default(uuid())
+  entityType        String        // The type of entity being modified (e.g., "User", "Loan", etc.)
+  entityId          String        // The ID of the entity being modified
+  action            AuditAction
+  performedById     String?       // The ID of the user who performed the action
+  performedByName   String?       // The name of the user who performed the action
+  previousValues    Json?         // The previous values of the entity (if applicable)
+  newValues         Json?         // The new values of the entity (if applicable)
+  ipAddress         String?       // The IP address of the user who performed the action
+  userAgent         String?       // The user agent of the user who performed the action
+  timestamp         DateTime      @default(now())
+  metadata          Json?         // Additional metadata about the action
+
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([performedById])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PASSWORD_CHANGE
+  PERMISSION_CHANGE
+  APPROVE
+  REJECT
+  DISBURSE
+  PAYMENT
+}
+
+// ==================== Staff Management Module ====================
+
+model Staff {
+  id                String        @id @default(uuid())
+  employeeId        String        @unique
+  firstName         String
+  lastName          String
+  email             String        @unique
+  passwordHash      String?       // Added for authentication
+  phone             String
+  address           String
+  dateOfBirth       DateTime
+  joinDate          DateTime
+  department        String
+  position          String
+  status            StaffStatus   @default(ACTIVE)
+  profileImage      String?
+  lastLogin         DateTime?     // Added for tracking login
+  failedLoginAttempts Int         @default(0) // Added for security
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  roles             StaffRole[]
+  documents         StaffDocument[]
+  performanceReviews PerformanceReview[]
+  attendance        Attendance[]
+  leaves            Leave[]
+
+  @@map("staff")
+}
+
+enum StaffStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+  TERMINATED
+}
+
+model StaffRole {
+  id                String        @id @default(uuid())
+  staffId           String
+  roleId            String
+  startDate         DateTime      @default(now())
+  endDate           DateTime?
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  staff             Staff         @relation(fields: [staffId], references: [id])
+  role              Role          @relation(fields: [roleId], references: [id])
+
+  @@map("staff_roles")
+}
+
+model StaffDocument {
+  id                String        @id @default(uuid())
+  staffId           String
+  documentType      String
+  documentName      String
+  filePath          String
+  uploadDate        DateTime      @default(now())
+  expiryDate        DateTime?
+  isVerified        Boolean       @default(false)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  staff             Staff         @relation(fields: [staffId], references: [id])
+
+  @@map("staff_documents")
+}
+
+model PerformanceReview {
+  id                String        @id @default(uuid())
+  staffId           String
+  reviewerId        String
+  reviewPeriodStart DateTime
+  reviewPeriodEnd   DateTime
+  overallRating     Float
+  strengths         String?
+  areasToImprove    String?
+  goals             String?
+  comments          String?
+  status            ReviewStatus  @default(DRAFT)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  staff             Staff         @relation(fields: [staffId], references: [id])
+
+  @@map("performance_reviews")
+}
+
+enum ReviewStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+model Attendance {
+  id                String        @id @default(uuid())
+  staffId           String
+  date              DateTime
+  checkIn           DateTime?
+  checkOut          DateTime?
+  status            AttendanceStatus
+  comments          String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  staff             Staff         @relation(fields: [staffId], references: [id])
+
+  @@unique([staffId, date])
+  @@map("attendance")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  LATE
+  ON_LEAVE
+  HOLIDAY
+}
+
+model Leave {
+  id                String        @id @default(uuid())
+  staffId           String
+  leaveType         LeaveType
+  startDate         DateTime
+  endDate           DateTime
+  reason            String
+  status            LeaveStatus   @default(PENDING)
+  approvedById      String?
+  approvedAt        DateTime?
+  comments          String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  staff             Staff         @relation(fields: [staffId], references: [id])
+
+  @@map("leaves")
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  MATERNITY
+  PATERNITY
+  UNPAID
+  OTHER
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}

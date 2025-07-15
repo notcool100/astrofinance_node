@@ -1,0 +1,64 @@
+import { Router } from 'express';
+import { 
+  getAccountBalance, 
+  getTrialBalance, 
+  getIncomeStatement, 
+  getBalanceSheet, 
+  getGeneralLedger 
+} from '../controllers/financial-report.controller';
+import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
+import { validate } from '../../../common/middleware/validation.middleware';
+import { 
+  getAccountBalanceValidation, 
+  getTrialBalanceValidation, 
+  getIncomeStatementValidation, 
+  getBalanceSheetValidation, 
+  getGeneralLedgerValidation 
+} from '../validations/financial-report.validation';
+
+const router = Router();
+
+// All routes require authentication
+router.use(authenticateAdmin);
+
+// Get account balance
+router.get(
+  '/accounts/:id/balance', 
+  hasPermission('accounting.view'), 
+  validate(getAccountBalanceValidation), 
+  getAccountBalance
+);
+
+// Get trial balance
+router.get(
+  '/trial-balance', 
+  hasPermission('accounting.view'), 
+  validate(getTrialBalanceValidation), 
+  getTrialBalance
+);
+
+// Get income statement
+router.get(
+  '/income-statement', 
+  hasPermission('accounting.view'), 
+  validate(getIncomeStatementValidation), 
+  getIncomeStatement
+);
+
+// Get balance sheet
+router.get(
+  '/balance-sheet', 
+  hasPermission('accounting.view'), 
+  validate(getBalanceSheetValidation), 
+  getBalanceSheet
+);
+
+// Get general ledger
+router.get(
+  '/general-ledger', 
+  hasPermission('accounting.view'), 
+  validate(getGeneralLedgerValidation), 
+  getGeneralLedger
+);
+
+export default router;
