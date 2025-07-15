@@ -18,8 +18,12 @@ export interface StaffProfile {
   lastLogin?: string;
   roles: Array<{
     id: string;
-    name: string;
-    description?: string;
+    roleId: string;
+    role?: {
+      id: string;
+      name: string;
+      description?: string;
+    }
   }>;
 }
 

@@ -45,6 +45,14 @@ const EditStaffPage: React.FC = () => {
       setError(null);
       setSuccessMessage(null);
       
+      console.log('Submitting staff update with data:', data);
+      
+      // Ensure roleIds is an array of strings
+      if (data.roleIds) {
+        data.roleIds = data.roleIds.map(id => String(id));
+        console.log('Processed roleIds:', data.roleIds);
+      }
+      
       await updateStaff(id, data);
       setSuccessMessage('Staff details updated successfully');
       
@@ -52,7 +60,7 @@ const EditStaffPage: React.FC = () => {
       await fetchStaffDetails(id);
     } catch (err: any) {
       console.error('Error updating staff:', err);
-      setError(err.response?.data?.message || 'Failed to update staff details. Please try again.');
+      setError(err.message || 'Failed to update staff details. Please try again.');
     } finally {
       setSaving(false);
     }

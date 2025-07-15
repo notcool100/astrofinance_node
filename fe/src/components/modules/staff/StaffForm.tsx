@@ -63,6 +63,13 @@ const StaffForm: React.FC<StaffFormProps> = ({
 
     // If editing, populate form with staff data
     if (isEditMode && staff) {
+      console.log('Staff roles:', staff.roles);
+      
+      // Extract role IDs from the staff object
+      // The backend returns roles as an array of objects with a roleId property
+      const roleIds = staff.roles.map(role => role.roleId || (role.role && role.role.id));
+      console.log('Mapped roleIds:', roleIds);
+      
       setFormData({
         employeeId: staff.employeeId,
         firstName: staff.firstName,
@@ -75,7 +82,7 @@ const StaffForm: React.FC<StaffFormProps> = ({
         department: staff.department,
         position: staff.position,
         status: staff.status,
-        roleIds: staff.roles.map(role => role.id),
+        roleIds: roleIds,
       });
     }
   }, [isEditMode, staff]);
@@ -94,19 +101,46 @@ const StaffForm: React.FC<StaffFormProps> = ({
 
   const handleRoleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value, checked } = e.target;
+    console.log('Role change:', { value, checked });
+    
     setFormData(prev => {
-      const currentRoleIds = prev.roleIds || [];
+      // Convert all IDs to strings for consistency
+      const currentRoleIds = (prev.roleIds || []).map(id => String(id));
+      console.log('Current roleIds:', currentRoleIds);
+      
+      const roleIdStr = String(value);
+      
+      let newRoleIds;
       if (checked) {
-        return { ...prev, roleIds: [...currentRoleIds, value] };
+        // Add the role ID if it's not already in the array
+        if (!currentRoleIds.includes(roleIdStr)) {
+          newRoleIds = [...currentRoleIds, roleIdStr];
+        } else {
+          newRoleIds = currentRoleIds;
+        }
       } else {
-        return { ...prev, roleIds: currentRoleIds.filter(id => id !== value) };
+        // Remove the role ID
+        newRoleIds = currentRoleIds.filter(id => id !== roleIdStr);
       }
+      
+      console.log('New roleIds:', newRoleIds);
+      return { ...prev, roleIds: newRoleIds };
     });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // Create a copy of the form data
+    const submissionData = { ...formData };
+    
+    // Ensure roleIds is an array of strings
+    if (submissionData.roleIds) {
+      submissionData.roleIds = submissionData.roleIds.map(id => String(id));
+      console.log('Submitting with roleIds:', submissionData.roleIds);
+    }
+    
+    onSubmit(submissionData);
   };
 
   return (
@@ -345,29 +379,38 @@ const StaffForm: React.FC<StaffFormProps> = ({
                 {loadingRoles ? (
                   <p className="text-sm text-gray-500">Loading roles...</p>
                 ) : (
-                  roles.map((role) => (
-                    <div key={role.id} className="relative flex items-start">
-                      <div className="flex h-5 items-center">
-                        <input
-                          id={`role-${role.id}`}
-                          name={`role-${role.id}`}
-                          type="checkbox"
-                          value={role.id}
-                          checked={(formData.roleIds || []).includes(role.id)}
-                          onChange={handleRoleChange}
-                          className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                        />
+                  roles.map((role) => {
+                    // Convert all IDs to strings for comparison
+                    const roleIdStr = String(role.id);
+                    const formRoleIds = (formData.roleIds || []).map(id => String(id));
+                    const isChecked = formRoleIds.includes(roleIdStr);
+                    
+                    console.log(`Role ${role.name} (${roleIdStr}), checked:`, isChecked);
+                    console.log('formData.roleIds:', formRoleIds);
+                    return (
+                      <div key={role.id} className="relative flex items-start">
+                        <div className="flex h-5 items-center">
+                          <input
+                            id={`role-${role.id}`}
+                            name={`role-${role.id}`}
+                            type="checkbox"
+                            value={role.id}
+                            checked={isChecked}
+                            onChange={handleRoleChange}
+                            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                          />
+                        </div>
+                        <div className="ml-3 text-sm">
+                          <label htmlFor={`role-${role.id}`} className="font-medium text-gray-700">
+                            {role.name}
+                          </label>
+                          {role.description && (
+                            <p className="text-gray-500">{role.description}</p>
+                          )}
+                        </div>
                       </div>
-                      <div className="ml-3 text-sm">
-                        <label htmlFor={`role-${role.id}`} className="font-medium text-gray-700">
-                          {role.name}
-                        </label>
-                        {role.description && (
-                          <p className="text-gray-500">{role.description}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </fieldset>

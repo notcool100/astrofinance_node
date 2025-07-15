@@ -147,13 +147,15 @@ const StaffDetails: React.FC<StaffDetailsProps> = ({ staff }) => {
               <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                 <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
                   {staff.roles.length > 0 ? (
-                    staff.roles.map((role) => (
+                    staff.roles.map((roleItem) => (
                       <li
-                        key={role.id}
+                        key={roleItem.id}
                         className="pl-3 pr-4 py-3 flex items-center justify-between text-sm"
                       >
                         <div className="w-0 flex-1 flex items-center">
-                          <span className="ml-2 flex-1 w-0 truncate">{role.name}</span>
+                          <span className="ml-2 flex-1 w-0 truncate">
+                            {roleItem.role ? roleItem.role.name : 'Unknown Role'}
+                          </span>
                         </div>
                       </li>
                     ))
