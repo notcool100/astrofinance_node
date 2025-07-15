@@ -159,9 +159,9 @@ async function seedNavigation() {
       if (adminGroup) {
         await prisma.navigationItem.create({
           data: {
-            label: 'Admin Users',
-            icon: 'admin_panel_settings',
-            url: '/admin-users',
+            label: 'Staff',
+            icon: 'people',
+            url: '/staff',
             order: 1,
             groupId: adminGroup.id,
           }

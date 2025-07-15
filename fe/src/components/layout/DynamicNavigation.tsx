@@ -172,7 +172,7 @@ const DynamicNavigation: React.FC = () => {
         // Convert API URL to our format (e.g., '/dashboard' to '/office/dashboard')
         let href = item.url || '#';
         if (href.startsWith('/') && !href.startsWith('/office/')) {
-          href = `/office${href}`;
+          href = `${href}`;
         }
         
         // Get icon component from map or use default
