@@ -115,7 +115,6 @@ export const getStaffById = async (req: Request, res: Response) => {
 export const createStaff = async (req: Request, res: Response) => {
   try {
     const { 
-      employeeId, 
       firstName, 
       lastName, 
       email, 
@@ -130,23 +129,40 @@ export const createStaff = async (req: Request, res: Response) => {
       roleIds = [] 
     } = req.body;
 
-    // Check if employeeId or email already exists
-    const existingStaff = await prisma.staff.findFirst({
-      where: {
-        OR: [
-          { employeeId },
-          { email }
-        ]
-      }
+    // Check if email already exists
+    const existingStaffWithEmail = await prisma.staff.findUnique({
+      where: { email }
     });
 
-    if (existingStaff) {
-      if (existingStaff.employeeId === employeeId) {
-        throw new ApiError(409, `Employee ID '${employeeId}' is already taken`);
-      } else {
-        throw new ApiError(409, `Email '${email}' is already registered`);
+    if (existingStaffWithEmail) {
+      throw new ApiError(409, `Email '${email}' is already registered`);
+    }
+    
+    // Generate a new employee ID
+    // Format: STAFF001, STAFF002, etc.
+    const latestStaff = await prisma.staff.findFirst({
+      orderBy: {
+        employeeId: 'desc'
+      }
+    });
+    
+    let newEmployeeId = 'STAFF001';
+    
+    if (latestStaff && latestStaff.employeeId) {
+      // Extract the numeric part and increment it
+      const match = latestStaff.employeeId.match(/STAFF(\d+)/);
+      if (match && match[1]) {
+        const currentNumber = parseInt(match[1], 10);
+        const nextNumber = currentNumber + 1;
+        // Pad with leading zeros to maintain format (e.g., 001, 002, etc.)
+        newEmployeeId = `STAFF${nextNumber.toString().padStart(3, '0')}`;
       }
     }
+    
+    // Log the generated employee ID
+    logger.info(`Generated new employee ID: ${newEmployeeId}`);
+    
+    const employeeId = newEmployeeId;
 
     // Hash password if provided
     const passwordHash = password ? await bcrypt.hash(password, 10) : null;
