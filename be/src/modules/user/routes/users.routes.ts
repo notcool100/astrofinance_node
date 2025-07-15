@@ -9,6 +9,7 @@ import {
   getUserLoanApplications,
   deleteUser
 } from '../controllers/user.controller';
+import { getUserAccounts } from '../controllers/account.controller';
 import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import { 
@@ -19,6 +20,7 @@ import {
   getUserLoansValidation, 
   getUserLoanApplicationsValidation 
 } from '../validations/user.validation.fixed';
+import { getUserAccountsValidation } from '../validations/account.validation';
 
 const router = Router();
 
@@ -78,6 +80,14 @@ router.get(
   hasPermission('users.view'), 
   validate(getUserLoanApplicationsValidation), 
   getUserLoanApplications
+);
+
+// Get user accounts
+router.get(
+  '/:userId/accounts', 
+  hasPermission('users.view'), 
+  validate(getUserAccountsValidation), 
+  getUserAccounts
 );
 
 // Delete user

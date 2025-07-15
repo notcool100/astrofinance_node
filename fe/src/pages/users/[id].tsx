@@ -8,6 +8,7 @@ import Button from '@/components/common/Button';
 import Badge from '@/components/common/Badge';
 import Tabs from '@/components/common/Tabs';
 import Table from '@/components/common/Table';
+import UserAccounts from '@/components/modules/users/UserAccounts';
 import { formatDate, formatCurrency } from '@/utils/dateUtils';
 import { getUserById, getUserLoans, getUserLoanApplications, User, UserLoan, UserLoanApplication } from '@/services/user.service';
 import { toast } from 'react-toastify';
@@ -173,6 +174,7 @@ const UserDetailPage: React.FC = () => {
 
   const tabs = [
     { id: 'details', label: 'User Details' },
+    { id: 'accounts', label: 'Accounts' },
     { id: 'loans', label: 'Loans' },
     { id: 'applications', label: 'Loan Applications' },
   ];
@@ -327,6 +329,12 @@ const UserDetailPage: React.FC = () => {
                         keyField="id"
                       />
                     )}
+                  </div>
+                )}
+
+                {activeTab === 'accounts' && (
+                  <div className="px-4 py-5">
+                    {user && <UserAccounts userId={user.id} />}
                   </div>
                 )}
 

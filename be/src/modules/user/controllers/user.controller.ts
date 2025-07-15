@@ -22,7 +22,12 @@ export const getAllUsers = async (req: Request, res: Response) => {
     const where: any = {};
     
     if (status) {
-      where.isActive = status === 'active';
+      // Handle different status formats: 'active', 'inactive', 'true', 'false'
+      if (status === 'active' || status === 'true') {
+        where.isActive = true;
+      } else if (status === 'inactive' || status === 'false') {
+        where.isActive = false;
+      }
     }
     
     if (search) {

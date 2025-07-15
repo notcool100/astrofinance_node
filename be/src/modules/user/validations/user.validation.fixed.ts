@@ -221,8 +221,13 @@ export const getUsersValidation = [
   
   query('status')
     .optional()
-    .isIn(['active', 'inactive'])
-    .withMessage('Status must be either active or inactive'),
+    .custom((value) => {
+      // Accept 'active', 'inactive', 'true', 'false', true, false
+      const validValues = ['active', 'inactive', 'true', 'false', true, false];
+      return validValues.includes(value) || 
+             validValues.includes(String(value).toLowerCase());
+    })
+    .withMessage('Status must be either active, inactive, true, or false'),
   
   query('page')
     .optional()
