@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import MainLayout from '@/components/layout/MainLayout';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
 import Button from '@/components/common/Button';
 import { getStaffById, resetStaffPassword, StaffProfile } from '@/services/staff.service';
 
@@ -78,16 +79,17 @@ const ResetPasswordPage: React.FC = () => {
   };
 
   return (
-    <MainLayout>
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link href={`/office/staff/${id}`}>
-            <Button variant="outline" className="flex items-center">
-              <ArrowLeftIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-              Back to Staff Details
-            </Button>
-          </Link>
-        </div>
+    <ProtectedRoute adminOnly>
+      <MainLayout>
+        <div className="px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-6">
+            <Link href={`/office/staff/${id}`}>
+              <Button variant="outline" className="flex items-center">
+                <ArrowLeftIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                Back to Staff Details
+              </Button>
+            </Link>
+          </div>
 
         <div className="sm:flex sm:items-center mb-6">
           <div className="sm:flex-auto">
@@ -195,7 +197,8 @@ const ResetPasswordPage: React.FC = () => {
           <div className="p-6 text-center">Staff not found or you don't have permission to reset this staff member's password.</div>
         )}
       </div>
-    </MainLayout>
+      </MainLayout>
+    </ProtectedRoute>
   );
 };
 

@@ -13,7 +13,8 @@ import {
   getStaffById, 
   createStaff, 
   updateStaff, 
-  resetStaffPassword 
+  resetStaffPassword,
+  deleteStaff
 } from '../controllers/staff.controller';
 import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
@@ -30,8 +31,17 @@ router.use(authenticateAdmin);
 
 // Only Super Admin can access staff management
 const isSuperAdmin = (req: Request, res: Response, next: NextFunction) => {
-  const userRoles = req.adminUser?.roles || [];
-  const isSuperAdmin = userRoles.some((role: { name: string }) => role.name === 'Super Admin');
+  // Check roles from the token first (if available)
+  const tokenRoles = req.user?.roles || [];
+  
+  // Then check roles from the adminUser object (from database)
+  const dbRoles = req.adminUser?.roles || [];
+  const dbRoleNames = dbRoles.map((role: any) => role.role?.name || role.name);
+  
+  // Check if either source has the Super Admin role
+  const isSuperAdmin = 
+    (Array.isArray(tokenRoles) && tokenRoles.includes('Super Admin')) || 
+    dbRoleNames.includes('Super Admin');
   
   if (!isSuperAdmin) {
     return res.status(403).json({ 
@@ -73,6 +83,13 @@ router.post(
   hasPermission('staff.edit'), 
   validate(resetPasswordValidation), 
   resetStaffPassword
+);
+
+// Delete staff member
+router.delete(
+  '/:id',
+  hasPermission('staff.delete'),
+  deleteStaff
 );
 
 export default router;

@@ -466,3 +466,83 @@ export const resetStaffPassword = async (req: Request, res: Response) => {
     throw new ApiError(500, 'Failed to reset password');
   }
 };
+
+/**
+ * Delete staff member
+ */
+export const deleteStaff = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Check if staff exists
+    const existingStaff = await prisma.staff.findUnique({
+      where: { id },
+      include: {
+        roles: true,
+        documents: true,
+        performanceReviews: true,
+        attendance: true,
+        leaves: true
+      }
+    });
+
+    if (!existingStaff) {
+      throw new ApiError(404, 'Staff member not found');
+    }
+
+    // Delete staff and related records in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Delete related records first
+      await tx.staffRole.deleteMany({
+        where: { staffId: id }
+      });
+
+      await tx.staffDocument.deleteMany({
+        where: { staffId: id }
+      });
+
+      await tx.performanceReview.deleteMany({
+        where: { staffId: id }
+      });
+
+      await tx.attendance.deleteMany({
+        where: { staffId: id }
+      });
+
+      await tx.leave.deleteMany({
+        where: { staffId: id }
+      });
+
+      // Finally delete the staff record
+      await tx.staff.delete({
+        where: { id }
+      });
+    });
+
+    // Create audit log
+    await createAuditLog(
+      req,
+      'Staff',
+      id,
+      AuditAction.DELETE,
+      {
+        employeeId: existingStaff.employeeId,
+        firstName: existingStaff.firstName,
+        lastName: existingStaff.lastName,
+        email: existingStaff.email,
+        department: existingStaff.department,
+        position: existingStaff.position
+      },
+      null
+    );
+
+    return res.json({ 
+      message: 'Staff member deleted successfully',
+      id
+    });
+  } catch (error) {
+    logger.error(`Delete staff error: ${error}`);
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(500, 'Failed to delete staff member');
+  }
+};

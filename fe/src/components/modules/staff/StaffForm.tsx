@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { StaffProfile, CreateStaffData, UpdateStaffData } from '@/services/staff.service';
+import { getAllRoles } from '@/services/role.service';
 import Button from '@/components/common/Button';
 import DatePicker from '@/components/common/DatePicker';
 import { formatDate } from '@/utils/dateUtils';
+import { toast } from 'react-toastify';
 
 interface Role {
   id: string;
@@ -46,18 +48,12 @@ const StaffForm: React.FC<StaffFormProps> = ({
     const fetchRoles = async () => {
       try {
         setLoadingRoles(true);
-        // This would be replaced with an actual API call
-        const response = await fetch('/api/roles');
-        const data = await response.json();
+        const data = await getAllRoles();
         setRoles(data);
       } catch (error) {
         console.error('Error fetching roles:', error);
-        // Fallback roles for demo
-        setRoles([
-          { id: '1', name: 'Admin', description: 'Administrator role' },
-          { id: '2', name: 'Manager', description: 'Manager role' },
-          { id: '3', name: 'Staff', description: 'Regular staff role' },
-        ]);
+        // Show error in UI instead of using fallback data
+        toast.error('Failed to load roles. Please try again.');
       } finally {
         setLoadingRoles(false);
       }
@@ -91,7 +87,8 @@ const StaffForm: React.FC<StaffFormProps> = ({
 
   const handleDateChange = (name: string, date: Date | null) => {
     if (date) {
-      setFormData(prev => ({ ...prev, [name]: date.toISOString().split('T')[0] }));
+      // Format date as ISO string for backend compatibility
+      setFormData(prev => ({ ...prev, [name]: date.toISOString() }));
     }
   };
 
@@ -334,7 +331,7 @@ const StaffForm: React.FC<StaffFormProps> = ({
               >
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
-                <option value="SUSPENDED">Suspended</option>
+                <option value="ON_LEAVE">On Leave</option>
                 <option value="TERMINATED">Terminated</option>
               </select>
             </div>

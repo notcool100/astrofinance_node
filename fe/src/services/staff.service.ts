@@ -84,25 +84,55 @@ export const changeStaffPassword = async (data: ChangePasswordData): Promise<{ m
 
 // Staff management API (for admin users)
 export const getAllStaff = async (): Promise<StaffProfile[]> => {
-  return apiService.get<StaffProfile[]>('/admin/staff');
+  try {
+    return await apiService.get<StaffProfile[]>('/admin/staff');
+  } catch (error) {
+    console.error('Error fetching staff:', error);
+    throw error;
+  }
 };
 
 export const getStaffById = async (id: string): Promise<StaffProfile> => {
-  return apiService.get<StaffProfile>(`/admin/staff/${id}`);
+  try {
+    return await apiService.get<StaffProfile>(`/admin/staff/${id}`);
+  } catch (error) {
+    console.error(`Error fetching staff with ID ${id}:`, error);
+    throw error;
+  }
 };
 
 export const createStaff = async (data: CreateStaffData): Promise<StaffProfile> => {
-  return apiService.post<StaffProfile>('/admin/staff', data);
+  try {
+    return await apiService.post<StaffProfile>('/admin/staff', data);
+  } catch (error) {
+    console.error('Error creating staff:', error);
+    throw error;
+  }
 };
 
 export const updateStaff = async (id: string, data: UpdateStaffData): Promise<StaffProfile> => {
-  return apiService.put<StaffProfile>(`/admin/staff/${id}`, data);
+  try {
+    return await apiService.put<StaffProfile>(`/admin/staff/${id}`, data);
+  } catch (error) {
+    console.error(`Error updating staff with ID ${id}:`, error);
+    throw error;
+  }
 };
 
 export const resetStaffPassword = async (id: string, data: ResetPasswordData): Promise<{ message: string }> => {
-  return apiService.post<{ message: string }>(`/admin/staff/${id}/reset-password`, data);
+  try {
+    return await apiService.post<{ message: string }>(`/admin/staff/${id}/reset-password`, data);
+  } catch (error) {
+    console.error(`Error resetting password for staff with ID ${id}:`, error);
+    throw error;
+  }
 };
 
 export const deleteStaff = async (id: string): Promise<{ message: string }> => {
-  return apiService.delete<{ message: string }>(`/admin/staff/${id}`);
+  try {
+    return await apiService.delete<{ message: string }>(`/admin/staff/${id}`);
+  } catch (error) {
+    console.error(`Error deleting staff with ID ${id}:`, error);
+    throw error;
+  }
 };

@@ -5,20 +5,28 @@ import {
   PlusIcon, 
   PencilSquareIcon, 
   TrashIcon, 
-  KeyIcon 
+  KeyIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline';
 import MainLayout from '@/components/layout/MainLayout';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
 import Table from '@/components/common/Table';
 import Badge from '@/components/common/Badge';
 import Button from '@/components/common/Button';
-import { getAllStaff, StaffProfile } from '@/services/staff.service';
+import Modal from '@/components/common/Modal';
+import { getAllStaff, StaffProfile, deleteStaff } from '@/services/staff.service';
 import { formatDate } from '@/utils/dateUtils';
+import { toast } from 'react-toastify';
+import { Column } from 'react-table';
 
 const StaffListPage: React.FC = () => {
   const router = useRouter();
   const [staff, setStaff] = useState<StaffProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [staffToDelete, setStaffToDelete] = useState<StaffProfile | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchStaff = async () => {
@@ -37,6 +45,32 @@ const StaffListPage: React.FC = () => {
 
     fetchStaff();
   }, []);
+  
+  const handleDeleteClick = (staffMember: StaffProfile) => {
+    setStaffToDelete(staffMember);
+    setIsDeleteModalOpen(true);
+  };
+  
+  const handleDeleteConfirm = async () => {
+    if (!staffToDelete) return;
+    
+    try {
+      setIsDeleting(true);
+      await deleteStaff(staffToDelete.id);
+      
+      // Update the staff list by removing the deleted staff
+      setStaff(prevStaff => prevStaff.filter(s => s.id !== staffToDelete.id));
+      
+      toast.success(`${staffToDelete.firstName} ${staffToDelete.lastName} has been deleted successfully`);
+      setIsDeleteModalOpen(false);
+      setStaffToDelete(null);
+    } catch (err: any) {
+      console.error('Error deleting staff:', err);
+      toast.error(err.message || 'Failed to delete staff member. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -44,8 +78,8 @@ const StaffListPage: React.FC = () => {
         return <Badge color="green" text="Active" />;
       case 'INACTIVE':
         return <Badge color="gray" text="Inactive" />;
-      case 'SUSPENDED':
-        return <Badge color="yellow" text="Suspended" />;
+      case 'ON_LEAVE':
+        return <Badge color="yellow" text="On Leave" />;
       case 'TERMINATED':
         return <Badge color="red" text="Terminated" />;
       default:
@@ -53,54 +87,70 @@ const StaffListPage: React.FC = () => {
     }
   };
 
-  const columns = [
+  // Import Column type from Table component
+
+  const columns: Column<StaffProfile>[] = [
     {
-      header: 'Employee ID',
+      Header: 'Employee ID',
       accessor: 'employeeId',
+      Cell: ({ row }: { row: { original: StaffProfile } }) => row.original.employeeId,
     },
     {
-      header: 'Name',
-      accessor: 'name',
-      cell: (row: StaffProfile) => `${row.firstName} ${row.lastName}`,
+      Header: 'Name',
+      accessor: 'firstName',
+      Cell: ({ row }: { row: { original: StaffProfile } }) => `${row.original.firstName} ${row.original.lastName}`,
     },
     {
-      header: 'Email',
+      Header: 'Email',
       accessor: 'email',
+      Cell: ({ row }: { row: { original: StaffProfile } }) => row.original.email,
     },
     {
-      header: 'Department',
+      Header: 'Department',
       accessor: 'department',
+      Cell: ({ row }: { row: { original: StaffProfile } }) => row.original.department,
     },
     {
-      header: 'Position',
+      Header: 'Position',
       accessor: 'position',
+      Cell: ({ row }: { row: { original: StaffProfile } }) => row.original.position,
     },
     {
-      header: 'Status',
+      Header: 'Status',
       accessor: 'status',
-      cell: (row: StaffProfile) => getStatusBadge(row.status),
+      Cell: ({ row }: { row: { original: StaffProfile } }) => getStatusBadge(row.original.status),
     },
     {
-      header: 'Join Date',
+      Header: 'Join Date',
       accessor: 'joinDate',
-      cell: (row: StaffProfile) => formatDate(row.joinDate),
+      Cell: ({ row }: { row: { original: StaffProfile } }) => formatDate(row.original.joinDate),
     },
     {
-      header: 'Actions',
-      accessor: 'actions',
-      cell: (row: StaffProfile) => (
+      Header: 'Actions',
+      accessor: 'id',
+      Cell: ({ row }: { row: { original: StaffProfile } }) => (
         <div className="flex space-x-2">
-          <Link href={`/office/staff/${row.id}`}>
+          <Link href={`/office/staff/${row.original.id}`}>
             <Button
               variant="outline"
               size="sm"
               className="p-1"
               title="View Details"
             >
+              <EyeIcon className="h-4 w-4" />
+            </Button>
+          </Link>
+          <Link href={`/office/staff/${row.original.id}/edit`}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="p-1"
+              title="Edit Staff"
+            >
               <PencilSquareIcon className="h-4 w-4" />
             </Button>
           </Link>
-          <Link href={`/office/staff/${row.id}/reset-password`}>
+          <Link href={`/office/staff/${row.original.id}/reset-password`}>
             <Button
               variant="outline"
               size="sm"
@@ -110,30 +160,40 @@ const StaffListPage: React.FC = () => {
               <KeyIcon className="h-4 w-4" />
             </Button>
           </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            className="p-1 text-red-600 hover:bg-red-50"
+            title="Delete Staff"
+            onClick={() => handleDeleteClick(row.original)}
+          >
+            <TrashIcon className="h-4 w-4" />
+          </Button>
         </div>
       ),
     },
   ];
 
   return (
-    <MainLayout>
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
-        <div className="sm:flex sm:items-center">
-          <div className="sm:flex-auto">
-            <h1 className="text-2xl font-semibold text-gray-900">Staff Management</h1>
-            <p className="mt-2 text-sm text-gray-700">
-              A list of all staff members in the system including their details and status.
-            </p>
+    <ProtectedRoute adminOnly>
+      <MainLayout>
+        <div className="px-4 sm:px-6 lg:px-8 py-8">
+          <div className="sm:flex sm:items-center mb-6">
+            <div className="sm:flex-auto">
+              <h1 className="text-2xl font-semibold text-gray-900">Staff Management</h1>
+              <p className="mt-2 text-sm text-gray-700">
+                A list of all staff members in the system including their details and status.
+              </p>
+            </div>
+            <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+              <Link href="/office/staff/create">
+                <Button variant="primary" className="flex items-center">
+                  <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                  Add Staff
+                </Button>
+              </Link>
+            </div>
           </div>
-          <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-            <Link href="/office/staff/create">
-              <Button variant="primary" className="flex items-center">
-                <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                Add Staff
-              </Button>
-            </Link>
-          </div>
-        </div>
 
         {error && (
           <div className="mt-6 rounded-md bg-red-50 p-4">
@@ -148,27 +208,77 @@ const StaffListPage: React.FC = () => {
           </div>
         )}
 
-        <div className="mt-8 flex flex-col">
-          <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+        <div className="mt-4">
+          <div className="overflow-x-auto">
+            <div className="inline-block min-w-full">
               <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                {loading ? (
-                  <div className="p-6 text-center">Loading staff data...</div>
-                ) : staff.length === 0 ? (
-                  <div className="p-6 text-center">No staff members found.</div>
-                ) : (
-                  <Table
-                    columns={columns}
-                    data={staff}
-                    keyField="id"
-                  />
-                )}
+                <div className="bg-white">
+                  {loading ? (
+                    <div className="p-6 text-center">Loading staff data...</div>
+                  ) : staff.length === 0 ? (
+                    <div className="p-6 text-center">No staff members found.</div>
+                  ) : (
+                    <Table
+                      columns={columns}
+                      data={staff}
+                      pagination={true}
+                      pageSize={10}
+                      keyField="id"
+                      isLoading={loading}
+                      emptyMessage="No staff members found."
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          if (!isDeleting) {
+            setIsDeleteModalOpen(false);
+            setStaffToDelete(null);
+          }
+        }}
+        title="Confirm Delete"
+      >
+        <div className="mt-2">
+          <p className="text-sm text-gray-500">
+            Are you sure you want to delete {staffToDelete?.firstName} {staffToDelete?.lastName}? 
+            This action cannot be undone.
+          </p>
+        </div>
+
+        <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+          <Button
+            variant="danger"
+            className="w-full sm:w-auto sm:ml-3"
+            onClick={handleDeleteConfirm}
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </Button>
+          <Button
+            variant="outline"
+            className="mt-3 w-full sm:mt-0 sm:w-auto"
+            onClick={() => {
+              if (!isDeleting) {
+                setIsDeleteModalOpen(false);
+                setStaffToDelete(null);
+              }
+            }}
+            disabled={isDeleting}
+          >
+            Cancel
+          </Button>
+        </div>
+      </Modal>
     </MainLayout>
+    </ProtectedRoute>
   );
 };
 

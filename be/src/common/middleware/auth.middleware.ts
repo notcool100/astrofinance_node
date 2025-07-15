@@ -69,6 +69,16 @@ export const authenticateAdmin = async (req: Request, res: Response, next: NextF
     // Attach admin user to request object
     req.adminUser = adminUser;
     
+    // Also attach to unified user object for consistency
+    req.user = {
+      id: adminUser.id,
+      email: adminUser.email,
+      userType: 'ADMIN',
+      username: adminUser.username,
+      fullName: adminUser.fullName,
+      roles: adminUser.roles.map((r: any) => r.role?.name || r.name)
+    };
+    
     next();
   } catch (error) {
     logger.error('Authentication error:', error);

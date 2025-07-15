@@ -63,9 +63,18 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
 
+    // Extract role names for the token
+    const roleNames = adminUser.roles.map(r => r.role.name);
+    
     // Generate JWT token
     const token = jwt.sign(
-      { id: adminUser.id, username: adminUser.username },
+      { 
+        id: adminUser.id, 
+        username: adminUser.username, 
+        email: adminUser.email,
+        userType: 'ADMIN',
+        roles: roleNames
+      },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN as any }
     );

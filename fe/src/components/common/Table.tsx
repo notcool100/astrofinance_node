@@ -10,6 +10,7 @@ interface TableProps<T extends object> {
   onRowClick?: (row: Row<T>) => void;
   isLoading?: boolean;
   emptyMessage?: string;
+  keyField?: string;
 }
 
 function Table<T extends object>({
@@ -20,6 +21,7 @@ function Table<T extends object>({
   onRowClick,
   isLoading = false,
   emptyMessage = 'No data available',
+  keyField = 'id',
 }: TableProps<T>) {
   const {
     getTableProps,
@@ -67,14 +69,15 @@ function Table<T extends object>({
 
   return (
     <div className="table-container">
-      <table {...getTableProps()} className="table">
-        <thead className="table-header">
+      <table {...getTableProps()} className="min-w-full divide-y divide-gray-300">
+        <thead className="bg-gray-50">
           {headerGroups.map(headerGroup => (
             <tr {...headerGroup.getHeaderGroupProps()}>
               {headerGroup.headers.map(column => (
                 <th
                   {...column.getHeaderProps(column.getSortByToggleProps())}
-                  className="table-header-cell"
+                  className="py-3.5 px-4 text-left text-sm font-semibold text-gray-900"
+                  scope="col"
                 >
                   <div className="flex items-center">
                     {column.render('Header')}
@@ -93,17 +96,22 @@ function Table<T extends object>({
             </tr>
           ))}
         </thead>
-        <tbody {...getTableBodyProps()} className="table-body">
+        <tbody {...getTableBodyProps()} className="divide-y divide-gray-200 bg-white">
           {page.map(row => {
             prepareRow(row);
             return (
               <tr
+                key={row.original[keyField as keyof typeof row.original] as string}
                 {...row.getRowProps()}
-                className={`table-row ${onRowClick ? 'cursor-pointer' : ''}`}
+                className={`hover:bg-gray-50 ${onRowClick ? 'cursor-pointer' : ''}`}
                 onClick={() => onRowClick && onRowClick(row)}
               >
                 {row.cells.map(cell => (
-                  <td {...cell.getCellProps()} className="table-cell">
+                  <td 
+                    key={`${row.original[keyField as keyof typeof row.original]}-${cell.column.id}`}
+                    {...cell.getCellProps()} 
+                    className="whitespace-nowrap py-4 px-4 text-sm text-gray-500"
+                  >
                     {cell.render('Cell')}
                   </td>
                 ))}
