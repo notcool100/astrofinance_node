@@ -41,6 +41,9 @@ model AdminUser {
   closedDayBooks DayBook[] @relation("ClosedByAdmin")
   createdJournalEntries JournalEntry[] @relation("CreatedByAdmin")
   approvedJournalEntries JournalEntry[] @relation("ApprovedByAdmin")
+  createdUserAccounts UserAccount[] @relation("CreatedUserAccount")
+  performedTransactions UserAccountTransaction[] @relation("PerformedByAdmin")
+  generatedStatements UserAccountStatement[] @relation("GeneratedByAdmin")
 
   @@index([username])
   @@index([email])
@@ -177,7 +180,7 @@ model User {
   updatedAt       DateTime      @updatedAt
 
   // Relations
-  accounts        Account[]
+  accounts        UserAccount[]
   loanApplications LoanApplication[]
   loans           Loan[]
   tdsCalculations TdsCalculation[]
@@ -198,7 +201,7 @@ enum UserType {
   MB
 }
 
-model Account {
+model UserAccount {
   id                String        @id @default(uuid())
   accountNumber     String        @unique
   userId            String
@@ -208,20 +211,25 @@ model Account {
   openingDate       DateTime
   lastTransactionDate DateTime?
   status            AccountStatus @default(ACTIVE)
+  createdById       String?       // Admin or staff who created the account
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
   // Relations
   user              User          @relation(fields: [userId], references: [id])
+  createdBy         AdminUser?    @relation("CreatedUserAccount", fields: [createdById], references: [id])
   bbAccountDetails  BbAccountDetails?
   mbAccountDetails  MbAccountDetails?
   tdsCalculations   TdsCalculation[]
+  transactions      UserAccountTransaction[]
+  statements        UserAccountStatement[]
 
   @@index([userId])
   @@index([accountType])
   @@index([status])
   @@index([openingDate])
-  @@map("accounts")
+  @@index([createdById])
+  @@map("user_accounts")
 }
 
 enum AccountType {
@@ -237,6 +245,43 @@ enum AccountStatus {
   FROZEN
 }
 
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  INTEREST_CREDIT
+  FEE_DEBIT
+  ADJUSTMENT
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
+model UserAccountTransaction {
+  id                String        @id @default(uuid())
+  accountId         String
+  transactionType   TransactionType
+  amount            Decimal       @db.Decimal(15, 2)
+  transactionDate   DateTime      @default(now())
+  description       String?
+  referenceNumber   String?       // For receipts, cheque numbers, etc.
+  runningBalance    Decimal       @db.Decimal(15, 2)
+  journalEntryId    String?
+  performedById     String?       // Admin user who performed the transaction
+  transactionMethod String?       // Cash, Cheque, Online, etc.
+  createdAt         DateTime      @default(now())
+  
+  // Relations
+  account           UserAccount   @relation(fields: [accountId], references: [id])
+  journalEntry      JournalEntry? @relation(fields: [journalEntryId], references: [id])
+  performedBy       AdminUser?    @relation("PerformedByAdmin", fields: [performedById], references: [id])
+  
+  @@index([accountId])
+  @@index([transactionDate])
+  @@index([accountId, transactionDate])
+  @@index([journalEntryId])
+  @@index([transactionType])
+  @@map("user_account_transactions")
+}
+
 model BbAccountDetails {
   accountId         String        @id
   guardianName      String
@@ -249,7 +294,7 @@ model BbAccountDetails {
   updatedAt         DateTime      @updatedAt
 
   // Relations
-  account           Account       @relation(fields: [accountId], references: [id])
+  account           UserAccount   @relation(fields: [accountId], references: [id])
 
   @@map("bb_account_details")
 }
@@ -265,9 +310,37 @@ model MbAccountDetails {
   updatedAt         DateTime      @updatedAt
 
   // Relations
-  account           Account       @relation(fields: [accountId], references: [id])
+  account           UserAccount   @relation(fields: [accountId], references: [id])
 
   @@map("mb_account_details")
+}
+
+model UserAccountStatement {
+  id                String        @id @default(uuid())
+  accountId         String
+  statementNumber   String        @unique
+  periodStartDate   DateTime
+  periodEndDate     DateTime
+  openingBalance    Decimal       @db.Decimal(15, 2)
+  closingBalance    Decimal       @db.Decimal(15, 2)
+  totalDeposits     Decimal       @db.Decimal(15, 2) @default(0)
+  totalWithdrawals  Decimal       @db.Decimal(15, 2) @default(0)
+  totalInterestEarned Decimal     @db.Decimal(15, 2) @default(0)
+  totalFees         Decimal       @db.Decimal(15, 2) @default(0)
+  generatedDate     DateTime      @default(now())
+  isGenerated       Boolean       @default(false)
+  generatedById     String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  account           UserAccount   @relation(fields: [accountId], references: [id])
+  generatedBy       AdminUser?    @relation("GeneratedByAdmin", fields: [generatedById], references: [id])
+
+  @@index([accountId])
+  @@index([periodStartDate, periodEndDate])
+  @@index([accountId, periodStartDate, periodEndDate])
+  @@map("user_account_statements")
 }
 
 // ==================== Loan Module ====================
@@ -485,6 +558,7 @@ model JournalEntry {
   createdBy         AdminUser?    @relation("CreatedByAdmin", fields: [createdById], references: [id])
   approvedBy        AdminUser?    @relation("ApprovedByAdmin", fields: [approvedById], references: [id])
   journalEntryLines JournalEntryLine[]
+  accountTransactions UserAccountTransaction[]
 
   @@index([entryDate])
   @@index([status])
@@ -728,7 +802,7 @@ model TdsCalculation {
 
   // Relations
   user              User          @relation(fields: [userId], references: [id])
-  account           Account       @relation(fields: [accountId], references: [id])
+  account           UserAccount   @relation(fields: [accountId], references: [id])
 
   @@map("tds_calculations")
 }

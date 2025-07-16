@@ -273,6 +273,7 @@ export const createAccount = async (data: CreateAccountData): Promise<Account> =
 };
 
 export const updateAccount = async (id: string, data: UpdateAccountData): Promise<Account> => {
+  console.log('Updating account with data:', data);
   return apiService.put<Account>(`/accounts/${id}`, data);
 };
 

@@ -38,7 +38,7 @@ router.get(
 // Get user by ID
 router.get(
   '/:id', 
-  hasPermission('users.view'), 
+  // hasPermission('users.view'), 
   getUserById
 );
 

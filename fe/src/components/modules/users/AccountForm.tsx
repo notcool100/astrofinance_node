@@ -127,7 +127,7 @@ const AccountForm: React.FC<AccountFormProps> = ({
         };
         
         // Add BB account details if applicable
-        if (account.accountType === 'SAVINGS' && account.bbAccountDetails) {
+        if (account.accountType === 'SAVINGS' && guardianName) {
           updateData.bbAccountDetails = {
             guardianName,
             guardianRelation,
@@ -136,16 +136,20 @@ const AccountForm: React.FC<AccountFormProps> = ({
             guardianIdNumber,
             maturityDate: bbMaturityDate ? bbMaturityDate.toISOString() : undefined
           };
+          
+          console.log('Including BB account details in update:', updateData.bbAccountDetails);
         }
         
         // Add MB account details if applicable
-        if (account.accountType === 'SAVINGS' && account.mbAccountDetails) {
+        if (account.accountType === 'SAVINGS' && monthlyDepositAmount) {
           updateData.mbAccountDetails = {
             monthlyDepositAmount: parseFloat(monthlyDepositAmount),
             depositDay: parseInt(depositDay),
             termMonths: parseInt(termMonths),
             maturityDate: mbMaturityDate ? mbMaturityDate.toISOString() : undefined
           };
+          
+          console.log('Including MB account details in update:', updateData.mbAccountDetails);
         }
         
         await updateAccount(account.id, updateData);
