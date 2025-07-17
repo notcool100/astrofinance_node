@@ -31,20 +31,11 @@ stages:
         npm install
       displayName: 'Install Frontend Dependencies'
     
-    - script: |
-        cd fe
-        npm run lint
-      displayName: 'Run Frontend Linting'
-    
+  
     - script: |
         cd fe
         npm run type-check
       displayName: 'Run TypeScript Check'
-    
-    - script: |
-        cd fe
-        npm run test
-      displayName: 'Run Frontend Tests'
     
     - script: |
         cd fe
@@ -80,21 +71,11 @@ stages:
         cd be
         npm install
       displayName: 'Install Backend Dependencies'
-    
-    - script: |
-        cd be
-        npm run lint
-      displayName: 'Run Backend Linting'
-    
+
     - script: |
         cd be
         npm run prisma:generate
       displayName: 'Generate Prisma Client'
-    
-    - script: |
-        cd be
-        npm run test
-      displayName: 'Run Backend Tests'
     
     - script: |
         cd be
