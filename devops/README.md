@@ -1,6 +1,6 @@
-# Financial Management System - DevOps
+# AstroFinance - DevOps
 
-This directory contains DevOps configuration files, CI/CD pipelines, and infrastructure as code for the Financial Management System.
+This directory contains DevOps configuration files, CI/CD pipelines, and infrastructure as code for the AstroFinance Financial Management System.
 
 ## Technology Stack
 
@@ -11,46 +11,68 @@ This directory contains DevOps configuration files, CI/CD pipelines, and infrast
 
 ## Getting Started
 
-Please refer to the [DevOps Setup Guide](../docs/setup/devops-setup.md) for detailed setup instructions.
+We provide several guides to help you set up and use the DevOps pipeline:
+
+- [Quick Start Guide](QUICKSTART.md) - Get up and running quickly
+- [Setup Guide](SETUP_GUIDE.md) - Comprehensive setup instructions
+- [Contabo Agent Setup Guide](CONTABO_AGENT_SETUP.md) - Set up a self-hosted agent on Contabo
+- [Pipeline Diagram](PIPELINE_DIAGRAM.md) - Visual representation of the pipeline architecture
+- [DevOps Setup Guide](../docs/setup/devops-setup.md) - Original setup documentation
 
 ## Directory Structure
 
 ```
 /devops
 ├── pipelines/           # Azure Pipeline definitions
-│   ├── frontend-pipeline.yml
-│   ├── backend-pipeline.yml
-│   └── database-pipeline.yml
+│   ├── azure-pipelines.yml     # Combined pipeline for frontend and backend
+│   ├── frontend-pipeline.yml   # Frontend-specific pipeline
+│   ├── backend-pipeline.yml    # Backend-specific pipeline
+│   └── README.md               # Pipeline documentation
 ├── templates/           # Reusable pipeline templates
-│   ├── build-template.yml
-│   └── deploy-template.yml
+│   ├── build-template.yml      # Common build steps
+│   ├── deploy-template.yml     # Common deployment steps
+│   └── README.md               # Template documentation
 ├── scripts/             # Deployment and utility scripts
-│   ├── deploy/
-│   ├── backup/
-│   └── monitoring/
-└── infrastructure/      # Infrastructure as Code (IaC)
-    ├── arm-templates/
-    └── terraform/
+│   ├── deploy/          # Deployment scripts
+│   │   ├── setup-azure-devops.sh  # Azure DevOps setup script
+│   │   └── README.md             # Deployment scripts documentation
+│   ├── agent-setup/     # Self-hosted agent setup scripts
+│   │   ├── setup-agent.sh        # Agent setup script
+│   │   └── README.md             # Agent setup documentation
+│   ├── backup/          # Backup scripts (to be implemented)
+│   │   └── README.md             # Backup scripts documentation
+│   ├── monitoring/      # Monitoring scripts (to be implemented)
+│   │   └── README.md             # Monitoring scripts documentation
+│   └── README.md        # Scripts documentation
+├── infrastructure/      # Infrastructure as Code (IaC)
+│   ├── arm-templates/   # Azure Resource Manager templates
+│   │   └── webapp.json          # Web App ARM template
+│   ├── terraform/       # Terraform configurations
+│   │   └── main.tf              # Main Terraform configuration
+│   └── README.md        # Infrastructure documentation
+├── QUICKSTART.md        # Quick start guide
+├── SETUP_GUIDE.md       # Comprehensive setup guide
+├── CONTABO_AGENT_SETUP.md # Self-hosted agent setup guide
+└── PIPELINE_DIAGRAM.md  # Visual pipeline architecture
 ```
 
 ## CI/CD Pipelines
 
 The project uses the following CI/CD pipelines:
 
-1. **Frontend Pipeline**
+1. **Combined Pipeline** (`azure-pipelines.yml`)
+   - Builds and deploys both frontend and backend components
+   - Triggered by changes to either frontend or backend code
+
+2. **Frontend Pipeline** (`frontend-pipeline.yml`)
    - Builds and deploys the Next.js frontend application
    - Includes linting, testing, and building steps
    - Deploys to Azure Web App
 
-2. **Backend Pipeline**
+3. **Backend Pipeline** (`backend-pipeline.yml`)
    - Builds and deploys the Node.js backend application
    - Includes linting, testing, and building steps
    - Deploys to Azure Web App for Linux
-
-3. **Database Pipeline**
-   - Validates and applies database migrations
-   - Includes validation and deployment steps
-   - Executes migrations against the PostgreSQL database
 
 ## Environment Configuration
 
@@ -61,17 +83,7 @@ The project uses the following environments:
    - Automatic deployments from the develop branch
    - Minimal approval requirements
 
-2. **Testing**
-   - For QA and testing
-   - Deployments triggered manually or by PR completion
-   - Basic approval requirements
-
-3. **Staging**
-   - Pre-production environment
-   - Mirrors production configuration
-   - Requires approvals for deployments
-
-4. **Production**
+2. **Production**
    - Live environment
    - Strict approval requirements
    - Blue-green deployment strategy
@@ -124,9 +136,7 @@ The project uses the following monitoring tools:
 The project uses the following deployment strategies:
 
 1. **Development**: Direct deployment
-2. **Testing**: Deployment with basic validation
-3. **Staging**: Blue-green deployment with smoke tests
-4. **Production**: Blue-green deployment with full testing
+2. **Production**: Blue-green deployment with full testing
 
 ## Security Considerations
 

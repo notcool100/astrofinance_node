@@ -1,0 +1,68 @@
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - be/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  nodeVersion: '16.x'
+
+stages:
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build Node.js API'
+    steps:
+    - template: ../templates/build-template.yml
+      parameters:
+        projectPath: 'be'
+        projectType: 'backend'
+        nodeVersion: '$(nodeVersion)'
+        artifactName: 'backend'
+
+- stage: DeployDev
+  displayName: 'Deploy to Development'
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+  jobs:
+  - deployment: DeployJob
+    displayName: 'Deploy to Azure Web App'
+    environment: 'development'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - template: ../templates/deploy-template.yml
+            parameters:
+              environment: 'development'
+              artifactName: 'backend'
+              appType: 'webAppLinux'
+              appName: 'astrofinance-backend-dev'
+              startUpCommand: 'npm run start'
+
+- stage: DeployProd
+  displayName: 'Deploy to Production'
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - deployment: DeployJob
+    displayName: 'Deploy to Azure Web App'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - template: ../templates/deploy-template.yml
+            parameters:
+              environment: 'production'
+              artifactName: 'backend'
+              appType: 'webAppLinux'
+              appName: 'astrofinance-backend'
+              startUpCommand: 'npm run start'

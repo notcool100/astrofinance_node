@@ -12,6 +12,7 @@ import Table from '@/components/common/Table';
 import Badge from '@/components/common/Badge';
 import Button from '@/components/common/Button';
 import { getAllStaff, StaffProfile } from '@/services/staff.service';
+import { Column } from 'react-table';
 import { formatDate } from '@/utils/dateUtils';
 
 const StaffListPage: React.FC = () => {
@@ -53,44 +54,44 @@ const StaffListPage: React.FC = () => {
     }
   };
 
-  const columns = [
+  const columns: Column<StaffProfile>[] = [
     {
-      header: 'Employee ID',
-      accessor: 'employeeId',
+      Header: 'Employee ID',
+      accessor: 'employeeId' as keyof StaffProfile,
     },
     {
-      header: 'Name',
-      accessor: 'name',
-      cell: (row: StaffProfile) => `${row.firstName} ${row.lastName}`,
+      Header: 'Name',
+      accessor: 'firstName' as keyof StaffProfile,
+      Cell: ({ row }: any) => `${row.original.firstName} ${row.original.lastName}`,
     },
     {
-      header: 'Email',
-      accessor: 'email',
+      Header: 'Email',
+      accessor: 'email' as keyof StaffProfile,
     },
     {
-      header: 'Department',
-      accessor: 'department',
+      Header: 'Department',
+      accessor: 'department' as keyof StaffProfile,
     },
     {
-      header: 'Position',
-      accessor: 'position',
+      Header: 'Position',
+      accessor: 'position' as keyof StaffProfile,
     },
     {
-      header: 'Status',
-      accessor: 'status',
-      cell: (row: StaffProfile) => getStatusBadge(row.status),
+      Header: 'Status',
+      accessor: 'status' as keyof StaffProfile,
+      Cell: ({ row }: any) => getStatusBadge(row.original.status),
     },
     {
-      header: 'Join Date',
-      accessor: 'joinDate',
-      cell: (row: StaffProfile) => formatDate(row.joinDate),
+      Header: 'Join Date',
+      accessor: 'joinDate' as keyof StaffProfile,
+      Cell: ({ row }: any) => formatDate(row.original.joinDate),
     },
     {
-      header: 'Actions',
-      accessor: 'actions',
-      cell: (row: StaffProfile) => (
+      Header: 'Actions',
+      accessor: 'id' as keyof StaffProfile,
+      Cell: ({ row }: any) => (
         <div className="flex space-x-2">
-          <Link href={`/admin/staff/${row.id}`}>
+          <Link href={`/admin/staff/${row.original.id}`}>
             <Button
               variant="outline"
               size="sm"

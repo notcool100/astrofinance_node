@@ -99,6 +99,12 @@ export interface Account {
   status: 'ACTIVE' | 'INACTIVE' | 'CLOSED' | 'FROZEN';
   createdAt: string;
   updatedAt: string;
+  // Add user property for API responses that include user details
+  user?: {
+    id: string;
+    fullName: string;
+    email?: string;
+  };
   bbAccountDetails?: {
     accountId: string;
     guardianName: string;

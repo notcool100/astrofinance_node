@@ -56,7 +56,7 @@ const StaffSettings = () => {
     register: registerNotification,
     handleSubmit: handleSubmitNotification,
     formState: { errors: notificationErrors },
-  } = useForm<NotificationFormData>({
+  } = useForm({
     resolver: yupResolver(notificationSchema),
     defaultValues: {
       emailNotifications: true,
@@ -74,7 +74,7 @@ const StaffSettings = () => {
     register: registerAppearance,
     handleSubmit: handleSubmitAppearance,
     formState: { errors: appearanceErrors },
-  } = useForm<AppearanceFormData>({
+  } = useForm({
     resolver: yupResolver(appearanceSchema),
     defaultValues: {
       theme: 'light',
@@ -85,16 +85,26 @@ const StaffSettings = () => {
   });
   
   // Handle notification settings update
-  const onUpdateNotifications = async (data: NotificationFormData) => {
+  const onUpdateNotifications = async (data: any) => {
+    // Type assertion to ensure we have the expected properties
+    const notificationData: NotificationFormData = {
+      emailNotifications: !!data.emailNotifications,
+      smsNotifications: !!data.smsNotifications,
+      pushNotifications: !!data.pushNotifications,
+      loanApplications: !!data.loanApplications,
+      loanApprovals: !!data.loanApprovals,
+      paymentReminders: !!data.paymentReminders,
+      systemUpdates: !!data.systemUpdates,
+    };
     setIsUpdatingNotifications(true);
     setNotificationSuccess(false);
     
     try {
       // This would be replaced with an actual API call
-      // await settingsService.updateNotificationSettings(data);
+      // await settingsService.updateNotificationSettings(notificationData);
       
       // For now, just simulate a successful update
-      console.log('Notification settings updated:', data);
+      console.log('Notification settings updated:', notificationData);
       
       setNotificationSuccess(true);
       setTimeout(() => setNotificationSuccess(false), 3000);
@@ -107,16 +117,23 @@ const StaffSettings = () => {
   };
   
   // Handle appearance settings update
-  const onUpdateAppearance = async (data: AppearanceFormData) => {
+  const onUpdateAppearance = async (data: any) => {
+    // Type assertion to ensure we have the expected properties
+    const appearanceData: AppearanceFormData = {
+      theme: data.theme,
+      fontSize: data.fontSize,
+      language: data.language,
+      compactMode: !!data.compactMode,
+    };
     setIsUpdatingAppearance(true);
     setAppearanceSuccess(false);
     
     try {
       // This would be replaced with an actual API call
-      // await settingsService.updateAppearanceSettings(data);
+      // await settingsService.updateAppearanceSettings(appearanceData);
       
       // For now, just simulate a successful update
-      console.log('Appearance settings updated:', data);
+      console.log('Appearance settings updated:', appearanceData);
       
       setAppearanceSuccess(true);
       setTimeout(() => setAppearanceSuccess(false), 3000);

@@ -14,7 +14,7 @@ interface Role {
 
 interface StaffFormProps {
   staff?: StaffProfile;
-  onSubmit: (data: CreateStaffData | UpdateStaffData) => void;
+  onSubmit: (data: any) => void;
   isSubmitting: boolean;
   isEditMode: boolean;
 }
@@ -81,7 +81,7 @@ const StaffForm: React.FC<StaffFormProps> = ({
         department: staff.department,
         position: staff.position,
         status: staff.status,
-        roleIds: roleIds,
+        roleIds: roleIds.filter((id): id is string => id !== undefined),
       });
     }
   }, [isEditMode, staff]);
@@ -163,7 +163,7 @@ const StaffForm: React.FC<StaffFormProps> = ({
                 type="text"
                 name="employeeId"
                 id="employeeId"
-                value={isEditMode ? (formData.employeeId || '') : 'Will be auto-generated'}
+                value={isEditMode ? ((formData as any).employeeId || '') : 'Will be auto-generated'}
                 onChange={handleChange}
                 disabled={true}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm disabled:bg-gray-100"
@@ -298,10 +298,8 @@ const StaffForm: React.FC<StaffFormProps> = ({
             <div className="mt-1">
               <DatePicker
                 id="dateOfBirth"
-                name="dateOfBirth"
-                selected={formData.dateOfBirth ? new Date(formData.dateOfBirth) : null}
+                selected={(formData as any).dateOfBirth ? new Date((formData as any).dateOfBirth) : null}
                 onChange={(date) => handleDateChange('dateOfBirth', date)}
-                required
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               />
             </div>
@@ -315,10 +313,8 @@ const StaffForm: React.FC<StaffFormProps> = ({
             <div className="mt-1">
               <DatePicker
                 id="joinDate"
-                name="joinDate"
-                selected={formData.joinDate ? new Date(formData.joinDate) : null}
+                selected={(formData as any).joinDate ? new Date((formData as any).joinDate) : null}
                 onChange={(date) => handleDateChange('joinDate', date)}
-                required
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               />
             </div>

@@ -78,6 +78,7 @@ function Table<T extends object>({
       columns,
       data,
       initialState: { 
+        // @ts-ignore - pageIndex is valid but not in the type definition
         pageIndex: 0,
         pageSize: pageSize as number
       },
@@ -110,19 +111,22 @@ function Table<T extends object>({
       <table {...getTableProps()} className="min-w-full divide-y divide-gray-300">
         <thead className="bg-gray-50">
           {headerGroups.map((headerGroup, groupIndex) => (
-            <tr key={`header-group-${groupIndex}`} {...headerGroup.getHeaderGroupProps()}>
+            <tr {...headerGroup.getHeaderGroupProps()}>
               {headerGroup.headers.map((column, columnIndex) => (
                 <th
-                  key={`header-${columnIndex}`}
-                  {...column.getHeaderProps(column.getSortByToggleProps())}
+                  {...column.getHeaderProps(
+                    // @ts-ignore - getSortByToggleProps is valid but not in the type definition
+                    column.getSortByToggleProps && column.getSortByToggleProps()
+                  )}
                   className="py-3.5 px-4 text-left text-sm font-semibold text-gray-900"
                   scope="col"
                 >
                   <div className="flex items-center">
                     {column.render('Header')}
                     <span>
-                      {column.isSorted ? (
-                        column.isSortedDesc ? (
+                      {/* @ts-ignore - isSorted is valid but not in the type definition */}
+                      {(column as any).isSorted ? (
+                        (column as any).isSortedDesc ? (
                           <ChevronDownIcon className="ml-1 h-4 w-4" />
                         ) : (
                           <ChevronUpIcon className="ml-1 h-4 w-4" />
@@ -140,15 +144,17 @@ function Table<T extends object>({
             prepareRow(row);
             return (
               <tr
-                key={row.original[keyField as keyof typeof row.original] as string}
-                {...row.getRowProps()}
+                {...row.getRowProps({
+                  key: row.original[keyField as keyof typeof row.original] as string
+                })}
                 className={`hover:bg-gray-50 ${onRowClick ? 'cursor-pointer' : ''}`}
                 onClick={() => onRowClick && onRowClick(row)}
               >
                 {row.cells.map(cell => (
                   <td 
-                    key={`${row.original[keyField as keyof typeof row.original]}-${cell.column.id}`}
-                    {...cell.getCellProps()} 
+                    {...cell.getCellProps({
+                      key: `${row.original[keyField as keyof typeof row.original]}-${cell.column.id}`
+                    })} 
                     className="whitespace-nowrap py-4 px-4 text-sm text-gray-500"
                   >
                     {cell.render('Cell')}

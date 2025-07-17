@@ -6,7 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import Button from '@/components/common/Button';
 import UserForm from '@/components/modules/users/UserForm';
-import { createUser, CreateUserData } from '@/services/user.service';
+import { createUser, CreateUserData, UpdateUserData } from '@/services/user.service';
 import { toast } from 'react-toastify';
 
 const CreateUserPage: React.FC = () => {
@@ -14,12 +14,14 @@ const CreateUserPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (data: CreateUserData) => {
+  const handleSubmit = async (data: CreateUserData | UpdateUserData) => {
+    // Since we're in create mode, we can safely cast to CreateUserData
+    const createData = data as CreateUserData;
     try {
       setIsSubmitting(true);
       setError(null);
       
-      const newUser = await createUser(data);
+      const newUser = await createUser(createData);
       toast.success('User created successfully');
       
       // Redirect to the user details page

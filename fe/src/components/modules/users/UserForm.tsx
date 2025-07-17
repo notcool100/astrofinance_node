@@ -6,7 +6,7 @@ import { formatDate } from '@/utils/dateUtils';
 
 interface UserFormProps {
   user?: User;
-  onSubmit: (data: CreateUserData | UpdateUserData) => void;
+  onSubmit: (data: any) => void;
   isSubmitting: boolean;
   isEditMode: boolean;
 }
@@ -83,10 +83,8 @@ const UserForm: React.FC<UserFormProps> = ({
             <div className="mt-1">
               <DatePicker
                 id="dateOfBirth"
-                name="dateOfBirth"
                 selected={formData.dateOfBirth ? new Date(formData.dateOfBirth) : null}
                 onChange={(date) => handleDateChange('dateOfBirth', date)}
-                required
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               />
             </div>
@@ -239,7 +237,7 @@ const UserForm: React.FC<UserFormProps> = ({
               <select
                 id="userType"
                 name="userType"
-                value={formData.userType || 'SB'}
+                value={(formData as any).userType || 'SB'}
                 onChange={handleChange}
                 required
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"

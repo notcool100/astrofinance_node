@@ -8,6 +8,7 @@ import Table from '@/components/common/Table';
 import Badge from '@/components/common/Badge';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import loanService, { LoanApplication } from '@/services/loanService';
+import { Column } from 'react-table';
 import { PlusIcon, FunnelIcon } from '@heroicons/react/24/outline';
 
 const ApplicationStatusBadge = ({ status }: { status: string }) => {
@@ -45,47 +46,47 @@ const LoanApplicationsPage = () => {
     () => [
       {
         Header: 'Application ID',
-        accessor: 'id',
+        accessor: 'id' as keyof LoanApplication,
       },
       {
         Header: 'Loan Type',
-        accessor: 'loanType.name',
+        accessor: 'loanType' as keyof LoanApplication,
         Cell: ({ row }: any) => row.original.loanType?.name || 'N/A',
       },
       {
         Header: 'Amount',
-        accessor: 'amount',
+        accessor: 'amount' as keyof LoanApplication,
         Cell: ({ value }: { value: number }) => `$${value.toLocaleString()}`,
       },
       {
         Header: 'Tenure',
-        accessor: 'tenure',
+        accessor: 'tenure' as keyof LoanApplication,
         Cell: ({ value }: { value: number }) => `${value} months`,
       },
       {
         Header: 'Application Date',
-        accessor: 'applicationDate',
+        accessor: 'applicationDate' as keyof LoanApplication,
         Cell: ({ value }: { value: string }) => new Date(value).toLocaleDateString(),
       },
       {
         Header: 'Status',
-        accessor: 'status',
+        accessor: 'status' as keyof LoanApplication,
         Cell: ({ value }: { value: string }) => <ApplicationStatusBadge status={value} />,
       },
       {
         Header: 'Actions',
-        accessor: (row: LoanApplication) => row,
-        Cell: ({ value }: { value: LoanApplication }) => (
+        accessor: 'id' as keyof LoanApplication,
+        Cell: ({ row }: any) => (
           <div className="flex space-x-2">
             <button
-              onClick={() => router.push(`/loans/applications/${value.id}`)}
+              onClick={() => router.push(`/loans/applications/${row.original.id}`)}
               className="text-primary-600 hover:text-primary-900"
             >
               View
             </button>
-            {value.status === 'APPROVED' && (
+            {row.original.status === 'APPROVED' && (
               <button
-                onClick={() => router.push(`/loans/applications/${value.id}/documents`)}
+                onClick={() => router.push(`/loans/applications/${row.original.id}/documents`)}
                 className="text-primary-600 hover:text-primary-900"
               >
                 Upload Docs
@@ -214,7 +215,7 @@ const LoanApplicationsPage = () => {
               </div>
 
               <Table
-                columns={columns}
+                columns={columns as any}
                 data={mockApplications}
                 isLoading={false}
                 onRowClick={handleRowClick}

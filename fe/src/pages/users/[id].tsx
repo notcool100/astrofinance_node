@@ -11,6 +11,7 @@ import Table from '@/components/common/Table';
 import UserAccounts from '@/components/modules/users/UserAccounts';
 import { formatDate, formatCurrency } from '@/utils/dateUtils';
 import { getUserById, getUserLoans, getUserLoanApplications, User, UserLoan, UserLoanApplication } from '@/services/user.service';
+import { Column } from 'react-table';
 import { toast } from 'react-toastify';
 
 const UserDetailPage: React.FC = () => {
@@ -80,14 +81,17 @@ const UserDetailPage: React.FC = () => {
     }
   };
 
-  const loanColumns = [
+  const loanColumns: Column<UserLoan>[] = [
     {
       Header: 'Account Number',
       accessor: 'accountNumber',
     },
     {
       Header: 'Loan Type',
-      accessor: 'loanType.name',
+      accessor: 'loanType' as keyof UserLoan,
+      Cell: ({ row }: any) => (
+        <span>{row.original.loanType?.name || 'Unknown'}</span>
+      ),
     },
     {
       Header: 'Amount',
@@ -126,14 +130,17 @@ const UserDetailPage: React.FC = () => {
     },
   ];
 
-  const applicationColumns = [
+  const applicationColumns: Column<UserLoanApplication>[] = [
     {
       Header: 'Application Number',
       accessor: 'applicationNumber',
     },
     {
       Header: 'Loan Type',
-      accessor: 'loanType.name',
+      accessor: 'loanType' as keyof UserLoanApplication,
+      Cell: ({ row }: any) => (
+        <span>{row.original.loanType?.name || 'Unknown'}</span>
+      ),
     },
     {
       Header: 'Amount',

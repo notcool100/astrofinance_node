@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '@/contexts/AuthContext';
+import { User } from '@/services/authService';
 import MainLayout from '@/components/layout/MainLayout';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
@@ -62,7 +63,7 @@ const StaffProfile = () => {
       firstName: user?.fullName?.split(' ')[0] || '',
       lastName: user?.fullName?.split(' ')[1] || '',
       email: user?.email || '',
-      phone: user?.phone || '',
+      phone: user?.contactNumber || '',
     },
   });
   
@@ -86,15 +87,18 @@ const StaffProfile = () => {
       // const response = await authService.updateStaffProfile(data);
       
       // For now, just simulate a successful update
-      const updatedUser = {
-        ...user,
-        fullName: `${data.firstName} ${data.lastName}`,
-        email: data.email,
-        phone: data.phone,
-      };
-      
-      // Update user in context
-      updateUser(updatedUser);
+      if (user) {
+        const updatedUser = {
+          ...user,
+          fullName: `${data.firstName} ${data.lastName}`,
+          email: data.email,
+          contactNumber: data.phone,
+          id: user.id, // Ensure id is always present
+        };
+        
+        // Update user in context
+        updateUser(updatedUser as User);
+      }
       
       setUpdateSuccess(true);
       setTimeout(() => setUpdateSuccess(false), 3000);

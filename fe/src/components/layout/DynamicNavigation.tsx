@@ -96,10 +96,12 @@ interface ApiNavigationGroup {
 }
 
 interface NavigationItem {
+  id?: string;
   name: string;
   href: string;
   icon: React.ForwardRefExoticComponent<React.SVGProps<SVGSVGElement>>;
   current: boolean;
+  children?: NavigationItem[];
 }
 
 function classNames(...classes: string[]) {
@@ -120,13 +122,13 @@ const DynamicNavigation: React.FC = () => {
         
         if (navFromAuth && navFromAuth.length > 0) {
           console.log('Using navigation from auth context:', navFromAuth);
-          setApiNavGroups(navFromAuth);
+          setApiNavGroups(navFromAuth as unknown as ApiNavigationGroup[]);
         } else {
           // If not available, fetch directly from API
           console.log('Fetching navigation from API...');
           const navFromApi = await navigationService.getUserNavigation();
           console.log('Navigation fetched from API:', navFromApi);
-          setApiNavGroups(navFromApi);
+          setApiNavGroups(navFromApi as unknown as ApiNavigationGroup[]);
         }
       } catch (error) {
         console.error('Error fetching navigation:', error);
@@ -193,7 +195,7 @@ const DynamicNavigation: React.FC = () => {
           href,
           icon: IconComponent,
           current: router.pathname === href || router.pathname.startsWith(`${href}/`),
-          children: item.children?.map(child => {
+          children: (item.children as any)?.map((child: any) => {
             // Process child items
             let childHref = child.url || '#';
             if (childHref.startsWith('/') && !childHref.startsWith('/office/')) {
@@ -232,8 +234,8 @@ const DynamicNavigation: React.FC = () => {
             </div>
             <ul role="list" className="-mx-2 space-y-1">
               {group.items.map((item) => (
-                <li key={item.id}>
-                  {!item.children || item.children.length === 0 ? (
+                <li key={(item as any).id || item.name}>
+                  {!(item as any).children || (item as any).children.length === 0 ? (
                     <Link
                       href={item.href}
                       className={classNames(
@@ -274,7 +276,7 @@ const DynamicNavigation: React.FC = () => {
                       </button>
                       {/* Submenu for children */}
                       <ul className="mt-1 pl-8 space-y-1">
-                        {item.children.map((child) => (
+                        {((item as any).children || []).map((child: any) => (
                           <li key={child.id}>
                             <Link
                               href={child.href}

@@ -1,0 +1,65 @@
+parameters:
+  - name: projectPath
+    type: string
+    default: ''
+  - name: projectType
+    type: string
+    default: 'frontend'
+  - name: nodeVersion
+    type: string
+    default: '16.x'
+  - name: artifactName
+    type: string
+    default: 'app'
+
+steps:
+- task: NodeTool@0
+  inputs:
+    versionSpec: '${{ parameters.nodeVersion }}'
+  displayName: 'Install Node.js'
+
+- script: |
+    cd ${{ parameters.projectPath }}
+    npm ci
+  displayName: 'Install Dependencies'
+
+- script: |
+    cd ${{ parameters.projectPath }}
+    npm run lint
+  displayName: 'Run Linting'
+
+- ${{ if eq(parameters.projectType, 'frontend') }}:
+  - script: |
+      cd ${{ parameters.projectPath }}
+      npm run type-check
+    displayName: 'Run TypeScript Check'
+
+- ${{ if eq(parameters.projectType, 'backend') }}:
+  - script: |
+      cd ${{ parameters.projectPath }}
+      npm run prisma:generate
+    displayName: 'Generate Prisma Client'
+
+- script: |
+    cd ${{ parameters.projectPath }}
+    npm run test
+  displayName: 'Run Tests'
+
+- script: |
+    cd ${{ parameters.projectPath }}
+    npm run build
+  displayName: 'Build Application'
+
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '${{ parameters.projectPath }}'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/${{ parameters.artifactName }}.zip'
+    replaceExistingArchive: true
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/${{ parameters.artifactName }}.zip'
+    ArtifactName: '${{ parameters.artifactName }}'
+    publishLocation: 'Container'

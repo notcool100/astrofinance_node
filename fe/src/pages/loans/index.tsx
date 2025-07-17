@@ -8,6 +8,7 @@ import Table from '@/components/common/Table';
 import Badge from '@/components/common/Badge';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import loanService, { Loan } from '@/services/loanService';
+import { Column } from 'react-table';
 import { PlusIcon, FunnelIcon } from '@heroicons/react/24/outline';
 
 const LoanStatusBadge = ({ status }: { status: string }) => {
@@ -41,7 +42,7 @@ const LoansPage = () => {
     }
   );
 
-  const columns = React.useMemo(
+  const columns: Column<Loan>[] = React.useMemo(
     () => [
       {
         Header: 'Loan Number',

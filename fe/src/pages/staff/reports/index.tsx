@@ -194,6 +194,7 @@ const StaffReports = () => {
                   </label>
                   <Select
                     id="reportType"
+                    name="reportType"
                     value={selectedReportType}
                     onChange={(e) => setSelectedReportType(e.target.value)}
                     options={
@@ -241,6 +242,7 @@ const StaffReports = () => {
                   </label>
                   <Select
                     id="format"
+                    name="format"
                     value={selectedFormat}
                     onChange={(e) => setSelectedFormat(e.target.value)}
                     options={

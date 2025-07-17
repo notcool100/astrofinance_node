@@ -12,7 +12,7 @@ import { toast } from 'react-toastify';
 const EditUserPage: React.FC = () => {
   const router = useRouter();
   const { id } = router.query;
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

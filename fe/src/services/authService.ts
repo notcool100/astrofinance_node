@@ -44,6 +44,8 @@ export interface User {
   userType: 'ADMIN' | 'STAFF' | 'USER';
   department?: string;
   position?: string;
+  createdAt?: string;
+  contactNumber?: string; // Adding this for compatibility with staff profile
 }
 
 export interface AuthResponse {
@@ -163,6 +165,12 @@ const authService = {
     }
     console.log('Navigation from user data:', user.navigation);
     return user.navigation;
+  },
+  
+  // Method already defined above
+  
+  changeAdminPassword: async (passwordData: { currentPassword: string; newPassword: string }) => {
+    return apiService.post('/admin/change-password', passwordData);
   }
 };
 

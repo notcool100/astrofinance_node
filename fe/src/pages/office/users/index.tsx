@@ -10,6 +10,7 @@ import Badge from '@/components/common/Badge';
 import Modal from '@/components/common/Modal';
 import { formatDate } from '@/utils/dateUtils';
 import { getAllUsers, User } from '@/services/user.service';
+import { Column } from 'react-table';
 import { toast } from 'react-toastify';
 
 const UsersPage: React.FC = () => {
@@ -84,7 +85,7 @@ const UsersPage: React.FC = () => {
     }
   };
 
-  const columns = [
+  const columns: Column<User>[] = [
     {
       Header: 'Name',
       accessor: 'fullName',
@@ -148,7 +149,7 @@ const UsersPage: React.FC = () => {
     },
     {
       Header: 'Loans',
-      accessor: '_count.loans',
+      accessor: '_count' as keyof User,
       Cell: ({ row }: any) => (
         <div className="text-center">
           {row.original._count?.loans || 0}
@@ -157,7 +158,7 @@ const UsersPage: React.FC = () => {
     },
     {
       Header: 'Applications',
-      accessor: '_count.loanApplications',
+      accessor: '_count' as keyof User,
       Cell: ({ row }: any) => (
         <div className="text-center">
           {row.original._count?.loanApplications || 0}
@@ -175,12 +176,12 @@ const UsersPage: React.FC = () => {
     },
     {
       Header: 'Actions',
-      accessor: 'actions',
+      accessor: 'id' as keyof User,
       Cell: ({ row }: any) => (
         <div className="flex space-x-2">
           <Link href={`/office/users/${row.original.id}`}>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               className="text-blue-600 hover:text-blue-800"
               title="View User"
@@ -190,7 +191,7 @@ const UsersPage: React.FC = () => {
           </Link>
           <Link href={`/office/users/${row.original.id}/edit`}>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               className="text-green-600 hover:text-green-800"
               title="Edit User"
@@ -200,7 +201,7 @@ const UsersPage: React.FC = () => {
           </Link>
           <Link href={`/office/users/${row.original.id}/reset-password`}>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               className="text-yellow-600 hover:text-yellow-800"
               title="Reset Password"
@@ -209,7 +210,7 @@ const UsersPage: React.FC = () => {
             </Button>
           </Link>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             className="text-red-600 hover:text-red-800"
             title="Delete User"
@@ -312,9 +313,10 @@ const UsersPage: React.FC = () => {
                   data={users}
                   pagination={true}
                   pageSize={pageSize}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
+                  // These props are not in the Table component interface
+                  // currentPage={currentPage}
+                  // totalPages={totalPages}
+                  // onPageChange={setCurrentPage}
                   keyField="id"
                   isLoading={loading}
                   emptyMessage="No users found."

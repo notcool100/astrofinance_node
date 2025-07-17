@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginForm from '@/components/forms/LoginForm';
 
-type UserType = 'STAFF' | 'ADMIN';
+type UserType = 'STAFF' | 'ADMIN' | 'USER';
 
 const Login = () => {
   // Check if there's a userType in the URL query
@@ -101,7 +101,7 @@ const Login = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <LoginForm userType={userType} />
+          <LoginForm userType={userType === 'USER' ? undefined : userType} />
           
           <div className="mt-6">
             <div className="relative">

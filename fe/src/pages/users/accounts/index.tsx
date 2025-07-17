@@ -8,6 +8,7 @@ import Table from '@/components/common/Table';
 import Badge from '@/components/common/Badge';
 import { formatDate, formatCurrency } from '@/utils/dateUtils';
 import { getAllAccounts, Account } from '@/services/user.service';
+import { Column } from 'react-table';
 import { toast } from 'react-toastify';
 
 const AccountsPage: React.FC = () => {
@@ -54,14 +55,17 @@ const AccountsPage: React.FC = () => {
     fetchAccounts();
   };
 
-  const columns = [
+  const columns: Column<Account>[] = [
     {
       Header: 'Account Number',
       accessor: 'accountNumber',
     },
     {
       Header: 'User',
-      accessor: 'user.fullName',
+      accessor: 'user' as keyof Account,
+      Cell: ({ row }: any) => (
+        <span>{row.original.user?.fullName || 'Unknown'}</span>
+      ),
     },
     {
       Header: 'Account Type',

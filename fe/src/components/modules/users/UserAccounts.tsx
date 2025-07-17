@@ -8,6 +8,7 @@ import Badge from '@/components/common/Badge';
 import { formatDate, formatCurrency } from '@/utils/dateUtils';
 import { getUserAccounts, Account } from '@/services/user.service';
 import { toast } from 'react-toastify';
+import { Column } from 'react-table';
 
 interface UserAccountsProps {
   userId: string;
@@ -40,7 +41,7 @@ const UserAccounts: React.FC<UserAccountsProps> = ({ userId }) => {
     }
   };
 
-  const accountColumns = [
+  const accountColumns: Column<Account>[] = [
     {
       Header: 'Account Number',
       accessor: 'accountNumber',
