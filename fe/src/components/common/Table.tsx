@@ -111,13 +111,14 @@ function Table<T extends object>({
       <table {...getTableProps()} className="min-w-full divide-y divide-gray-300">
         <thead className="bg-gray-50">
           {headerGroups.map((headerGroup, groupIndex) => (
-            <tr {...headerGroup.getHeaderGroupProps()}>
+            <tr {...headerGroup.getHeaderGroupProps({ key: `header-group-${groupIndex}` })}>
               {headerGroup.headers.map((column, columnIndex) => (
                 <th
-                  {...column.getHeaderProps(
+                  {...column.getHeaderProps({
+                    key: `header-${columnIndex}`,
                     // @ts-ignore - getSortByToggleProps is valid but not in the type definition
-                    column.getSortByToggleProps && column.getSortByToggleProps()
-                  )}
+                    ...(column.getSortByToggleProps && column.getSortByToggleProps())
+                  })}
                   className="py-3.5 px-4 text-left text-sm font-semibold text-gray-900"
                   scope="col"
                 >
