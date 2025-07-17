@@ -123,6 +123,9 @@ stages:
       displayName: 'Extract Frontend Build'
 
     - script: |
+        export PATH=$PATH:/home/astro/.nvm/versions/node/v24.4.1/bin
+        export PM2_HOME=/home/astro/.pm2
+        cd /var/www/astrofinance/frontend-dev
         pm2 restart frontend-dev || pm2 start npm --name "frontend-dev" -- start --cwd /var/www/astrofinance/frontend-dev
       displayName: 'Restart Frontend with PM2'
 
@@ -145,6 +148,9 @@ stages:
       displayName: 'Extract Backend Build'
 
     - script: |
+        export PATH=$PATH:/home/astro/.nvm/versions/node/v24.4.1/bin
+        export PM2_HOME=/home/astro/.pm2
+        cd /var/www/astrofinance/backend-dev
         cd /var/www/astrofinance/backend-dev
         pm2 restart backend-dev || pm2 start npm --name "backend-dev" -- start --cwd /var/www/astrofinance/backend-dev
       displayName: 'Restart Backend with PM2'
