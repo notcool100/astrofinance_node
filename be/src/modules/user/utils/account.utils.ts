@@ -25,7 +25,7 @@ export const generateAccountNumber = async (accountType: string): Promise<string
   const prefix = `${typePrefix}${year}${month}`;
   
   // Find the latest account with this prefix
-  const latestAccount = await prisma.account.findFirst({
+  const latestAccount = await prisma.userAccount.findFirst({
     where: {
       accountNumber: {
         startsWith: prefix

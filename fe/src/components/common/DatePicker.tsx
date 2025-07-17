@@ -31,8 +31,9 @@ const DatePicker: React.FC<DatePickerProps> = ({
   error,
 }) => {
   // Custom input component
+  // Custom input component with display name
   const CustomInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
-    ({ value, onClick, onChange, placeholder }, ref) => (
+    ({ value, onClick, placeholder }, ref) => (
       <div className="relative">
         <input
           ref={ref}
@@ -43,7 +44,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
               : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
           } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''} ${className}`}
           value={value as string}
-          onChange={onChange}
           onClick={onClick}
           placeholder={placeholder}
           readOnly
@@ -55,6 +55,9 @@ const DatePicker: React.FC<DatePickerProps> = ({
       </div>
     )
   );
+  
+  // Add display name
+  CustomInput.displayName = 'DatePickerCustomInput';
 
   return (
     <div>

@@ -40,7 +40,7 @@ export const getUserAccounts = async (req: Request, res: Response) => {
     
     // Get accounts with pagination
     const [accounts, totalCount] = await Promise.all([
-      prisma.account.findMany({
+      prisma.userAccount.findMany({
         where,
         include: {
           bbAccountDetails: true,
@@ -50,7 +50,7 @@ export const getUserAccounts = async (req: Request, res: Response) => {
         take: Number(limit),
         orderBy: { createdAt: 'desc' }
       }),
-      prisma.account.count({ where })
+      prisma.userAccount.count({ where })
     ]);
     
     // Calculate pagination metadata
@@ -79,7 +79,7 @@ export const getAccountById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    const account = await prisma.account.findUnique({
+    const account = await prisma.userAccount.findUnique({
       where: { id },
       include: {
         bbAccountDetails: true,
@@ -138,7 +138,7 @@ export const createAccount = async (req: Request, res: Response) => {
     // Create account with transaction to ensure all related data is created atomically
     const account = await prisma.$transaction(async (prisma) => {
       // Create the main account
-      const newAccount = await prisma.account.create({
+      const newAccount = await prisma.userAccount.create({
         data: {
           accountNumber,
           userId,
@@ -234,7 +234,7 @@ export const createAccount = async (req: Request, res: Response) => {
         }
       }
       
-      return prisma.account.findUnique({
+      return prisma.userAccount.findUnique({
         where: { id: newAccount.id },
         include: {
           bbAccountDetails: true,
@@ -302,7 +302,7 @@ export const updateAccount = async (req: Request, res: Response) => {
     logger.info(`MB Account Details: ${JSON.stringify(mbAccountDetails)}`);
     
     // Check if account exists
-    const existingAccount = await prisma.account.findUnique({
+    const existingAccount = await prisma.userAccount.findUnique({
       where: { id },
       include: {
         bbAccountDetails: true,
@@ -334,7 +334,7 @@ export const updateAccount = async (req: Request, res: Response) => {
       
       // Only update if there are changes
       if (Object.keys(accountData).length > 0) {
-        await prisma.account.update({
+        await prisma.userAccount.update({
           where: { id },
           data: accountData
         });
@@ -522,7 +522,7 @@ export const updateAccount = async (req: Request, res: Response) => {
         }
       }
       
-      return prisma.account.findUnique({
+      return prisma.userAccount.findUnique({
         where: { id },
         include: {
           bbAccountDetails: true,
@@ -542,7 +542,7 @@ export const updateAccount = async (req: Request, res: Response) => {
     );
     
     // Get the latest account data to ensure we return the most up-to-date information
-    const finalAccount = await prisma.account.findUnique({
+    const finalAccount = await prisma.userAccount.findUnique({
       where: { id },
       include: {
         bbAccountDetails: true,
@@ -585,7 +585,7 @@ export const closeAccount = async (req: Request, res: Response) => {
     const { closureReason } = req.body;
     
     // Check if account exists
-    const existingAccount = await prisma.account.findUnique({
+    const existingAccount = await prisma.userAccount.findUnique({
       where: { id }
     });
     
@@ -599,7 +599,7 @@ export const closeAccount = async (req: Request, res: Response) => {
     }
     
     // Update account status to CLOSED
-    const updatedAccount = await prisma.account.update({
+    const updatedAccount = await prisma.userAccount.update({
       where: { id },
       data: {
         status: 'CLOSED',
@@ -672,7 +672,7 @@ export const getAllAccounts = async (req: Request, res: Response) => {
     
     // Get accounts with pagination
     const [accounts, totalCount] = await Promise.all([
-      prisma.account.findMany({
+      prisma.userAccount.findMany({
         where,
         include: {
           user: {
@@ -691,7 +691,7 @@ export const getAllAccounts = async (req: Request, res: Response) => {
         take: Number(limit),
         orderBy: { createdAt: 'desc' }
       }),
-      prisma.account.count({ where })
+      prisma.userAccount.count({ where })
     ]);
     
     // Calculate pagination metadata

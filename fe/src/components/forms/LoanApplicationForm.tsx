@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Button from '@/components/common/Button';
-import apiService from '@/services/api';
 
 interface LoanType {
   id: string;
@@ -98,7 +97,7 @@ const fetchLoanTypes = async (): Promise<LoanType[]> => {
 };
 
 // Service to submit loan application
-const submitLoanApplication = async (data: LoanApplicationFormData): Promise<{ id: string; status: string }> => {
+const submitLoanApplication = async (_data: LoanApplicationFormData): Promise<{ id: string; status: string }> => {
   // This would be replaced with an actual API call
   // return apiService.post<{ id: string; status: string }>('/loan/applications', data);
   
@@ -113,7 +112,7 @@ const submitLoanApplication = async (data: LoanApplicationFormData): Promise<{ i
   });
 };
 
-const LoanApplicationForm: React.FC<{ onSuccess?: (applicationId: string) => void }> = ({ onSuccess }) => {
+const LoanApplicationForm: React.FC<{ onSuccess?: (_applicationId: string) => void }> = ({ onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -345,7 +344,7 @@ const LoanApplicationForm: React.FC<{ onSuccess?: (applicationId: string) => voi
       <div className="pt-4">
         <h3 className="text-lg font-medium leading-6 text-gray-900">Required Documents</h3>
         <p className="mt-1 text-sm text-gray-500">
-          You'll need to upload the following documents after submitting your application:
+          You&apos;ll need to upload the following documents after submitting your application:
         </p>
         <ul className="mt-3 list-disc list-inside text-sm text-gray-500">
           <li>Identity Proof (Aadhar Card, PAN Card, Passport, etc.)</li>

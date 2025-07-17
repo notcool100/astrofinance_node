@@ -364,7 +364,7 @@ async function seedNavigation() {
 			data: {
 				label: "Accounts",
 				icon: "account_balance",
-				url: "/accounts",
+				url: "/users/accounts",
 				order: 2,
 				groupId: userGroup.id,
 			},

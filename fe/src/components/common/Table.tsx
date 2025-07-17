@@ -1,5 +1,13 @@
-import React, { ReactNode } from 'react';
-import { useTable, useSortBy, usePagination, Column, Row } from 'react-table';
+import React from 'react';
+import { 
+  useTable, 
+  useSortBy, 
+  usePagination, 
+  Column, 
+  Row, 
+  TableInstance, 
+  HeaderGroup
+} from 'react-table';
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/solid';
 
 interface TableProps<T extends object> {
@@ -7,11 +15,40 @@ interface TableProps<T extends object> {
   data: T[];
   pagination?: boolean;
   pageSize?: number;
-  onRowClick?: (row: Row<T>) => void;
+  onRowClick?: (_row: Row<T>) => void;
   isLoading?: boolean;
   emptyMessage?: string;
   keyField?: string;
 }
+
+// Define types for react-table with TypeScript
+type SortingColumn = {
+  getSortByToggleProps: () => any;
+  isSorted: boolean;
+  isSortedDesc: boolean;
+};
+
+type TableColumn<T extends object> = Column<T> & SortingColumn;
+
+type TableHeaderGroup<T extends object> = HeaderGroup<T> & {
+  headers: TableColumn<T>[];
+};
+
+// Extend TableInstance type to include pagination properties
+type TableInstanceWithPagination<T extends object> = TableInstance<T> & {
+  page: Row<T>[];
+  canPreviousPage: boolean;
+  canNextPage: boolean;
+  pageCount: number;
+  gotoPage: (_page: number) => void;
+  nextPage: () => void;
+  previousPage: () => void;
+  state: {
+    pageIndex: number;
+    pageSize: number;
+  };
+  headerGroups: TableHeaderGroup<T>[];
+};
 
 function Table<T extends object>({
   columns,
@@ -31,22 +68,23 @@ function Table<T extends object>({
     page,
     canPreviousPage,
     canNextPage,
-    pageOptions,
     pageCount,
     gotoPage,
     nextPage,
     previousPage,
-    setPageSize,
     state: { pageIndex },
   } = useTable(
     {
       columns,
       data,
-      initialState: { pageSize },
+      initialState: { 
+        pageIndex: 0,
+        pageSize: pageSize as number
+      },
     },
     useSortBy,
     usePagination
-  );
+  ) as TableInstanceWithPagination<T>;
 
   if (isLoading) {
     return (
@@ -71,10 +109,11 @@ function Table<T extends object>({
     <div className="table-container">
       <table {...getTableProps()} className="min-w-full divide-y divide-gray-300">
         <thead className="bg-gray-50">
-          {headerGroups.map(headerGroup => (
-            <tr {...headerGroup.getHeaderGroupProps()}>
-              {headerGroup.headers.map(column => (
+          {headerGroups.map((headerGroup, groupIndex) => (
+            <tr key={`header-group-${groupIndex}`} {...headerGroup.getHeaderGroupProps()}>
+              {headerGroup.headers.map((column, columnIndex) => (
                 <th
+                  key={`header-${columnIndex}`}
                   {...column.getHeaderProps(column.getSortByToggleProps())}
                   className="py-3.5 px-4 text-left text-sm font-semibold text-gray-900"
                   scope="col"

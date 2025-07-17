@@ -50,7 +50,7 @@ export const calculateAccountBalance = async (
   }
   
   // Build journal entry filter
-  const journalFilter = {
+  const journalFilter: Prisma.JournalEntryWhereInput = {
     status: 'POSTED',
     ...(Object.keys(dateFilter).length > 0 ? { entryDate: dateFilter } : {})
   };

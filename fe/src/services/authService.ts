@@ -106,10 +106,7 @@ const authService = {
     return userStr ? JSON.parse(userStr) : null;
   },
   
-  getUserType: (): string | null => {
-    const user = authService.getCurrentUser();
-    return user ? user.userType : null;
-  },
+  // Removed duplicate getUserType method
   
   setAuth: (response: AuthResponse): void => {
     if (typeof window === 'undefined') return;

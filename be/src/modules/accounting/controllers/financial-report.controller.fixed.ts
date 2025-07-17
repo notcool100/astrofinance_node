@@ -209,8 +209,8 @@ export const getGeneralLedger = async (req: Request, res: Response) => {
         : entry.journalEntryLines;
       
       // Group by debit and credit
-      const debitLines = relevantLines.filter(line => line.debitAmount > 0);
-      const creditLines = relevantLines.filter(line => line.creditAmount > 0);
+      const debitLines = relevantLines.filter(line => Number(line.debitAmount) > 0);
+      const creditLines = relevantLines.filter(line => Number(line.creditAmount) > 0);
       
       return {
         entryDate: entry.entryDate,

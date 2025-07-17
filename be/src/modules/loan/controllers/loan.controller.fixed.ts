@@ -129,6 +129,7 @@ export const getLoanInstallments = async (req: Request, res: Response) => {
     const loan = await prisma.loan.findUnique({
       where: { id },
       include: {
+        loanType: true,
         installments: {
           orderBy: {
             dueDate: 'asc'
@@ -152,8 +153,8 @@ export const getLoanInstallments = async (req: Request, res: Response) => {
       toNumber(loan.interestRate),
       loan.tenure,
       convertInterestType(loan.loanType.interestType),
-      new Date(loan.disbursementDate),
-      new Date(loan.firstPaymentDate)
+      loan.disbursementDate ? new Date(loan.disbursementDate) : new Date(),
+      loan.firstPaymentDate ? new Date(loan.firstPaymentDate) : new Date()
     );
 
     return res.json(installments);
@@ -254,8 +255,7 @@ export const disburseLoan = async (req: Request, res: Response) => {
           processingFee,
           outstandingPrincipal: application.amount,
           outstandingInterest: totalInterest,
-          status: 'ACTIVE',
-          createdById: adminUserId
+          status: 'ACTIVE'
         }
       });
 
@@ -280,6 +280,7 @@ export const disburseLoan = async (req: Request, res: Response) => {
             interestAmount: installment.interestAmount,
             totalAmount: installment.totalAmount,
             paidAmount: 0,
+            remainingPrincipal: installment.principalAmount,
             status: 'PENDING'
           }
         });
@@ -415,7 +416,7 @@ export const processLoanPayment = async (req: Request, res: Response) => {
         data: {
           paidAmount: updatedPaidAmount,
           status: newStatus,
-          lastPaymentDate: new Date(paymentDate)
+          paymentDate: new Date(paymentDate)
         }
       });
 
@@ -448,7 +449,7 @@ export const processLoanPayment = async (req: Request, res: Response) => {
           where: { id },
           data: {
             status: 'CLOSED',
-            closedDate: new Date(paymentDate)
+            closureDate: new Date(paymentDate)
           }
         });
       }
@@ -606,7 +607,7 @@ export const processEarlySettlement = async (req: Request, res: Response) => {
           data: {
             paidAmount: installment.totalAmount,
             status: 'PAID',
-            lastPaymentDate: new Date(paymentDate)
+            paymentDate: new Date(paymentDate)
           }
         });
       }
@@ -618,8 +619,7 @@ export const processEarlySettlement = async (req: Request, res: Response) => {
           outstandingPrincipal: 0,
           outstandingInterest: 0,
           status: 'CLOSED',
-          closedDate: new Date(paymentDate),
-          closedById: adminUserId
+          closureDate: new Date(paymentDate)
         }
       });
 
