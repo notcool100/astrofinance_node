@@ -96,7 +96,6 @@ stages:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)/backend.tar.gz'
         ArtifactName: 'backend'
         publishLocation: 'Container'
-
 - stage: DeployDev
   displayName: 'Deploy to Development'
   dependsOn: 
@@ -123,10 +122,13 @@ stages:
       displayName: 'Extract Frontend Build'
 
     - script: |
-        export PATH=$PATH:/home/astro/.nvm/versions/node/v24.4.1/bin
-        export PM2_HOME=/home/astro/.pm2
-        cd /var/www/astrofinance/frontend-dev
-        pm2 restart frontend-dev || pm2 start npm --name "frontend-dev" -- start --cwd /var/www/astrofinance/frontend-dev
+        sudo -u astro bash -c '
+          export PATH=$PATH:/home/astro/.nvm/versions/node/v24.4.1/bin
+          export PM2_HOME=/home/astro/.pm2
+          cd /var/www/astrofinance/frontend-dev
+          pm2 restart frontend-dev || pm2 start npm --name "frontend-dev" -- start --cwd /var/www/astrofinance/frontend-dev
+          pm2 save
+        '
       displayName: 'Restart Frontend with PM2'
 
   - job: DeployBackendDev
@@ -148,9 +150,11 @@ stages:
       displayName: 'Extract Backend Build'
 
     - script: |
-        export PATH=$PATH:/home/astro/.nvm/versions/node/v24.4.1/bin
-        export PM2_HOME=/home/astro/.pm2
-        cd /var/www/astrofinance/backend-dev
-        cd /var/www/astrofinance/backend-dev
-        pm2 restart backend-dev || pm2 start npm --name "backend-dev" -- start --cwd /var/www/astrofinance/backend-dev
+        sudo -u astro bash -c '
+          export PATH=$PATH:/home/astro/.nvm/versions/node/v24.4.1/bin
+          export PM2_HOME=/home/astro/.pm2
+          cd /var/www/astrofinance/backend-dev
+          pm2 restart backend-dev || pm2 start npm --name "backend-dev" -- start --cwd /var/www/astrofinance/backend-dev
+          pm2 save
+        '
       displayName: 'Restart Backend with PM2'
