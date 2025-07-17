@@ -123,7 +123,7 @@ stages:
       displayName: 'Extract Frontend Build'
 
     - script: |
-        pm2 restart frontend-dev || pm2 start npm --name "frontend-dev" -- start
+        pm2 restart frontend-dev || pm2 start npm --name "frontend-dev" -- start --cwd /var/www/astrofinance/frontend-dev
       displayName: 'Restart Frontend with PM2'
 
   - job: DeployBackendDev
@@ -146,5 +146,5 @@ stages:
 
     - script: |
         cd /var/www/astrofinance/backend-dev
-        pm2 restart backend-dev || pm2 start npm --name "backend-dev" -- start
+        pm2 restart backend-dev || pm2 start npm --name "backend-dev" -- start --cwd /var/www/astrofinance/backend-dev
       displayName: 'Restart Backend with PM2'
