@@ -118,7 +118,7 @@ stages:
          echo "Listing downloaded files:"
          ls -la $(System.ArtifactsDirectory)
          mkdir -p /var/www/astrofinance/frontend-dev
-         tar -xzf $(System.ArtifactsDirectory)/frontend.tar.gz -C /var/www/astrofinance/frontend-dev
+         tar -xzf $(System.ArtifactsDirectory)/frontend/frontend.tar.gz -C /var/www/astrofinance/frontend-dev
          echo "Frontend deployed to /var/www/astrofinance/frontend-dev"
       displayName: 'Extract Frontend Build'
 
@@ -140,7 +140,7 @@ stages:
         echo "Listing downloaded files:"
         ls -la $(System.ArtifactsDirectory)
         mkdir -p /var/www/astrofinance/backend-dev
-        tar -xzf $(System.ArtifactsDirectory)/backend.tar.gz -C /var/www/astrofinance/backend-dev
+        tar -xzf $(System.ArtifactsDirectory)/backend/backend.tar.gz -C /var/www/astrofinance/backend-dev
         echo "Backend deployed to /var/www/astrofinance/backend-dev"
       displayName: 'Extract Backend Build'
 
