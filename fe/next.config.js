@@ -6,7 +6,9 @@ const nextConfig = {
     domains: ['localhost'],
   },
   
-   eslint: {
+  eslint: {
+    // Ignore ESLint errors during builds to prevent pipeline failures
+    // This is useful for CI/CD pipelines
     ignoreDuringBuilds: true,
   },
   typescript: {

@@ -122,13 +122,20 @@ stages:
       displayName: 'Extract Frontend Build'
 
     - script: |
-        sudo -u astro bash -c '
+        # Check if we're running as the astro user
+        if [ "$(whoami)" = "astro" ]; then
+          # Running as astro, no need for sudo
           export PATH=$PATH:/home/astro/.nvm/versions/node/v24.4.1/bin
           export PM2_HOME=/home/astro/.pm2
           cd /var/www/astrofinance/frontend-dev
           pm2 restart frontend-dev || pm2 start npm --name "frontend-dev" -- start --cwd /var/www/astrofinance/frontend-dev
           pm2 save
-        '
+        else
+          # We need to use a different approach since sudo is not available
+          echo "Current user is not astro and sudo is not available. Please configure the pipeline to run as the astro user."
+          echo "Alternatively, add the pipeline user to the sudoers file with the appropriate permissions."
+          exit 1
+        fi
       displayName: 'Restart Frontend with PM2'
 
   - job: DeployBackendDev
@@ -150,11 +157,18 @@ stages:
       displayName: 'Extract Backend Build'
 
     - script: |
-        sudo -u astro bash -c '
+        # Check if we're running as the astro user
+        if [ "$(whoami)" = "astro" ]; then
+          # Running as astro, no need for sudo
           export PATH=$PATH:/home/astro/.nvm/versions/node/v24.4.1/bin
           export PM2_HOME=/home/astro/.pm2
           cd /var/www/astrofinance/backend-dev
           pm2 restart backend-dev || pm2 start npm --name "backend-dev" -- start --cwd /var/www/astrofinance/backend-dev
           pm2 save
-        '
+        else
+          # We need to use a different approach since sudo is not available
+          echo "Current user is not astro and sudo is not available. Please configure the pipeline to run as the astro user."
+          echo "Alternatively, add the pipeline user to the sudoers file with the appropriate permissions."
+          exit 1
+        fi
       displayName: 'Restart Backend with PM2'
