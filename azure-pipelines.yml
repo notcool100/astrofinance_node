@@ -12,7 +12,7 @@ pool:
   name: 'Astro'
 
 variables:
-  nodeVersion: '16.x'
+  nodeVersion: '24.x'
 
 stages:
 - stage: BuildFrontend
