@@ -46,9 +46,11 @@ stages:
       inputs:
         rootFolderOrFile: 'fe'
         includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/frontend.zip'
+        archiveType: 'tar'
+        tarCompression: 'gz'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/frontend.tar.gz'
         replaceExistingArchive: true
+
     
     - task: PublishBuildArtifacts@1
       inputs:
