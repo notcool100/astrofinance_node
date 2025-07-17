@@ -28,7 +28,7 @@ stages:
     
     - script: |
         cd fe
-        npm ci
+        npm install
       displayName: 'Install Frontend Dependencies'
     
     - script: |
@@ -78,7 +78,7 @@ stages:
     
     - script: |
         cd be
-        npm ci
+        npm install
       displayName: 'Install Backend Dependencies'
     
     - script: |
