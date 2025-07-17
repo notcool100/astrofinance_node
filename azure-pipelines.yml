@@ -9,7 +9,7 @@ trigger:
       - be/*
 
 pool:
-  vmImage: 'ubuntu-latest'
+  name: 'Astro'
 
 variables:
   nodeVersion: '16.x'
@@ -115,6 +115,7 @@ stages:
         ArtifactName: 'backend'
         publishLocation: 'Container'
 
+
 - stage: DeployDev
   displayName: 'Deploy to Development'
   dependsOn: 
@@ -122,97 +123,43 @@ stages:
     - BuildBackend
   condition: and(succeeded('BuildFrontend'), succeeded('BuildBackend'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
   jobs:
-  - deployment: DeployFrontendDev
+  - job: DeployFrontendDev
     displayName: 'Deploy Frontend to Dev'
-    environment: 'development'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: DownloadBuildArtifacts@1
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'frontend'
-              downloadPath: '$(System.ArtifactsDirectory)'
-          
-          - task: AzureWebApp@1
-            inputs:
-              azureSubscription: 'Azure Subscription'
-              appType: 'webApp'
-              appName: 'astrofinance-frontend-dev'
-              package: '$(System.ArtifactsDirectory)/frontend/frontend.zip'
-              deploymentMethod: 'auto'
-  
-  - deployment: DeployBackendDev
-    displayName: 'Deploy Backend to Dev'
-    environment: 'development'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: DownloadBuildArtifacts@1
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'backend'
-              downloadPath: '$(System.ArtifactsDirectory)'
-          
-          - task: AzureWebApp@1
-            inputs:
-              azureSubscription: 'Azure Subscription'
-              appType: 'webAppLinux'
-              appName: 'astrofinance-backend-dev'
-              package: '$(System.ArtifactsDirectory)/backend/backend.zip'
-              startUpCommand: 'npm run start'
+    steps:
+    - task: DownloadBuildArtifacts@1
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'frontend'
+        downloadPath: '$(System.ArtifactsDirectory)/frontend'
 
-- stage: DeployProd
-  displayName: 'Deploy to Production'
-  dependsOn: 
-    - BuildFrontend
-    - BuildBackend
-  condition: and(succeeded('BuildFrontend'), succeeded('BuildBackend'), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-  jobs:
-  - deployment: DeployFrontendProd
-    displayName: 'Deploy Frontend to Production'
-    environment: 'production'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: DownloadBuildArtifacts@1
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'frontend'
-              downloadPath: '$(System.ArtifactsDirectory)'
-          
-          - task: AzureWebApp@1
-            inputs:
-              azureSubscription: 'Azure Subscription'
-              appType: 'webApp'
-              appName: 'astrofinance-frontend'
-              package: '$(System.ArtifactsDirectory)/frontend/frontend.zip'
-              deploymentMethod: 'auto'
-  
-  - deployment: DeployBackendProd
-    displayName: 'Deploy Backend to Production'
-    environment: 'production'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: DownloadBuildArtifacts@1
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'backend'
-              downloadPath: '$(System.ArtifactsDirectory)'
-          
-          - task: AzureWebApp@1
-            inputs:
-              azureSubscription: 'Azure Subscription'
-              appType: 'webAppLinux'
-              appName: 'astrofinance-backend'
-              package: '$(System.ArtifactsDirectory)/backend/backend.zip'
-              startUpCommand: 'npm run start'
+    - script: |
+        mkdir -p /var/www/astrofinance/frontend-dev
+        unzip -o $(System.ArtifactsDirectory)/frontend/frontend.zip -d /var/www/astrofinance/frontend-dev
+        echo "Frontend deployed to /var/www/astrofinance/frontend-dev"
+      displayName: 'Extract Frontend Build'
+
+    - script: |
+        pm2 restart frontend-dev || pm2 start npm --name "frontend-dev" -- start
+      displayName: 'Restart Frontend with PM2'
+
+  - job: DeployBackendDev
+    displayName: 'Deploy Backend to Dev'
+    steps:
+    - task: DownloadBuildArtifacts@1
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'backend'
+        downloadPath: '$(System.ArtifactsDirectory)/backend'
+
+    - script: |
+        mkdir -p /var/www/astrofinance/backend-dev
+        unzip -o $(System.ArtifactsDirectory)/backend/backend.zip -d /var/www/astrofinance/backend-dev
+        echo "Backend deployed to /var/www/astrofinance/backend-dev"
+      displayName: 'Extract Backend Build'
+
+    - script: |
+        cd /var/www/astrofinance/backend-dev
+        pm2 restart backend-dev || pm2 start npm --name "backend-dev" -- start
+      displayName: 'Restart Backend with PM2'
