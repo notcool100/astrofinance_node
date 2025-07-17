@@ -1,0 +1,218 @@
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - fe/*
+      - be/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  nodeVersion: '16.x'
+
+stages:
+- stage: BuildFrontend
+  displayName: 'Build Frontend'
+  jobs:
+  - job: BuildFrontendJob
+    displayName: 'Build Next.js App'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '$(nodeVersion)'
+      displayName: 'Install Node.js'
+    
+    - script: |
+        cd fe
+        npm ci
+      displayName: 'Install Frontend Dependencies'
+    
+    - script: |
+        cd fe
+        npm run lint
+      displayName: 'Run Frontend Linting'
+    
+    - script: |
+        cd fe
+        npm run type-check
+      displayName: 'Run TypeScript Check'
+    
+    - script: |
+        cd fe
+        npm run test
+      displayName: 'Run Frontend Tests'
+    
+    - script: |
+        cd fe
+        npm run build
+      displayName: 'Build Frontend Application'
+    
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: 'fe'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/frontend.zip'
+        replaceExistingArchive: true
+    
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/frontend.zip'
+        ArtifactName: 'frontend'
+        publishLocation: 'Container'
+
+- stage: BuildBackend
+  displayName: 'Build Backend'
+  jobs:
+  - job: BuildBackendJob
+    displayName: 'Build Node.js API'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '$(nodeVersion)'
+      displayName: 'Install Node.js'
+    
+    - script: |
+        cd be
+        npm ci
+      displayName: 'Install Backend Dependencies'
+    
+    - script: |
+        cd be
+        npm run lint
+      displayName: 'Run Backend Linting'
+    
+    - script: |
+        cd be
+        npm run prisma:generate
+      displayName: 'Generate Prisma Client'
+    
+    - script: |
+        cd be
+        npm run test
+      displayName: 'Run Backend Tests'
+    
+    - script: |
+        cd be
+        npm run build
+      displayName: 'Build Backend Application'
+    
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: 'be'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/backend.zip'
+        replaceExistingArchive: true
+    
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/backend.zip'
+        ArtifactName: 'backend'
+        publishLocation: 'Container'
+
+- stage: DeployDev
+  displayName: 'Deploy to Development'
+  dependsOn: 
+    - BuildFrontend
+    - BuildBackend
+  condition: and(succeeded('BuildFrontend'), succeeded('BuildBackend'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+  jobs:
+  - deployment: DeployFrontendDev
+    displayName: 'Deploy Frontend to Dev'
+    environment: 'development'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'frontend'
+              downloadPath: '$(System.ArtifactsDirectory)'
+          
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: 'Azure Subscription'
+              appType: 'webApp'
+              appName: 'astrofinance-frontend-dev'
+              package: '$(System.ArtifactsDirectory)/frontend/frontend.zip'
+              deploymentMethod: 'auto'
+  
+  - deployment: DeployBackendDev
+    displayName: 'Deploy Backend to Dev'
+    environment: 'development'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'backend'
+              downloadPath: '$(System.ArtifactsDirectory)'
+          
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: 'Azure Subscription'
+              appType: 'webAppLinux'
+              appName: 'astrofinance-backend-dev'
+              package: '$(System.ArtifactsDirectory)/backend/backend.zip'
+              startUpCommand: 'npm run start'
+
+- stage: DeployProd
+  displayName: 'Deploy to Production'
+  dependsOn: 
+    - BuildFrontend
+    - BuildBackend
+  condition: and(succeeded('BuildFrontend'), succeeded('BuildBackend'), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - deployment: DeployFrontendProd
+    displayName: 'Deploy Frontend to Production'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'frontend'
+              downloadPath: '$(System.ArtifactsDirectory)'
+          
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: 'Azure Subscription'
+              appType: 'webApp'
+              appName: 'astrofinance-frontend'
+              package: '$(System.ArtifactsDirectory)/frontend/frontend.zip'
+              deploymentMethod: 'auto'
+  
+  - deployment: DeployBackendProd
+    displayName: 'Deploy Backend to Production'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'backend'
+              downloadPath: '$(System.ArtifactsDirectory)'
+          
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: 'Azure Subscription'
+              appType: 'webAppLinux'
+              appName: 'astrofinance-backend'
+              package: '$(System.ArtifactsDirectory)/backend/backend.zip'
+              startUpCommand: 'npm run start'
