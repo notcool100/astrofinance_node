@@ -121,6 +121,7 @@ stages:
       displayName: 'Extract Frontend Build'
 
     - script: |
+        npm install -g pm2
         pm2 restart frontend-dev || pm2 start npm --name "frontend-dev" -- start
       displayName: 'Restart Frontend with PM2'
 
@@ -142,5 +143,6 @@ stages:
 
     - script: |
         cd /var/www/astrofinance/backend-dev
+        npm install -g pm2
         pm2 restart backend-dev || pm2 start npm --name "backend-dev" -- start
       displayName: 'Restart Backend with PM2'
