@@ -428,7 +428,7 @@ async function seedNavigation() {
 			data: {
 				label: "Chart of Accounts",
 				icon: "account_tree",
-				url: "/chart-of-accounts",
+				url: "accounting/chart-of-accounts",
 				order: 1,
 				groupId: accountingGroup.id,
 			},
@@ -438,7 +438,7 @@ async function seedNavigation() {
 			data: {
 				label: "Journal Entries",
 				icon: "book",
-				url: "/journal-entries",
+				url: "accounting/journal-entries",
 				order: 2,
 				groupId: accountingGroup.id,
 			},
@@ -448,7 +448,7 @@ async function seedNavigation() {
 			data: {
 				label: "Day Book",
 				icon: "today",
-				url: "/day-book",
+				url: "accounting/day-book",
 				order: 3,
 				groupId: accountingGroup.id,
 			},
@@ -458,7 +458,7 @@ async function seedNavigation() {
 			data: {
 				label: "Financial Reports",
 				icon: "assessment",
-				url: "/financial-reports",
+				url: "accounting/financial-reports",
 				order: 4,
 				groupId: accountingGroup.id,
 			},

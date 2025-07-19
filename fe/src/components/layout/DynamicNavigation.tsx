@@ -169,6 +169,18 @@ const DynamicNavigation: React.FC = () => {
               current: router.pathname === '/office/profile',
             },
           ]
+        },
+        {
+          id: 'accounting-group',
+          name: 'Accounting',
+          items: [
+            {
+              name: 'Chart of Accounts',
+              href: '/accounting/chart-of-accounts',
+              icon: CalculatorIcon,
+              current: router.pathname.startsWith('/accounting/chart-of-accounts'),
+            }
+          ]
         }
       ];
     }

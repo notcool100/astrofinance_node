@@ -31,7 +31,11 @@ export const getAllAccounts = async (req: Request, res: Response) => {
       ]
     });
 
-    return res.json(accounts);
+    return res.status(200).json({
+      success: true,
+      message: 'Accounts retrieved successfully',
+      data: accounts
+    });
   } catch (error) {
     logger.error('Get all accounts error:', error);
     throw new ApiError(500, 'Failed to fetch accounts');
@@ -53,7 +57,11 @@ export const getAccountById = async (req: Request, res: Response) => {
       throw new ApiError(404, 'Account not found');
     }
 
-    return res.json(account);
+    return res.status(200).json({
+      success: true,
+      message: 'Account retrieved successfully',
+      data: account
+    });
   } catch (error) {
     logger.error(`Get account by ID error: ${error}`);
     if (error instanceof ApiError) throw error;
@@ -131,7 +139,11 @@ export const createAccount = async (req: Request, res: Response) => {
       account
     );
 
-    return res.status(201).json(account);
+    return res.status(201).json({
+      success: true,
+      message: 'Account created successfully',
+      data: account
+    });
   } catch (error) {
     logger.error(`Create account error: ${error}`);
     if (error instanceof ApiError) throw error;
@@ -212,7 +224,11 @@ export const updateAccount = async (req: Request, res: Response) => {
       updatedAccount
     );
 
-    return res.json(updatedAccount);
+    return res.status(200).json({
+      success: true,
+      message: 'Account updated successfully',
+      data: updatedAccount
+    });
   } catch (error) {
     logger.error(`Update account error: ${error}`);
     if (error instanceof ApiError) throw error;
@@ -269,7 +285,10 @@ export const deleteAccount = async (req: Request, res: Response) => {
       null
     );
 
-    return res.json({ message: 'Account deleted successfully' });
+    return res.status(200).json({
+      success: true,
+      message: 'Account deleted successfully'
+    });
   } catch (error) {
     logger.error(`Delete account error: ${error}`);
     if (error instanceof ApiError) throw error;
@@ -304,7 +323,11 @@ export const getAccountStructure = async (req: Request, res: Response) => {
       ]
     });
 
-    return res.json(topLevelAccounts);
+    return res.status(200).json({
+      success: true,
+      message: 'Account structure retrieved successfully',
+      data: topLevelAccounts
+    });
   } catch (error) {
     logger.error('Get account structure error:', error);
     throw new ApiError(500, 'Failed to fetch account structure');
