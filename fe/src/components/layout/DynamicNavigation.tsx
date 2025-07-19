@@ -179,6 +179,12 @@ const DynamicNavigation: React.FC = () => {
               href: '/accounting/chart-of-accounts',
               icon: CalculatorIcon,
               current: router.pathname.startsWith('/accounting/chart-of-accounts'),
+            },
+            {
+              name: 'Journal Entries',
+              href: '/accounting/journal-entries',
+              icon: DocumentTextIcon,
+              current: router.pathname.startsWith('/accounting/journal-entries'),
             }
           ]
         }

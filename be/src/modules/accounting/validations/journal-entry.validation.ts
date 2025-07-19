@@ -77,13 +77,13 @@ export const updateJournalEntryStatusValidation = [
   body('status')
     .notEmpty()
     .withMessage('Status is required')
-    .isIn(['PENDING', 'APPROVED', 'REJECTED'])
+    .isIn(['DRAFT', 'POSTED', 'REVERSED'])
     .withMessage('Invalid status'),
   
   body('rejectionReason')
-    .if(body('status').equals('REJECTED'))
+    .if(body('status').equals('REVERSED'))
     .notEmpty()
-    .withMessage('Rejection reason is required when status is REJECTED')
+    .withMessage('Rejection reason is required when status is REVERSED')
     .isLength({ min: 10, max: 200 })
     .withMessage('Rejection reason must be between 10 and 200 characters')
 ];
@@ -104,7 +104,7 @@ export const getJournalEntriesValidation = [
   
   query('status')
     .optional()
-    .isIn(['PENDING', 'APPROVED', 'REJECTED'])
+    .isIn(['DRAFT', 'POSTED', 'REVERSED'])
     .withMessage('Invalid status'),
   
   query('page')
