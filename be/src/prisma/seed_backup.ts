@@ -174,8 +174,7 @@ async function seedRolesAndPermissions() {
 		"sms",
 		"tax",
 		"expenses",
-		"usertransactions",
-		"staff"
+		"staff",
 	];
 
 	const actions = ["view", "create", "edit", "delete", "approve"];

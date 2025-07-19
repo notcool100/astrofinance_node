@@ -4,6 +4,7 @@ import { ApiError } from '../../../common/middleware/error.middleware';
 import logger from '../../../config/logger';
 import { createAuditLog } from '../../../common/utils/audit.util';
 import { generateAccountNumber } from '../utils/account.utils';
+import { calculateInterest, applyInterest } from '../utils/transaction.utils';
 
 const prisma = new PrismaClient();
 

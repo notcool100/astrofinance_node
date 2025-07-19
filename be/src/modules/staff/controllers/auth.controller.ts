@@ -5,7 +5,7 @@ import prisma from '../../../config/database';
 import logger from '../../../config/logger';
 import type { StringValue } from 'ms'; 
 // JWT secret from environment variables
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET as string;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d';
 
 /**

@@ -6,6 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import Button from '@/components/common/Button';
 import Badge from '@/components/common/Badge';
+import ClientOnly from '@/components/common/ClientOnly';
 import AccountForm from '@/components/modules/users/AccountForm';
 import { getAllUsers, User } from '@/services/user.service';
 import { toast } from 'react-toastify';
@@ -22,11 +23,14 @@ const NewAccountPage: React.FC = () => {
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    if (userId && typeof userId === 'string') {
-      setSelectedUserId(userId);
+    // Only process when router is ready
+    if (router.isReady) {
+      if (userId && typeof userId === 'string') {
+        setSelectedUserId(userId);
+      }
+      fetchUsers();
     }
-    fetchUsers();
-  }, [userId]);
+  }, [router.isReady, userId]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -68,11 +72,15 @@ const NewAccountPage: React.FC = () => {
             </Link>
           </div>
 
-          <h1 className="text-2xl font-semibold text-gray-900 mb-6">Create New Account</h1>
+          <ClientOnly>
+            <h1 className="text-2xl font-semibold text-gray-900 mb-6">Create New Account</h1>
+          </ClientOnly>
 
           {!selectedUserId ? (
             <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Select User</h2>
+              <ClientOnly>
+                <h2 className="text-lg font-medium text-gray-900 mb-4">Select User</h2>
+              </ClientOnly>
               <p className="text-sm text-gray-500 mb-4">
                 First, select the user for whom you want to create an account.
               </p>

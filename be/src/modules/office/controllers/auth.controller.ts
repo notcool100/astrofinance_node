@@ -9,7 +9,7 @@ import { ApiError } from '../../../common/middleware/error.middleware';
 import { getUserNavigation, getUserPermissions } from '../services/navigation.service';
 
 // JWT configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'astrofinance-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET as string;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
 /**

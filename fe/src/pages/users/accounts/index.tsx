@@ -113,7 +113,7 @@ const AccountsPage: React.FC = () => {
       Header: 'Actions',
       accessor: 'id',
       Cell: ({ value }: { value: string }) => (
-        <Link href={`/accounts/${value}`}>
+        <Link href={`/users/accounts/${value}`}>
           <Button variant="outline" size="sm">
             View Details
           </Button>
@@ -134,7 +134,7 @@ const AccountsPage: React.FC = () => {
               </p>
             </div>
             <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-              <Link href="/accounts/new">
+              <Link href="/users/accounts/new">
                 <Button className="flex items-center">
                   <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                   New Account
@@ -219,7 +219,7 @@ const AccountsPage: React.FC = () => {
             ) : accounts.length === 0 ? (
               <div className="text-center py-10 bg-white shadow rounded-lg">
                 <p className="text-gray-500">No accounts found.</p>
-                <Link href="/accounts/new">
+                <Link href="/users/accounts/new">
                   <Button className="mt-4 flex items-center mx-auto">
                     <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                     Create New Account

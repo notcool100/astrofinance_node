@@ -166,6 +166,15 @@ const AccountDetailPage: React.FC = () => {
                 </p>
               </div>
               <div className="flex space-x-2">
+                <Link href={`/users/transaction?accountId=${account.id}`}>
+                  <Button 
+                    variant="primary" 
+                    className="flex items-center"
+                  >
+                    View Transactions
+                  </Button>
+                </Link>
+                
                 {account.status !== 'CLOSED' && (
                   <>
                     <Button 

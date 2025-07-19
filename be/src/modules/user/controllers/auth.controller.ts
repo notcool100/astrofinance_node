@@ -42,7 +42,7 @@ export const login = async (req: Request, res: Response) => {
         email: user.email, 
         type: 'user' 
       },
-      process.env.JWT_SECRET || 'default-secret',
+      process.env.JWT_SECRET as string,
       { expiresIn: '24h' }
     );
 
@@ -126,7 +126,7 @@ export const register = async (req: Request, res: Response) => {
         email: user.email, 
         type: 'user' 
       },
-      process.env.JWT_SECRET || 'default-secret',
+      process.env.JWT_SECRET as string,
       { expiresIn: '24h' }
     );
 
