@@ -18,6 +18,7 @@ import {
   AcademicCapIcon,
   BuildingLibraryIcon,
   ClipboardDocumentListIcon,
+  BookOpenIcon,
   ClockIcon,
   CogIcon,
   DocumentIcon,
@@ -185,6 +186,12 @@ const DynamicNavigation: React.FC = () => {
               href: '/accounting/journal-entries',
               icon: DocumentTextIcon,
               current: router.pathname.startsWith('/accounting/journal-entries'),
+            },
+            {
+              name: 'Day Books',
+              href: '/accounting/day-books',
+              icon: BookOpenIcon,
+              current: router.pathname.startsWith('/accounting/day-books'),
             }
           ]
         }
