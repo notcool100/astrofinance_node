@@ -116,8 +116,28 @@ stages:
     - script: |
          echo "Listing downloaded files:"
          ls -la $(System.ArtifactsDirectory)
+         
+         # Create a clean temporary directory for extraction
+         TEMP_DIR=$(mktemp -d)
+         echo "Created temporary directory: $TEMP_DIR"
+         
+         # Extract to temporary directory first
+         tar -xzf $(System.ArtifactsDirectory)/frontend/frontend.tar.gz -C $TEMP_DIR
+         
+         # Ensure target directory exists with proper permissions
          mkdir -p /var/www/astrofinance/frontend-dev
-         tar -xzf $(System.ArtifactsDirectory)/frontend/frontend.tar.gz -C /var/www/astrofinance/frontend-dev
+         
+         # Remove existing .next directory if it exists to avoid permission issues
+         if [ -d "/var/www/astrofinance/frontend-dev/.next" ]; then
+           rm -rf /var/www/astrofinance/frontend-dev/.next
+         fi
+         
+         # Copy files from temp directory to target directory
+         rsync -av --exclude='.next/cache' $TEMP_DIR/ /var/www/astrofinance/frontend-dev/
+         
+         # Clean up temporary directory
+         rm -rf $TEMP_DIR
+         
          echo "Frontend deployed to /var/www/astrofinance/frontend-dev"
       displayName: 'Extract Frontend Build'
 
@@ -151,8 +171,23 @@ stages:
     - script: |
         echo "Listing downloaded files:"
         ls -la $(System.ArtifactsDirectory)
+        
+        # Create a clean temporary directory for extraction
+        TEMP_DIR=$(mktemp -d)
+        echo "Created temporary directory: $TEMP_DIR"
+        
+        # Extract to temporary directory first
+        tar -xzf $(System.ArtifactsDirectory)/backend/backend.tar.gz -C $TEMP_DIR
+        
+        # Ensure target directory exists with proper permissions
         mkdir -p /var/www/astrofinance/backend-dev
-        tar -xzf $(System.ArtifactsDirectory)/backend/backend.tar.gz -C /var/www/astrofinance/backend-dev
+        
+        # Copy files from temp directory to target directory
+        rsync -av $TEMP_DIR/ /var/www/astrofinance/backend-dev/
+        
+        # Clean up temporary directory
+        rm -rf $TEMP_DIR
+        
         echo "Backend deployed to /var/www/astrofinance/backend-dev"
       displayName: 'Extract Backend Build'
 
