@@ -28,7 +28,7 @@ stages:
     
     - script: |
         cd fe
-        npm install
+        npm install --legacy-peer-deps
       displayName: 'Install Frontend Dependencies'
     
     - script: |
