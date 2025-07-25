@@ -15,7 +15,7 @@ variables:
   nodeVersion: '24.x'
 
 stages:
-- stage: BuildFrontend
+- stage: BuildFrontend 
   displayName: 'Build Frontend'
   jobs:
   - job: BuildFrontendJob
