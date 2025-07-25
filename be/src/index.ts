@@ -28,9 +28,16 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+const corsOptions = process.env.NODE_ENV === 'production' 
+  ? {
+      origin: 'http://62.171.175.112:3000',
+      credentials: true
+    }
+  : {};
+
+app.use(cors(corsOptions));
 app.use(express.json());
-app.use(morgan('dev'));
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Basic route
 app.get('/', (req, res) => {
