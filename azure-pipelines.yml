@@ -148,7 +148,7 @@ stages:
           export PATH=$PATH:/home/astro/.nvm/versions/node/v24.4.1/bin
           export PM2_HOME=/home/astro/.pm2
           cd /var/www/astrofinance/frontend-dev
-          pm2 restart frontend-dev || pm2 start npm --name "frontend-dev" -- start --cwd /var/www/astrofinance/frontend-dev
+          pm2 restart frontend-dev || pm2 start npm --name "frontend-dev" --cwd /var/www/astrofinance/frontend-dev -- start
           pm2 save
         else
           # We need to use a different approach since sudo is not available
@@ -198,7 +198,7 @@ stages:
           export PATH=$PATH:/home/astro/.nvm/versions/node/v24.4.1/bin
           export PM2_HOME=/home/astro/.pm2
           cd /var/www/astrofinance/backend-dev
-          pm2 restart backend-dev || pm2 start npm --name "backend-dev" -- start --cwd /var/www/astrofinance/backend-dev
+          pm2 restart backend-dev || pm2 start npm --name "backend-dev" --cwd /var/www/astrofinance/backend-dev -- start
           pm2 save
         else
           # We need to use a different approach since sudo is not available
