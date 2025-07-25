@@ -31,6 +31,7 @@ const port = process.env.PORT || 5000;
 const corsOptions = process.env.NODE_ENV === 'production' 
   ? {
       origin: 'http://62.171.175.112:3000',
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       credentials: true
     }
   : {};
