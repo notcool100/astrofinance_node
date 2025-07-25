@@ -1,7 +1,11 @@
+import dotenv from 'dotenv';
+
+// Load environment variables first, before any other imports
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
 import prisma from './config/database';
 import logger from './config/logger';
 import { errorHandler, notFound } from './common/middleware/error.middleware';
@@ -20,12 +24,17 @@ import taxRoutes from './modules/tax/routes';
 import notificationRoutes from './modules/notification/routes';
 import reportRoutes from './modules/report/routes';
 
-// Load environment variables
-dotenv.config();
-
 // Create Express app
 const app = express();
 const port = process.env.PORT || 5000;
+
+// Check critical environment variables
+if (!process.env.JWT_SECRET) {
+  logger.error('JWT_SECRET environment variable is not set. Authentication will fail!');
+}
+
+// Log environment mode
+logger.info(`Server starting in ${process.env.NODE_ENV} mode`);
 
 // Middleware
 const corsOptions = process.env.NODE_ENV === 'production' 
