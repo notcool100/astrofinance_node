@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://62.171.175.112:5000/api';
 
 // Create axios instance
 const api = axios.create({
@@ -22,10 +22,24 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for handling errors
+// Response interceptor for handling responses and errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log successful responses for debugging
+    console.log(`API Response [${response.status}]:`, response.config.url);
+    
+    // Handle 304 Not Modified - this shouldn't happen as an error with axios
+    // but we'll check it here just in case
+    if (response.status === 304) {
+      console.log('304 Not Modified response detected');
+    }
+    
+    return response;
+  },
   (error: AxiosError) => {
+    console.error('API Error:', error);
+    console.error('API Error Response:', error.response);
+    
     // Handle session expiration
     if (error.response?.status === 401) {
       // Clear local storage and redirect to login if not already there
