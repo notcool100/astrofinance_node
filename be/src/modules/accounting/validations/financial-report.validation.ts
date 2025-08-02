@@ -75,3 +75,40 @@ export const getGeneralLedgerValidation = [
     .isISO8601()
     .withMessage('End date must be a valid date')
 ];
+
+/**
+ * Validation schema for exporting reports
+ */
+export const exportReportValidation = [
+  param('type')
+    .notEmpty()
+    .withMessage('Report type is required')
+    .isIn(['balance-sheet', 'income-statement', 'trial-balance', 'general-ledger'])
+    .withMessage('Invalid report type'),
+  
+  query('format')
+    .notEmpty()
+    .withMessage('Export format is required')
+    .isIn(['pdf', 'excel'])
+    .withMessage('Invalid export format'),
+  
+  query('asOfDate')
+    .optional()
+    .isISO8601()
+    .withMessage('As of date must be a valid date'),
+  
+  query('startDate')
+    .optional()
+    .isISO8601()
+    .withMessage('Start date must be a valid date'),
+  
+  query('endDate')
+    .optional()
+    .isISO8601()
+    .withMessage('End date must be a valid date'),
+  
+  query('accountId')
+    .optional()
+    .isUUID()
+    .withMessage('Account ID must be a valid UUID')
+];

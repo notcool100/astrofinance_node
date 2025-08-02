@@ -57,11 +57,14 @@ api.interceptors.response.use(
 const request = async <T>(config: AxiosRequestConfig): Promise<T> => {
   try {
     const response: AxiosResponse<T> = await api(config);
+    console.log('API response data:', response.data);
     return response.data;
   } catch (error) {
+    console.error('API request error:', error);
     if (axios.isAxiosError(error)) {
       const serverError = error as AxiosError<{ error: { message: string; code: string; details?: any } }>;
       if (serverError && serverError.response) {
+        console.error('Server error response:', serverError.response.data);
         throw new Error(serverError.response.data?.error?.message || 'An unexpected error occurred');
       }
     }
@@ -71,7 +74,10 @@ const request = async <T>(config: AxiosRequestConfig): Promise<T> => {
 
 // API service methods
 export const apiService = {
-  get: <T>(url: string, params?: any) => request<T>({ method: 'GET', url, params }),
+  get: <T>(url: string, params?: any) => {
+    console.log('API GET request:', url, params);
+    return request<T>({ method: 'GET', url, params });
+  },
   post: <T>(url: string, data?: any) => request<T>({ method: 'POST', url, data }),
   put: <T>(url: string, data?: any) => request<T>({ method: 'PUT', url, data }),
   delete: <T>(url: string) => request<T>({ method: 'DELETE', url }),
