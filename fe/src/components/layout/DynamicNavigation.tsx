@@ -117,8 +117,14 @@ function classNames(...classes: string[]) {
 function isActive(itemPath: string, currentPath: string): boolean {
 	console.log(`Checking if ${itemPath} is active for current path ${currentPath}`);
 	
+	// Ensure paths start with a slash for consistent comparison
+	let normalizedItemPath = itemPath;
+	if (normalizedItemPath && normalizedItemPath !== "#" && !normalizedItemPath.startsWith('/')) {
+		normalizedItemPath = '/' + normalizedItemPath;
+	}
+	
 	// Normalize paths for comparison
-	const normalizedItemPath = itemPath.endsWith("/") ? itemPath.slice(0, -1) : itemPath;
+	normalizedItemPath = normalizedItemPath.endsWith("/") ? normalizedItemPath.slice(0, -1) : normalizedItemPath;
 	const normalizedCurrentPath = currentPath.endsWith("/") ? currentPath.slice(0, -1) : currentPath;
 	
 	// Exact match
@@ -250,8 +256,11 @@ const DynamicNavigation: React.FC = () => {
 			const processedItems = group.items.map((item) => {
 				// Convert API URL to our format
 				let href = item.url || "#";
-				// No need to modify the href, keep it as is
-				console.log(`Original href: ${href}`);
+				// Ensure URLs start with a slash for proper routing
+				if (href && href !== "#" && !href.startsWith('/')) {
+					href = '/' + href;
+				}
+				console.log(`Original href: ${href} (normalized)`);
 
 				// Get icon component from map or use default
 				const iconName = item.icon?.toLowerCase() || "";
@@ -270,8 +279,11 @@ const DynamicNavigation: React.FC = () => {
 					children: (item.children as any)?.map((child: any) => {
 						// Process child items
 						let childHref = child.url || "#";
-						// Keep the original URL for child items
-						console.log(`Original child href: ${childHref}`);
+						// Ensure child URLs also start with a slash
+						if (childHref && childHref !== "#" && !childHref.startsWith('/')) {
+							childHref = '/' + childHref;
+						}
+						console.log(`Original child href: ${childHref} (normalized)`);
 
 						const childIconName = child.icon?.toLowerCase() || "";
 						const ChildIconComponent = iconMap[childIconName] || DefaultIcon;
