@@ -160,3 +160,62 @@ export const generateRepaymentSchedule = (
   
   return schedule;
 };
+
+/**
+ * Compare flat and diminishing interest calculation methods
+ * 
+ * @param principal - Loan amount
+ * @param interestRate - Annual interest rate (in percentage)
+ * @param tenure - Loan tenure in months
+ * @returns Comparison of both methods with EMI, total interest, and total amount
+ */
+export const compareInterestMethods = (
+  principal: number,
+  interestRate: number,
+  tenure: number
+): {
+  flat: { emi: number; totalInterest: number; totalAmount: number };
+  diminishing: { emi: number; totalInterest: number; totalAmount: number };
+  difference: { emi: number; totalInterest: number; totalAmount: number };
+  recommendation: string;
+} => {
+  // Calculate for flat rate
+  const flatEmi = calculateEMI(principal, interestRate, tenure, InterestType.FLAT);
+  const flatTotalInterest = (principal * interestRate * tenure) / 1200;
+  const flatTotalAmount = principal + flatTotalInterest;
+  
+  // Calculate for diminishing balance
+  const diminishingEmi = calculateEMI(principal, interestRate, tenure, InterestType.DIMINISHING);
+  const diminishingTotalInterest = diminishingEmi * tenure - principal;
+  const diminishingTotalAmount = principal + diminishingTotalInterest;
+  
+  // Calculate differences
+  const emiDifference = Math.abs(flatEmi - diminishingEmi);
+  const interestDifference = Math.abs(flatTotalInterest - diminishingTotalInterest);
+  const totalDifference = Math.abs(flatTotalAmount - diminishingTotalAmount);
+  
+  // Determine which method is better
+  const isFlatBetter = flatTotalInterest < diminishingTotalInterest;
+  const recommendation = isFlatBetter
+    ? 'The Flat Rate method results in lower total interest payments for this specific scenario.'
+    : 'The Reducing Balance method is generally more favorable as it results in lower total interest payments.';
+  
+  return {
+    flat: {
+      emi: parseFloat(flatEmi.toFixed(2)),
+      totalInterest: parseFloat(flatTotalInterest.toFixed(2)),
+      totalAmount: parseFloat(flatTotalAmount.toFixed(2))
+    },
+    diminishing: {
+      emi: parseFloat(diminishingEmi.toFixed(2)),
+      totalInterest: parseFloat(diminishingTotalInterest.toFixed(2)),
+      totalAmount: parseFloat(diminishingTotalAmount.toFixed(2))
+    },
+    difference: {
+      emi: parseFloat(emiDifference.toFixed(2)),
+      totalInterest: parseFloat(interestDifference.toFixed(2)),
+      totalAmount: parseFloat(totalDifference.toFixed(2))
+    },
+    recommendation
+  };
+};

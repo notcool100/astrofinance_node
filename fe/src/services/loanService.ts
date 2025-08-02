@@ -69,6 +69,9 @@ export interface LoanDocument {
   documentType: string;
   documentUrl: string;
   uploadDate: string;
+  status?: 'PENDING' | 'UPLOADED' | 'VERIFIED' | 'REJECTED';
+  verificationDate?: string | null;
+  verificationNotes?: string | null;
 }
 
 export interface EMICalculationResult {
@@ -133,6 +136,12 @@ const loanService = {
   
   uploadLoanDocument: (id: string, formData: FormData) => 
     apiService.upload<LoanDocument>(`/loan/applications/${id}/documents`, formData),
+    
+  getLoanDocuments: (id: string) => 
+    apiService.get<LoanDocument[]>(`/loan/applications/${id}/documents`),
+    
+  submitDocuments: (id: string) => 
+    apiService.post<LoanApplication>(`/loan/applications/${id}/submit-documents`, {}),
   
   // Loans
   getLoans: (params?: { 
@@ -150,6 +159,9 @@ const loanService = {
   
   getLoanSchedule: (id: string) => 
     apiService.get<LoanSchedule[]>(`/loan/loans/${id}/schedule`),
+    
+  getLoanPayments: (id: string) => 
+    apiService.get<LoanPayment[]>(`/loan/loans/${id}/payments`),
   
   disburseLoan: (data: { 
     applicationId: string; 
@@ -190,6 +202,117 @@ const loanService = {
   
   generateSchedule: (data: CalculatorFormData) => 
     apiService.post<LoanSchedule[]>('/loan/calculator/schedule', data),
+    
+  compareInterestMethods: (data: {
+    amount: number;
+    tenure: number;
+    interestRate: number;
+  }) =>
+    apiService.post<{
+      flat: { emi: number; totalInterest: number; totalAmount: number };
+      diminishing: { emi: number; totalInterest: number; totalAmount: number };
+      difference: { emi: number; totalInterest: number; totalAmount: number };
+      recommendation: string;
+    }>('/loan/calculator/compare-methods', {
+      principal: data.amount,
+      tenure: data.tenure,
+      interestRate: data.interestRate
+    }),
+    
+  // Calculator presets
+  getUserCalculatorPresets: (userId: string) =>
+    apiService.get<LoanCalculatorPreset[]>(`/loan/calculator-presets/user/${userId}`),
+    
+  getCalculatorPreset: (id: string) =>
+    apiService.get<LoanCalculatorPreset>(`/loan/calculator-presets/${id}`),
+    
+  createCalculatorPreset: (data: {
+    name: string;
+    userId: string;
+    loanTypeId?: string;
+    amount: number;
+    tenure: number;
+    interestRate: number;
+    interestType: 'FLAT' | 'DIMINISHING';
+    startDate: string;
+    isDefault?: boolean;
+  }) =>
+    apiService.post<LoanCalculatorPreset>('/loan/calculator-presets', data),
+    
+  updateCalculatorPreset: (id: string, data: {
+    name?: string;
+    loanTypeId?: string;
+    amount?: number;
+    tenure?: number;
+    interestRate?: number;
+    interestType?: 'FLAT' | 'DIMINISHING';
+    startDate?: string;
+    isDefault?: boolean;
+  }) =>
+    apiService.put<LoanCalculatorPreset>(`/loan/calculator-presets/${id}`, data),
+    
+  deleteCalculatorPreset: (id: string) =>
+    apiService.delete(`/loan/calculator-presets/${id}`),
+    
+  // Calculator history
+  getUserCalculationHistory: (userId: string, page = 1, limit = 10) =>
+    apiService.get<{
+      data: LoanCalculatorHistory[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        pages: number;
+      }
+    }>(`/loan/calculator-history/user/${userId}?page=${page}&limit=${limit}`),
+    
+  getUserCalculationStats: (userId: string) =>
+    apiService.get<{
+      totalCalculations: number;
+      averages: {
+        amount: number;
+        tenure: number;
+        interestRate: number;
+        emi: number;
+        totalInterest: number;
+      };
+      maximums: {
+        amount: number;
+        tenure: number;
+        interestRate: number;
+        emi: number;
+        totalInterest: number;
+      };
+      minimums: {
+        amount: number;
+        tenure: number;
+        interestRate: number;
+        emi: number;
+        totalInterest: number;
+      };
+      mostUsedLoanType: {
+        id: string;
+        name: string;
+        code: string;
+      } | null;
+      mostUsedInterestType: string | null;
+    }>(`/loan/calculator-history/user/${userId}/stats`),
+    
+  recordCalculation: (data: {
+    userId: string;
+    loanTypeId?: string;
+    amount: number;
+    tenure: number;
+    interestRate: number;
+    interestType: 'FLAT' | 'DIMINISHING';
+    emi: number;
+    totalInterest: number;
+    totalAmount: number;
+  }) =>
+    apiService.post<LoanCalculatorHistory>('/loan/calculator-history', data),
+    
+  clearUserCalculationHistory: (userId: string) =>
+    apiService.delete(`/loan/calculator-history/user/${userId}`),
 };
 
 export default loanService;

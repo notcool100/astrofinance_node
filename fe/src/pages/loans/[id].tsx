@@ -7,7 +7,8 @@ import Button from '@/components/common/Button';
 import Badge from '@/components/common/Badge';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import loanService, { Loan, LoanSchedule } from '@/services/loanService';
-import { ArrowLeftIcon, DocumentTextIcon, CurrencyDollarIcon, CalculatorIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, DocumentTextIcon, CurrencyDollarIcon, CalculatorIcon, CreditCardIcon, BanknotesIcon } from '@heroicons/react/24/outline';
+import { toast } from 'react-hot-toast';
 
 const LoanStatusBadge = ({ status }: { status: string }) => {
   switch (status) {

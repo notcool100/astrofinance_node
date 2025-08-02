@@ -332,7 +332,7 @@ const GeneralLedgerPage: React.FC = () => {
         'general-ledger',
         'pdf',
         { 
-          accountId: selectedAccountId || undefined,
+          accountId: selectedAccountId || '',
           startDate,
           endDate
         }
@@ -363,7 +363,7 @@ const GeneralLedgerPage: React.FC = () => {
         'general-ledger',
         'excel',
         { 
-          accountId: selectedAccountId || undefined,
+          accountId: selectedAccountId ||'',
           startDate,
           endDate
         }

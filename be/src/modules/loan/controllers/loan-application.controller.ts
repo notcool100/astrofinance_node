@@ -108,8 +108,18 @@ export const getLoanApplicationById = async (req: Request, res: Response) => {
             username: true,
             fullName: true
           }
+        },
+        documents: {
+          include: {
+            verifiedBy: {
+              select: {
+                id: true,
+                username: true,
+                fullName: true
+              }
+            }
+          }
         }
-        // documents: true - removed as it's not in the schema
       }
     });
 

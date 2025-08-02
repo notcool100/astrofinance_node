@@ -68,3 +68,26 @@ export const generateAmortizationScheduleValidation = [
     .isISO8601()
     .withMessage('First payment date must be a valid date')
 ];
+
+/**
+ * Validation schema for comparing interest calculation methods
+ */
+export const compareInterestMethodsValidation = [
+  body('principal')
+    .notEmpty()
+    .withMessage('Principal amount is required')
+    .isFloat({ min: 0.01 })
+    .withMessage('Principal amount must be greater than zero'),
+  
+  body('interestRate')
+    .notEmpty()
+    .withMessage('Interest rate is required')
+    .isFloat({ min: 0 })
+    .withMessage('Interest rate must be a positive number'),
+  
+  body('tenure')
+    .notEmpty()
+    .withMessage('Tenure is required')
+    .isInt({ min: 1 })
+    .withMessage('Tenure must be a positive integer')
+];

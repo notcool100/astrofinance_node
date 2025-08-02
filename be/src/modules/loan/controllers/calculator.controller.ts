@@ -4,7 +4,8 @@ import logger from '../../../config/logger';
 import { ApiError } from '../../../common/middleware/error.middleware';
 import { 
   calculateEMI, 
-  generateRepaymentSchedule 
+  generateRepaymentSchedule,
+  compareInterestMethods
 } from '../utils/loan.utils';
 
 /**
@@ -115,5 +116,31 @@ export const generateAmortizationSchedule = async (req: Request, res: Response) 
     logger.error(`Generate amortization schedule error: ${error}`);
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, 'Failed to generate amortization schedule');
+  }
+};
+
+/**
+ * Compare interest calculation methods
+ */
+export const compareInterestCalculationMethods = async (req: Request, res: Response) => {
+  try {
+    const { 
+      principal, 
+      interestRate, 
+      tenure 
+    } = req.body;
+
+    // Compare flat and diminishing interest methods
+    const comparison = compareInterestMethods(
+      principal,
+      interestRate,
+      tenure
+    );
+
+    return res.json(comparison);
+  } catch (error) {
+    logger.error(`Compare interest methods error: ${error}`);
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(500, 'Failed to compare interest calculation methods');
   }
 };

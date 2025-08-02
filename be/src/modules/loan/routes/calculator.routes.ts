@@ -1,13 +1,15 @@
 import { Router } from 'express';
 import { 
   calculateLoanEMI, 
-  generateAmortizationSchedule 
+  generateAmortizationSchedule,
+  compareInterestCalculationMethods
 } from '../controllers/calculator.controller';
 import { authenticateAdmin } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import { 
   calculateEMIValidation, 
-  generateAmortizationScheduleValidation 
+  generateAmortizationScheduleValidation,
+  compareInterestMethodsValidation
 } from '../validations/calculator.validation';
 
 const router = Router();
@@ -27,6 +29,13 @@ router.post(
   '/schedule', 
   validate(generateAmortizationScheduleValidation), 
   generateAmortizationSchedule
+);
+
+// Compare interest calculation methods
+router.post(
+  '/compare-methods',
+  validate(compareInterestMethodsValidation),
+  compareInterestCalculationMethods
 );
 
 export default router;

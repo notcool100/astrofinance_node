@@ -44,6 +44,7 @@ model AdminUser {
   createdUserAccounts UserAccount[] @relation("CreatedUserAccount")
   performedTransactions UserAccountTransaction[] @relation("PerformedByAdmin")
   generatedStatements UserAccountStatement[] @relation("GeneratedByAdmin")
+  verifiedDocuments LoanDocument[] @relation("VerifiedByAdmin")
 
   @@index([username])
   @@index([email])
@@ -183,6 +184,8 @@ model User {
   accounts        UserAccount[]
   loanApplications LoanApplication[]
   loans           Loan[]
+  calculatorPresets LoanCalculatorPreset[]
+  calculatorHistory LoanCalculatorHistory[]
   tdsCalculations TdsCalculation[]
   tdsExemptions   TdsExemption[]
   taxCertificates TaxCertificate[]
@@ -364,8 +367,56 @@ model LoanType {
   // Relations
   loanApplications  LoanApplication[]
   loans             Loan[]
+  calculatorPresets LoanCalculatorPreset[]
+  calculatorHistory LoanCalculatorHistory[]
 
   @@map("loan_types")
+}
+
+model LoanCalculatorPreset {
+  id                String        @id @default(uuid())
+  name              String
+  userId            String
+  loanTypeId        String?
+  amount            Decimal       @db.Decimal(15, 2)
+  tenure            Int
+  interestRate      Decimal       @db.Decimal(5, 2)
+  interestType      InterestType
+  startDate         DateTime
+  isDefault         Boolean       @default(false)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  user              User          @relation(fields: [userId], references: [id])
+  loanType          LoanType?     @relation(fields: [loanTypeId], references: [id])
+
+  @@index([userId])
+  @@index([loanTypeId])
+  @@map("loan_calculator_presets")
+}
+
+model LoanCalculatorHistory {
+  id                String        @id @default(uuid())
+  userId            String
+  loanTypeId        String?
+  amount            Decimal       @db.Decimal(15, 2)
+  tenure            Int
+  interestRate      Decimal       @db.Decimal(5, 2)
+  interestType      InterestType
+  emi               Decimal       @db.Decimal(15, 2)
+  totalInterest     Decimal       @db.Decimal(15, 2)
+  totalAmount       Decimal       @db.Decimal(15, 2)
+  calculatedAt      DateTime      @default(now())
+  
+  // Relations
+  user              User          @relation(fields: [userId], references: [id])
+  loanType          LoanType?     @relation(fields: [loanTypeId], references: [id])
+
+  @@index([userId])
+  @@index([loanTypeId])
+  @@index([calculatedAt])
+  @@map("loan_calculator_history")
 }
 
 enum InterestType {
@@ -394,6 +445,7 @@ model LoanApplication {
   loanType          LoanType      @relation(fields: [loanTypeId], references: [id])
   approvedBy        AdminUser?    @relation("ApprovedByAdmin", fields: [approvedById], references: [id])
   loan              Loan?
+  documents         LoanDocument[]
 
   @@map("loan_applications")
 }
@@ -504,6 +556,36 @@ model LoanPayment {
   receivedBy        AdminUser?    @relation("ReceivedByAdmin", fields: [receivedById], references: [id])
 
   @@map("loan_payments")
+}
+
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model LoanDocument {
+  id                String        @id @default(uuid())
+  loanApplicationId String
+  documentType      String
+  documentName      String
+  documentUrl       String
+  uploadDate        DateTime      @default(now())
+  status            DocumentStatus @default(PENDING)
+  verificationDate  DateTime?
+  verificationNotes String?
+  verifiedById      String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  loanApplication   LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+  verifiedBy        AdminUser?    @relation("VerifiedByAdmin", fields: [verifiedById], references: [id])
+
+  @@index([loanApplicationId])
+  @@index([status])
+  @@index([documentType])
+  @@map("loan_documents")
 }
 
 // ==================== Accounting Module ====================
