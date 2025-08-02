@@ -4,16 +4,30 @@ import {
   getLoanTypeById, 
   createLoanType, 
   updateLoanType, 
-  deleteLoanType 
+  deleteLoanType,
+  bulkUpdateLoanTypeStatus
 } from '../controllers/loan-type.controller';
 import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
+import { performanceMonitor } from '../../../common/middleware/performance.middleware';
+import { apiLimiter } from '../../../common/middleware/rate-limit.middleware';
+import { sanitizeInput } from '../../../common/middleware/sanitization.middleware';
 import { 
   createLoanTypeValidation, 
-  updateLoanTypeValidation 
+  updateLoanTypeValidation,
+  bulkUpdateStatusValidation
 } from '../validations/loan-type.validation';
 
 const router = Router();
+
+// Apply rate limiting to all routes
+router.use(apiLimiter);
+
+// Apply performance monitoring middleware to all routes
+router.use(performanceMonitor);
+
+// Apply input sanitization to all routes
+router.use(sanitizeInput);
 
 // All routes require authentication
 router.use(authenticateAdmin);
@@ -45,6 +59,14 @@ router.delete(
   '/:id', 
   hasPermission('loans.delete'), 
   deleteLoanType
+);
+
+// Bulk update loan type status
+router.post(
+  '/bulk/status',
+  hasPermission('loans.edit'),
+  validate(bulkUpdateStatusValidation),
+  bulkUpdateLoanTypeStatus
 );
 
 export default router;

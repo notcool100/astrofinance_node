@@ -370,6 +370,12 @@ model LoanType {
   calculatorPresets LoanCalculatorPreset[]
   calculatorHistory LoanCalculatorHistory[]
 
+  // Indexes for better performance
+  @@index([interestType])
+  @@index([isActive])
+  @@index([interestRate])
+  @@index([name])
+  
   @@map("loan_types")
 }
 

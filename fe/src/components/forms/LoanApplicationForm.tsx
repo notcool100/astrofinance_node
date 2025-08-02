@@ -121,60 +121,64 @@ const LoanDetailsStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
   const watchTenure = watch('tenure');
 
   // Fetch loan types
-  const { data: loanTypes, isLoading: isLoadingLoanTypes } = useQuery(
+  const { data, isLoading: isLoadingLoanTypes } = useQuery(
     'loanTypes',
-    () => loanService.getLoanTypes(),
+    () => loanService.getLoanTypes().then(res => res.data),
     {
       staleTime: 60 * 60 * 1000, // 1 hour
-      // Mock data for now
-      onError: () => {
-        console.error('Failed to fetch loan types, using mock data');
-        return [
-          {
-            id: '1',
-            name: 'Personal Loan',
-            code: 'PL',
-            interestType: 'FLAT',
-            minAmount: 1000,
-            maxAmount: 50000,
-            minTenure: 3,
-            maxTenure: 36,
-            interestRate: 12,
-            isActive: true,
-          },
-          {
-            id: '2',
-            name: 'Business Loan',
-            code: 'BL',
-            interestType: 'DIMINISHING',
-            minAmount: 5000,
-            maxAmount: 200000,
-            minTenure: 6,
-            maxTenure: 60,
-            interestRate: 15,
-            isActive: true,
-          },
-          {
-            id: '3',
-            name: 'Education Loan',
-            code: 'EL',
-            interestType: 'DIMINISHING',
-            minAmount: 10000,
-            maxAmount: 100000,
-            minTenure: 12,
-            maxTenure: 84,
-            interestRate: 10,
-            isActive: true,
-          },
-        ];
-      }
     }
   );
+  
+  // Ensure loanTypes is always an array
+  const loanTypes = Array.isArray(data) ? data : [];
+  
+  // Mock data for development
+  const mockLoanTypes = [
+    {
+      id: '1',
+      name: 'Personal Loan',
+      code: 'PL',
+      interestType: 'FLAT',
+      minAmount: 1000,
+      maxAmount: 50000,
+      minTenure: 3,
+      maxTenure: 36,
+      interestRate: 12,
+      isActive: true,
+    },
+    {
+      id: '2',
+      name: 'Business Loan',
+      code: 'BL',
+      interestType: 'DIMINISHING',
+      minAmount: 5000,
+      maxAmount: 200000,
+      minTenure: 6,
+      maxTenure: 60,
+      interestRate: 15,
+      isActive: true,
+    },
+    {
+      id: '3',
+      name: 'Education Loan',
+      code: 'EL',
+      interestType: 'DIMINISHING',
+      minAmount: 10000,
+      maxAmount: 100000,
+      minTenure: 12,
+      maxTenure: 84,
+      interestRate: 10,
+      isActive: true,
+    },
+  ];
 
   // Update form values when loan type changes
   useEffect(() => {
-    if (loanTypes && watchLoanTypeId) {
-      const loanType = loanTypes.find(lt => lt.id === watchLoanTypeId);
+    if (watchLoanTypeId) {
+      // Try to find the loan type in the fetched data or fall back to mock data
+      const loanType = loanTypes.find(lt => lt.id === watchLoanTypeId) || 
+                      mockLoanTypes.find(lt => lt.id === watchLoanTypeId);
+      
       if (loanType) {
         setSelectedLoanType(loanType);
         
@@ -188,7 +192,7 @@ const LoanDetailsStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
         }
       }
     }
-  }, [loanTypes, watchLoanTypeId, setValue, watchAmount, watchTenure]);
+  }, [loanTypes, mockLoanTypes, watchLoanTypeId, setValue, watchAmount, watchTenure]);
 
   // Calculate EMI (simplified formula)
   const calculateEMI = () => {

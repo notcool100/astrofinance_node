@@ -29,7 +29,14 @@ export const createLoanTypeValidation = [
     .notEmpty()
     .withMessage('Minimum amount is required')
     .isFloat({ min: 0 })
-    .withMessage('Minimum amount must be a positive number'),
+    .withMessage('Minimum amount must be a positive number')
+    .custom((value) => {
+      // Business rule: Minimum loan amount should be at least 1000
+      if (value < 1000) {
+        throw new Error('Minimum loan amount should be at least 1000');
+      }
+      return true;
+    }),
   
   body('maxAmount')
     .notEmpty()
@@ -47,7 +54,14 @@ export const createLoanTypeValidation = [
     .notEmpty()
     .withMessage('Minimum tenure is required')
     .isInt({ min: 1 })
-    .withMessage('Minimum tenure must be a positive integer'),
+    .withMessage('Minimum tenure must be a positive integer')
+    .custom((value) => {
+      // Business rule: Minimum tenure should be at least 3 months
+      if (value < 3) {
+        throw new Error('Minimum tenure should be at least 3 months');
+      }
+      return true;
+    }),
   
   body('maxTenure')
     .notEmpty()
@@ -65,7 +79,14 @@ export const createLoanTypeValidation = [
     .notEmpty()
     .withMessage('Interest rate is required')
     .isFloat({ min: 0 })
-    .withMessage('Interest rate must be a positive number'),
+    .withMessage('Interest rate must be a positive number')
+    .custom((value) => {
+      // Business rule: Interest rate should be reasonable
+      if (value > 50) {
+        throw new Error('Interest rate seems unusually high (>50%). Please verify.');
+      }
+      return true;
+    }),
   
   body('processingFeePercent')
     .optional()
@@ -104,7 +125,14 @@ export const updateLoanTypeValidation = [
   body('minAmount')
     .optional()
     .isFloat({ min: 0 })
-    .withMessage('Minimum amount must be a positive number'),
+    .withMessage('Minimum amount must be a positive number')
+    .custom((value) => {
+      // Business rule: Minimum loan amount should be at least 1000
+      if (value < 1000) {
+        throw new Error('Minimum loan amount should be at least 1000');
+      }
+      return true;
+    }),
   
   body('maxAmount')
     .optional()
@@ -120,7 +148,14 @@ export const updateLoanTypeValidation = [
   body('minTenure')
     .optional()
     .isInt({ min: 1 })
-    .withMessage('Minimum tenure must be a positive integer'),
+    .withMessage('Minimum tenure must be a positive integer')
+    .custom((value) => {
+      // Business rule: Minimum tenure should be at least 3 months
+      if (value < 3) {
+        throw new Error('Minimum tenure should be at least 3 months');
+      }
+      return true;
+    }),
   
   body('maxTenure')
     .optional()
@@ -136,7 +171,14 @@ export const updateLoanTypeValidation = [
   body('interestRate')
     .optional()
     .isFloat({ min: 0 })
-    .withMessage('Interest rate must be a positive number'),
+    .withMessage('Interest rate must be a positive number')
+    .custom((value) => {
+      // Business rule: Interest rate should be reasonable
+      if (value > 50) {
+        throw new Error('Interest rate seems unusually high (>50%). Please verify.');
+      }
+      return true;
+    }),
   
   body('processingFeePercent')
     .optional()
@@ -150,6 +192,23 @@ export const updateLoanTypeValidation = [
   
   body('isActive')
     .optional()
+    .isBoolean()
+    .withMessage('isActive must be a boolean')
+];
+
+/**
+ * Validation schema for bulk updating loan type status
+ */
+export const bulkUpdateStatusValidation = [
+  body('ids')
+    .isArray({ min: 1 })
+    .withMessage('At least one loan type ID must be provided'),
+  
+  body('ids.*')
+    .isString()
+    .withMessage('Each ID must be a string'),
+  
+  body('isActive')
     .isBoolean()
     .withMessage('isActive must be a boolean')
 ];

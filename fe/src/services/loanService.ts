@@ -10,7 +10,11 @@ export interface LoanType {
   minTenure: number;
   maxTenure: number;
   interestRate: number;
+  processingFeePercent: number;
+  lateFeeAmount: number;
   isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface LoanApplication {
@@ -113,6 +117,38 @@ const loanService = {
   
   getLoanTypeById: (id: string) => 
     apiService.get<LoanType>(`/loan/types/${id}`),
+    
+  createLoanType: (data: {
+    name: string;
+    code: string;
+    interestType: 'FLAT' | 'DIMINISHING';
+    minAmount: number;
+    maxAmount: number;
+    minTenure: number;
+    maxTenure: number;
+    interestRate: number;
+    processingFeePercent: number;
+    lateFeeAmount: number;
+    isActive: boolean;
+  }) => 
+    apiService.post<LoanType>('/loan/types', data),
+    
+  updateLoanType: (id: string, data: {
+    name?: string;
+    interestType?: 'FLAT' | 'DIMINISHING';
+    minAmount?: number;
+    maxAmount?: number;
+    minTenure?: number;
+    maxTenure?: number;
+    interestRate?: number;
+    processingFeePercent?: number;
+    lateFeeAmount?: number;
+    isActive?: boolean;
+  }) => 
+    apiService.put<LoanType>(`/loan/types/${id}`, data),
+    
+  deleteLoanType: (id: string) => 
+    apiService.delete(`/loan/types/${id}`),
   
   // Loan Applications
   getLoanApplications: (params?: { 

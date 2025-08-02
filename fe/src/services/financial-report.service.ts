@@ -136,7 +136,7 @@ class FinancialReportService {
     if (endDate) params.append('endDate', endDate);
 
     const response = await api.get(`/accounting/reports/accounts/${accountId}/balance?${params.toString()}`);
-    return response.data;
+    return (response as { data: AccountBalance }).data;
   }
 
   /**
@@ -148,7 +148,7 @@ class FinancialReportService {
 
     try {
       // Make a direct axios call to ensure we get the raw response
-      const response = await axios.get(`${API_URL}/accounting/reports/trial-balance?${params.toString()}`, {
+      const response = await axios.get<TrialBalance>(`${API_URL}/accounting/reports/trial-balance?${params.toString()}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -283,7 +283,7 @@ class FinancialReportService {
 
     const response = await api.get(`/accounting/reports/export/${reportType}?${queryParams.toString()}`, {
       responseType: 'blob'
-    });
+    }) as { data: Blob };
     
     return response.data;
   }
