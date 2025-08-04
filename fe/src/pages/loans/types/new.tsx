@@ -188,3 +188,15 @@ const NewLoanTypePage: React.FC = () => {
 
 // Use dynamic import with SSR disabled to prevent router issues during static generation
 export default dynamic(() => Promise.resolve(NewLoanTypePage), { ssr: false });
+
+// Disable automatic static optimization for this page
+export const config = {
+  unstable_runtimeJS: true,
+};
+
+// Tell Next.js to skip static generation for this page
+export async function getStaticProps() {
+  return {
+    notFound: process.env.NODE_ENV === 'production', // Only in production builds
+  };
+}

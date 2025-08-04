@@ -17,6 +17,48 @@ const nextConfig = {
     // your project has type errors.
     // !! WARN !!
     ignoreBuildErrors: true,
+  },
+  
+  // Exclude problematic routes from static generation
+  exportPathMap: async function (
+    defaultPathMap,
+    { dev, dir, outDir, distDir, buildId }
+  ) {
+    // Remove problematic routes from static export
+    const pathMap = { ...defaultPathMap };
+    delete pathMap['/loans/types/[id]'];
+    delete pathMap['/loans/types/new'];
+    
+    return pathMap;
+  },
+  
+  // Configure specific pages to be server-side rendered only
+  // This prevents static optimization for these routes
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: '/loans/types/new',
+          destination: '/loans/types/new',
+          has: [
+            {
+              type: 'header',
+              key: 'x-skip-static-generation',
+            },
+          ],
+        },
+        {
+          source: '/loans/types/:id',
+          destination: '/loans/types/:id',
+          has: [
+            {
+              type: 'header',
+              key: 'x-skip-static-generation',
+            },
+          ],
+        },
+      ],
+    };
   }
 }
 
