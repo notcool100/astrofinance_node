@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useMutation } from 'react-query';
 import { useForm } from 'react-hook-form';
@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { toast } from 'react-hot-toast';
+import dynamic from 'next/dynamic';
 
 import MainLayout from '@/components/layout/MainLayout';
 import LoanTypeForm from '@/components/loan/LoanTypeForm';
@@ -92,14 +93,17 @@ type FormData = yup.InferType<typeof schema>;
 const NewLoanTypePage: React.FC = () => {
   const router = useRouter();
   const { hasPermission } = useAuth();
+  const [hasAccess, setHasAccess] = useState(true);
   
-  // Check if user has permission to create loan types
-  if (!hasPermission('loans.create')) {
-    router.push('/loans/types');
-    toast.error('You do not have permission to create loan types');
-    return null;
-  }
-
+  useEffect(() => {
+    // Check if user has permission to create loan types
+    if (router.isReady && !hasPermission('loans.create')) {
+      setHasAccess(false);
+      router.push('/loans/types');
+      toast.error('You do not have permission to create loan types');
+    }
+  }, [router.isReady, hasPermission, router]);
+  
   const form = useForm<FormData>({
     resolver: yupResolver(schema),
     defaultValues: {
@@ -111,6 +115,10 @@ const NewLoanTypePage: React.FC = () => {
   });
 
   const { handleSubmit, formState: { isSubmitting } } = form;
+  
+  if (!hasAccess) {
+    return null;
+  }
 
   const createMutation = useMutation(
     (data: FormData) => loanService.createLoanType(data),
@@ -178,4 +186,5 @@ const NewLoanTypePage: React.FC = () => {
   );
 };
 
-export default NewLoanTypePage;
+// Use dynamic import with SSR disabled to prevent router issues during static generation
+export default dynamic(() => Promise.resolve(NewLoanTypePage), { ssr: false });

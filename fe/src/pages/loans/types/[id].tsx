@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useQuery, useMutation } from 'react-query';
 import { useForm } from 'react-hook-form';
@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { toast } from 'react-hot-toast';
+import dynamic from 'next/dynamic';
 
 import MainLayout from '@/components/layout/MainLayout';
 import LoadingScreen from '@/components/common/LoadingScreen';
@@ -91,13 +92,16 @@ const EditLoanTypePage: React.FC = () => {
   const router = useRouter();
   const { id } = router.query;
   const { hasPermission } = useAuth();
+  const [hasAccess, setHasAccess] = useState(true);
   
-  // Check if user has permission to edit loan types
-  if (!hasPermission('loans.edit')) {
-    router.push('/loans/types');
-    toast.error('You do not have permission to edit loan types');
-    return null;
-  }
+  useEffect(() => {
+    // Check if user has permission to edit loan types
+    if (router.isReady && !hasPermission('loans.edit')) {
+      setHasAccess(false);
+      router.push('/loans/types');
+      toast.error('You do not have permission to edit loan types');
+    }
+  }, [router.isReady, hasPermission, router]);
 
   const form = useForm<FormData>({
     resolver: yupResolver(schema),
@@ -110,6 +114,10 @@ const EditLoanTypePage: React.FC = () => {
   });
 
   const { handleSubmit, reset, formState: { isSubmitting } } = form;
+  
+  if (!hasAccess) {
+    return null;
+  }
 
   // Fetch loan type data
   const { data: loanType, isLoading, error } = useQuery(
@@ -224,4 +232,5 @@ const EditLoanTypePage: React.FC = () => {
   );
 };
 
-export default EditLoanTypePage;
+// Use dynamic import with SSR disabled to prevent router issues during static generation
+export default dynamic(() => Promise.resolve(EditLoanTypePage), { ssr: false });
