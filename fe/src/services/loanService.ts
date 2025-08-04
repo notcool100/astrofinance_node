@@ -1,4 +1,5 @@
 import apiService from './api';
+import { LoanCalculatorPreset, LoanCalculatorHistory } from '@/types/loan';
 
 export interface LoanType {
   id: string;

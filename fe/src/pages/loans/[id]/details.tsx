@@ -104,6 +104,8 @@ const LoanDetailsPage = () => {
       minTenure: 3,
       maxTenure: 36,
       interestRate: 12,
+      processingFeePercent: 2,
+      lateFeeAmount: 500,
       isActive: true,
     },
   };

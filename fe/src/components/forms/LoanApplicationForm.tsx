@@ -123,7 +123,7 @@ const LoanDetailsStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
   // Fetch loan types
   const { data, isLoading: isLoadingLoanTypes } = useQuery(
     'loanTypes',
-    () => loanService.getLoanTypes().then(res => res.data),
+    () => loanService.getLoanTypes(),
     {
       staleTime: 60 * 60 * 1000, // 1 hour
     }
@@ -133,7 +133,7 @@ const LoanDetailsStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
   const loanTypes = Array.isArray(data) ? data : [];
   
   // Mock data for development
-  const mockLoanTypes = [
+  const mockLoanTypes: LoanTypeInterface[] = [
     {
       id: '1',
       name: 'Personal Loan',
@@ -144,6 +144,8 @@ const LoanDetailsStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
       minTenure: 3,
       maxTenure: 36,
       interestRate: 12,
+      processingFeePercent: 2,
+      lateFeeAmount: 500,
       isActive: true,
     },
     {
@@ -156,6 +158,8 @@ const LoanDetailsStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
       minTenure: 6,
       maxTenure: 60,
       interestRate: 15,
+      processingFeePercent: 2.5,
+      lateFeeAmount: 750,
       isActive: true,
     },
     {
@@ -168,6 +172,8 @@ const LoanDetailsStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
       minTenure: 12,
       maxTenure: 84,
       interestRate: 10,
+      processingFeePercent: 1.5,
+      lateFeeAmount: 300,
       isActive: true,
     },
   ];

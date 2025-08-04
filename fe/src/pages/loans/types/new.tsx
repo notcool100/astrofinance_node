@@ -121,7 +121,10 @@ const NewLoanTypePage: React.FC = () => {
   }
 
   const createMutation = useMutation(
-    (data: FormData) => loanService.createLoanType(data),
+    (data: FormData) => loanService.createLoanType({
+      ...data,
+      isActive: data.isActive === undefined ? true : data.isActive
+    }),
     {
       onSuccess: () => {
         toast.success('Loan type created successfully');
@@ -134,7 +137,12 @@ const NewLoanTypePage: React.FC = () => {
   );
 
   const onSubmit = (data: FormData) => {
-    createMutation.mutate(data);
+    // Ensure isActive is defined
+    const formData = {
+      ...data,
+      isActive: data.isActive ?? true
+    };
+    createMutation.mutate(formData);
   };
 
   return (

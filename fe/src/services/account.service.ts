@@ -66,32 +66,32 @@ class AccountService {
    * Get account by ID
    */
   async getAccount(id: string): Promise<Account> {
-    const response = await api.get(`/accounting/accounts/${id}`);
-    return response.data;
+    const response = await api.get<any>(`/accounting/accounts/${id}`);
+    return response.data.data as Account;
   }
 
   /**
    * Create new account
    */
   async createAccount(accountData: Partial<Account>): Promise<Account> {
-    const response = await api.post('/accounting/accounts', accountData);
-    return response.data;
+    const response = await api.post<any>('/accounting/accounts', accountData);
+    return response.data.data as Account;
   }
 
   /**
    * Update account
    */
   async updateAccount(id: string, accountData: Partial<Account>): Promise<Account> {
-    const response = await api.put(`/accounting/accounts/${id}`, accountData);
-    return response.data;
+    const response = await api.put<any>(`/accounting/accounts/${id}`, accountData);
+    return response.data.data as Account;
   }
 
   /**
    * Get account types
    */
   async getAccountTypes(): Promise<string[]> {
-    const response = await api.get('/accounting/accounts/types');
-    return response.data;
+    const response = await api.get<any>('/accounting/accounts/types');
+    return response.data.data as string[];
   }
 
   /**
@@ -101,8 +101,8 @@ class AccountService {
     const params = new URLSearchParams();
     if (asOfDate) params.append('asOfDate', asOfDate);
     
-    const response = await api.get(`/accounting/accounts/balance?${params.toString()}`);
-    return response.data;
+    const response = await api.get<any>(`/accounting/accounts/balance?${params.toString()}`);
+    return response.data.data as Record<string, number>;
   }
 }
 

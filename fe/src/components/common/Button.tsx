@@ -1,11 +1,12 @@
 import React, { ButtonHTMLAttributes, ReactNode } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'outline' | 'ghost' | 'link' | 'danger-outline';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   isLoading?: boolean; // For backward compatibility
   icon?: ReactNode;
+  iconPosition?: 'left' | 'right';
   children: ReactNode;
 }
 
@@ -15,6 +16,7 @@ const Button: React.FC<ButtonProps> = ({
   loading = false,
   isLoading = false, // For backward compatibility
   icon,
+  iconPosition = 'left',
   children,
   className = '',
   disabled,

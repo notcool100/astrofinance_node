@@ -122,7 +122,7 @@ const EditLoanTypePage: React.FC = () => {
   // Fetch loan type data
   const { data: loanType, isLoading, error } = useQuery(
     ['loanType', id],
-    () => loanService.getLoanTypeById(id as string).then(res => res.data),
+    () => loanService.getLoanTypeById(id as string),
     {
       enabled: !!id,
       onSuccess: (data) => {

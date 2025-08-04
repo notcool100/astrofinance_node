@@ -20,7 +20,7 @@ const LoanTypesPage: React.FC = () => {
   // Fetch loan types
   const { data: loanTypes, isLoading, error } = useQuery(
     ['loanTypes', showInactive],
-    () => loanService.getLoanTypes().then(res => res.data),
+    () => loanService.getLoanTypes(),
     {
       keepPreviousData: true,
     }
@@ -62,7 +62,7 @@ const LoanTypesPage: React.FC = () => {
 
   const filteredLoanTypes = showInactive
     ? loanTypes
-    : loanTypes?.filter(type => type.isActive);
+    : loanTypes?.filter((type: LoanType) => type.isActive);
 
   if (isLoading) {
     return (
@@ -175,7 +175,7 @@ const LoanTypesPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="table-body">
-                    {filteredLoanTypes?.map((loanType) => (
+                    {filteredLoanTypes?.map((loanType: LoanType) => (
                       <tr key={loanType.id} className="table-row">
                         <td className="table-cell">{loanType.name}</td>
                         <td className="table-cell">{loanType.code}</td>
