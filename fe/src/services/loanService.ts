@@ -20,15 +20,28 @@ export interface LoanType {
 
 export interface LoanApplication {
   id: string;
+  applicationNumber: string;
   userId: string;
   loanTypeId: string;
   amount: number;
   tenure: number;
   purpose: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'DISBURSED';
-  applicationDate: string;
+  appliedDate: string;
+  approvedDate?: string;
+  approvedById?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+  // Legacy field for compatibility
+  applicationDate?: string;
   notes?: string;
   loanType?: LoanType;
+  approvedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
 }
 
 export interface Loan {
@@ -113,8 +126,18 @@ export interface CalculatorFormData {
 
 const loanService = {
   // Loan Types
-  getLoanTypes: () => 
-    apiService.get<LoanType[]>('/loan/types'),
+  getLoanTypes: (params?: { 
+    active?: boolean; 
+    interestType?: string; 
+    minInterestRate?: number; 
+    maxInterestRate?: number;
+    search?: string;
+    page?: number; 
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: string;
+  }) => 
+    apiService.get<{ data: LoanType[]; pagination: any }>('/loan/types', params),
   
   getLoanTypeById: (id: string) => 
     apiService.get<LoanType>(`/loan/types/${id}`),
@@ -160,7 +183,7 @@ const loanService = {
     page?: number; 
     limit?: number; 
   }) => 
-    apiService.get<{ data: LoanApplication[]; pagination: any }>('/loan/applications', params),
+    apiService.get<LoanApplication[]>('/loan/applications', params),
   
   getLoanApplicationById: (id: string) => 
     apiService.get<LoanApplication>(`/loan/applications/${id}`),

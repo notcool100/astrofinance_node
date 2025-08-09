@@ -411,7 +411,7 @@ async function seedNavigation() {
 			data: {
 				label: "Loan Applications",
 				icon: "description",
-				url: "/loan-applications",
+				url: "/loans/applications",
 				order: 1,
 				groupId: loanGroup.id,
 			},
@@ -431,7 +431,7 @@ async function seedNavigation() {
 			data: {
 				label: "Loan Types",
 				icon: "category",
-				url: "/loan-types",
+				url: "/loans/types",
 				order: 3,
 				groupId: loanGroup.id,
 			},
@@ -473,7 +473,7 @@ async function seedNavigation() {
 			data: {
 				label: "Day Book",
 				icon: "today",
-				url: "accounting/day-book",
+				url: "accounting/day-books",
 				order: 3,
 				groupId: accountingGroup.id,
 			},
@@ -483,7 +483,7 @@ async function seedNavigation() {
 			data: {
 				label: "Financial Reports",
 				icon: "assessment",
-				url: "accounting/financial-reports",
+				url: "accounting/reports",
 				order: 4,
 				groupId: accountingGroup.id,
 			},
@@ -527,7 +527,7 @@ async function seedNavigation() {
 			data: {
 				label: "Staff",
 				icon: "people",
-				url: "/staff",
+				url: "/admin/staff",
 				order: 1,
 				groupId: adminGroup.id,
 			},
@@ -710,19 +710,6 @@ async function seedLoanTypes() {
 			interestRate: 9.5,
 			processingFeePercent: 0.75,
 			lateFeeAmount: 500,
-			isActive: true,
-		},
-		{
-			name: "Vehicle Loan",
-			code: "VL",
-			interestType: InterestType.DIMINISHING,
-			minAmount: 50000,
-			maxAmount: 3000000,
-			minTenure: 12,
-			maxTenure: 84,
-			interestRate: 9.5,
-			processingFeePercent: 1.0,
-			lateFeeAmount: 1000,
 			isActive: true,
 		},
 	];

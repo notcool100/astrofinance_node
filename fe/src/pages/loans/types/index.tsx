@@ -18,13 +18,16 @@ const LoanTypesPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Fetch loan types
-  const { data: loanTypes, isLoading, error } = useQuery(
+  const { data: loanTypesResponse, isLoading, error } = useQuery(
     ['loanTypes', showInactive],
     () => loanService.getLoanTypes(),
     {
       keepPreviousData: true,
     }
   );
+
+  // Extract loan types data from the response
+  const loanTypes = loanTypesResponse?.data || [];
 
   // Delete loan type mutation
   const deleteMutation = useMutation(

@@ -42,54 +42,108 @@ const LoanApplicationsPage = () => {
     }
   );
 
-  const columns = React.useMemo(
+  const columns: Column<LoanApplication>[] = React.useMemo(
     () => [
       {
         Header: 'Application ID',
-        accessor: 'id' as keyof LoanApplication,
+        accessor: 'id',
+        Cell: ({ value }: { value: string }) => (
+          <span className="font-mono text-sm">{value.slice(-8).toUpperCase()}</span>
+        ),
+      },
+      {
+        Header: 'Application Number',
+        accessor: 'applicationNumber' as keyof LoanApplication,
+        Cell: ({ value }: { value: string }) => (
+          <span className="font-medium">{value || 'N/A'}</span>
+        ),
       },
       {
         Header: 'Loan Type',
         accessor: 'loanType' as keyof LoanApplication,
-        Cell: ({ row }: any) => row.original.loanType?.name || 'N/A',
+        Cell: ({ row }: any) => (
+          <div>
+            <div className="font-medium">{row.original.loanType?.name || 'N/A'}</div>
+            <div className="text-xs text-gray-500">{row.original.loanType?.code || ''}</div>
+          </div>
+        ),
       },
       {
-        Header: 'Amount',
-        accessor: 'amount' as keyof LoanApplication,
-        Cell: ({ value }: { value: number }) => `$${value.toLocaleString()}`,
+        Header: 'Amount Requested',
+        accessor: 'amount',
+        Cell: ({ value }: { value: number }) => (
+          <span className="font-medium">${value.toLocaleString()}</span>
+        ),
       },
       {
         Header: 'Tenure',
-        accessor: 'tenure' as keyof LoanApplication,
+        accessor: 'tenure',
         Cell: ({ value }: { value: number }) => `${value} months`,
       },
       {
-        Header: 'Application Date',
-        accessor: 'applicationDate' as keyof LoanApplication,
-        Cell: ({ value }: { value: string }) => new Date(value).toLocaleDateString(),
+        Header: 'Purpose',
+        accessor: 'purpose',
+        Cell: ({ value }: { value: string }) => (
+          <span className="truncate max-w-32" title={value}>
+            {value}
+          </span>
+        ),
+      },
+      {
+        Header: 'Applied Date',
+        accessor: 'appliedDate' as keyof LoanApplication,
+        Cell: ({ value }: { value: string }) => {
+          const date = value ? new Date(value) : new Date();
+          return (
+            <div>
+              <div>{date.toLocaleDateString()}</div>
+              <div className="text-xs text-gray-500">{date.toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              })}</div>
+            </div>
+          );
+        },
       },
       {
         Header: 'Status',
-        accessor: 'status' as keyof LoanApplication,
+        accessor: 'status',
         Cell: ({ value }: { value: string }) => <ApplicationStatusBadge status={value} />,
       },
       {
         Header: 'Actions',
-        accessor: 'id' as keyof LoanApplication,
+        id: 'actions', // Use unique ID instead of accessor
         Cell: ({ row }: any) => (
           <div className="flex space-x-2">
             <button
-              onClick={() => router.push(`/loans/applications/${row.original.id}`)}
-              className="text-primary-600 hover:text-primary-900"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/loans/applications/${row.original.id}`);
+              }}
+              className="text-primary-600 hover:text-primary-900 text-sm font-medium"
             >
               View
             </button>
             {row.original.status === 'APPROVED' && (
               <button
-                onClick={() => router.push(`/loans/applications/${row.original.id}/documents`)}
-                className="text-primary-600 hover:text-primary-900"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/loans/applications/${row.original.id}/documents`);
+                }}
+                className="text-green-600 hover:text-green-900 text-sm font-medium"
               >
-                Upload Docs
+                Documents
+              </button>
+            )}
+            {row.original.status === 'APPROVED' && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/loans/applications/${row.original.id}/agreement`);
+                }}
+                className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+              >
+                Agreement
               </button>
             )}
           </div>
@@ -103,82 +157,34 @@ const LoanApplicationsPage = () => {
     router.push(`/loans/applications/${row.original.id}`);
   };
 
-  // Mock data for now
-  const mockApplications: LoanApplication[] = [
-    {
-      id: 'LA-1001',
-      userId: 'user-1',
-      loanTypeId: '1',
-      amount: 10000,
-      tenure: 12,
-      purpose: 'Home renovation',
-      status: 'PENDING',
-      applicationDate: '2023-12-01',
-      loanType: {
-        id: '1',
-        name: 'Personal Loan',
-        code: 'PL',
-        interestType: 'FLAT',
-        minAmount: 1000,
-        maxAmount: 50000,
-        minTenure: 3,
-        maxTenure: 36,
-        interestRate: 12,
-        processingFeePercent: 2,
-        lateFeeAmount: 500,
-        isActive: true,
-      },
-    },
-    {
-      id: 'LA-1002',
-      userId: 'user-1',
-      loanTypeId: '2',
-      amount: 25000,
-      tenure: 24,
-      purpose: 'Business expansion',
-      status: 'APPROVED',
-      applicationDate: '2023-11-15',
-      loanType: {
-        id: '2',
-        name: 'Business Loan',
-        code: 'BL',
-        interestType: 'DIMINISHING',
-        minAmount: 5000,
-        maxAmount: 200000,
-        minTenure: 6,
-        maxTenure: 60,
-        interestRate: 15,
-        processingFeePercent: 2,
-        lateFeeAmount: 500,
-        isActive: true,
-      },
-    },
-    {
-      id: 'LA-1003',
-      userId: 'user-1',
-      loanTypeId: '3',
-      amount: 15000,
-      tenure: 36,
-      purpose: 'Education',
-      status: 'REJECTED',
-      applicationDate: '2023-10-20',
-      notes: 'Insufficient income documentation',
-      loanType: {
-        id: '3',
-        name: 'Education Loan',
-        code: 'EL',
-        interestType: 'DIMINISHING',
-        minAmount: 10000,
-        maxAmount: 100000,
-        minTenure: 12,
-        maxTenure: 84,
-        processingFeePercent: 1.5,
-        lateFeeAmount: 300,
-        interestRate: 10,
-        isActive: true,
-      },
-    },
-  ];
+
+
+  // Filter applications based on filter state
+  const filteredApplications = React.useMemo(() => {
+    let filtered = applicationsData || [];
+    
+    if (filter.status) {
+      filtered = filtered.filter(app => app.status === filter.status);
+    }
+    
+    if (filter.loanType) {
+      filtered = filtered.filter(app => app.loanType?.name === filter.loanType);
+    }
+    
+    return filtered;
+  }, [applicationsData, filter]);
+
+  // Calculate statistics
+  const stats = React.useMemo(() => {
+    const total = filteredApplications.length;
+    const pending = filteredApplications.filter(app => app.status === 'PENDING').length;
+    const approved = filteredApplications.filter(app => app.status === 'APPROVED').length;
+    const rejected = filteredApplications.filter(app => app.status === 'REJECTED').length;
+    const disbursed = filteredApplications.filter(app => app.status === 'DISBURSED').length;
+    const totalAmount = filteredApplications.reduce((sum, app) => sum + app.amount, 0);
+    
+    return { total, pending, approved, rejected, disbursed, totalAmount };
+  }, [filteredApplications]);
 
   return (
     <ProtectedRoute>
@@ -198,6 +204,40 @@ const LoanApplicationsPage = () => {
             >
               New Application
             </Button>
+          </div>
+
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <Card>
+              <div className="p-4">
+                <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+                <div className="text-sm text-gray-500">Total Applications</div>
+              </div>
+            </Card>
+            <Card>
+              <div className="p-4">
+                <div className="text-2xl font-bold text-blue-600">{stats.pending}</div>
+                <div className="text-sm text-gray-500">Pending Review</div>
+              </div>
+            </Card>
+            <Card>
+              <div className="p-4">
+                <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
+                <div className="text-sm text-gray-500">Approved</div>
+              </div>
+            </Card>
+            <Card>
+              <div className="p-4">
+                <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
+                <div className="text-sm text-gray-500">Rejected</div>
+              </div>
+            </Card>
+            <Card>
+              <div className="p-4">
+                <div className="text-2xl font-bold text-purple-600">${stats.totalAmount.toLocaleString()}</div>
+                <div className="text-sm text-gray-500">Total Amount</div>
+              </div>
+            </Card>
           </div>
 
           <Card>
@@ -222,10 +262,15 @@ const LoanApplicationsPage = () => {
 
               <Table
                 columns={columns as any}
-                data={mockApplications}
-                isLoading={false}
+                data={filteredApplications}
+                isLoading={isLoading}
                 onRowClick={handleRowClick}
-                emptyMessage="You don't have any loan applications yet. Apply for a loan to get started."
+                emptyMessage={
+                  filter.status || filter.loanType 
+                    ? "No applications match your filters" 
+                    : "You don't have any loan applications yet. Apply for a loan to get started."
+                }
+                keyField="id"
               />
             </div>
           </Card>
