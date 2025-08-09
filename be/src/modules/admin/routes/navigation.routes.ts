@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { 
   getAllNavigationGroups,
+  getNavigationGroupById,
   createNavigationGroup,
   updateNavigationGroup,
   deleteNavigationGroup,
   getAllNavigationItems,
+  getNavigationItemById,
   createNavigationItem,
   updateNavigationItem,
   deleteNavigationItem,
@@ -29,6 +31,7 @@ router.use(authenticateAdmin);
 
 // Navigation groups
 router.get('/groups', hasPermission('admin.view'), getAllNavigationGroups);
+router.get('/groups/:id', hasPermission('admin.view'), getNavigationGroupById);
 router.post(
   '/groups', 
   hasPermission('admin.create'), 
@@ -49,6 +52,7 @@ router.delete(
 
 // Navigation items
 router.get('/', hasPermission('admin.view'), getAllNavigationItems);
+router.get('/:id', hasPermission('admin.view'), getNavigationItemById);
 router.post(
   '/', 
   hasPermission('admin.create'), 
