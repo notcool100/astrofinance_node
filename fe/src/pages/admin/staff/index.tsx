@@ -11,6 +11,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import Table from '@/components/common/Table';
 import Badge from '@/components/common/Badge';
 import Button from '@/components/common/Button';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
 import { getAllStaff, StaffProfile } from '@/services/staff.service';
 import { Column } from 'react-table';
 import { formatDate } from '@/utils/dateUtils';
@@ -117,8 +118,9 @@ const StaffListPage: React.FC = () => {
   ];
 
   return (
-    <MainLayout>
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
+    <ProtectedRoute adminOnly>
+      <MainLayout>
+        <div className="px-4 sm:px-6 lg:px-8 py-8">
         <div className="sm:flex sm:items-center">
           <div className="sm:flex-auto">
             <h1 className="text-2xl font-semibold text-gray-900">Staff Management</h1>
@@ -169,7 +171,8 @@ const StaffListPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </MainLayout>
+      </MainLayout>
+    </ProtectedRoute>
   );
 };
 

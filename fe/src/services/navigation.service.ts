@@ -41,7 +41,7 @@ export const fetchUserNavigation = async (): Promise<NavigationItem[]> => {
  */
 export const fetchAllNavigationItems = async (): Promise<NavigationItem[]> => {
   try {
-    const response = await apiService.get<NavigationItem[]>('/office/admin/navigation/items');
+    const response = await apiService.get<NavigationItem[]>('/admin/navigation');
     return response;
   } catch (error) {
     console.error('Error fetching all navigation items:', error);
@@ -55,7 +55,7 @@ export const fetchAllNavigationItems = async (): Promise<NavigationItem[]> => {
  */
 export const fetchNavigationGroups = async (): Promise<NavigationGroup[]> => {
   try {
-    const response = await apiService.get<NavigationGroup[]>('/office/admin/navigation/groups');
+    const response = await apiService.get<NavigationGroup[]>('/admin/navigation/groups');
     return response;
   } catch (error) {
     console.error('Error fetching navigation groups:', error);
@@ -70,7 +70,7 @@ export const fetchNavigationGroups = async (): Promise<NavigationGroup[]> => {
  */
 export const createNavigationItem = async (data: Partial<NavigationItem>): Promise<NavigationItem> => {
   try {
-    const response = await apiService.post<NavigationItem>('/office/admin/navigation/items', data);
+    const response = await apiService.post<NavigationItem>('/admin/navigation', data);
     return response;
   } catch (error) {
     console.error('Error creating navigation item:', error);
@@ -86,7 +86,7 @@ export const createNavigationItem = async (data: Partial<NavigationItem>): Promi
  */
 export const updateNavigationItem = async (id: string, data: Partial<NavigationItem>): Promise<NavigationItem> => {
   try {
-    const response = await apiService.put<NavigationItem>(`/office/admin/navigation/items/${id}`, data);
+    const response = await apiService.put<NavigationItem>(`/admin/navigation/${id}`, data);
     return response;
   } catch (error) {
     console.error('Error updating navigation item:', error);
@@ -101,7 +101,7 @@ export const updateNavigationItem = async (id: string, data: Partial<NavigationI
  */
 export const deleteNavigationItem = async (id: string): Promise<{ message: string }> => {
   try {
-    const response = await apiService.delete<{ message: string }>(`/office/admin/navigation/items/${id}`);
+    const response = await apiService.delete<{ message: string }>(`/admin/navigation/${id}`);
     return response;
   } catch (error) {
     console.error('Error deleting navigation item:', error);
@@ -120,8 +120,8 @@ export const assignNavigationToRole = async (
   navigationItemIds: string[]
 ): Promise<{ message: string }> => {
   try {
-    const response = await apiService.post<{ message: string }>(
-      `/office/admin/roles/${roleId}/navigation`, 
+    const response = await apiService.put<{ message: string }>(
+      `/admin/navigation/roles/${roleId}`,
       { navigationItemIds }
     );
     return response;

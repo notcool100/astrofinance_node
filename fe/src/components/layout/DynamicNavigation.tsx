@@ -255,11 +255,15 @@ const DynamicNavigation: React.FC = () => {
 			// Process items in this group
 			const processedItems = group.items.map((item) => {
 				// Convert API URL to our format
-				let href = item.url || "#";
+                let href = item.url || "#";
 				// Ensure URLs start with a slash for proper routing
 				if (href && href !== "#" && !href.startsWith('/')) {
 					href = '/' + href;
 				}
+                // Prefix admin routes
+                if (href.startsWith('/roles') || href.startsWith('/navigation') || href.startsWith('/settings') || href.startsWith('/sms') || href.startsWith('/tax')) {
+                  href = '/admin' + href;
+                }
 				console.log(`Original href: ${href} (normalized)`);
 
 				// Get icon component from map or use default
@@ -278,11 +282,14 @@ const DynamicNavigation: React.FC = () => {
 					current: isActive(href, router.pathname),
 					children: (item.children as any)?.map((child: any) => {
 						// Process child items
-						let childHref = child.url || "#";
+                        let childHref = child.url || "#";
 						// Ensure child URLs also start with a slash
 						if (childHref && childHref !== "#" && !childHref.startsWith('/')) {
 							childHref = '/' + childHref;
 						}
+                        if (childHref.startsWith('/roles') || childHref.startsWith('/navigation') || childHref.startsWith('/settings') || childHref.startsWith('/sms') || childHref.startsWith('/tax')) {
+                          childHref = '/admin' + childHref;
+                        }
 						console.log(`Original child href: ${childHref} (normalized)`);
 
 						const childIconName = child.icon?.toLowerCase() || "";

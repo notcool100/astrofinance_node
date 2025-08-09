@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import MainLayout from '@/components/layout/MainLayout';
 import Button from '@/components/common/Button';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
 import StaffForm from '@/components/modules/staff/StaffForm';
 import { createStaff, CreateStaffData } from '@/services/staff.service';
 
@@ -30,8 +31,9 @@ const CreateStaffPage: React.FC = () => {
   };
 
   return (
-    <MainLayout>
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
+    <ProtectedRoute adminOnly>
+      <MainLayout>
+        <div className="px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <Link href="/admin/staff">
             <Button variant="outline" className="flex items-center">
@@ -69,7 +71,8 @@ const CreateStaffPage: React.FC = () => {
           isEditMode={false}
         />
       </div>
-    </MainLayout>
+      </MainLayout>
+    </ProtectedRoute>
   );
 };
 
