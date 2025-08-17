@@ -1,92 +1,96 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from 'react-query';
+import { useQuery, useMutation } from 'react-query';
 import { useForm, FormProvider, useFormContext, SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Button from '@/components/common/Button';
-import loanService, { LoanType as LoanTypeInterface } from '@/services/loanService';
-import { ArrowRightIcon, ArrowLeftIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import loanService, { LoanType as LoanTypeInterface, EMICalculationResult } from '@/services/loanService';
+import { useAuth } from '@/contexts/AuthContext';
+import { ArrowRightIcon, ArrowLeftIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
-// Step 1: Loan Details Schema
-const loanDetailsSchema = yup.object().shape({
-  loanTypeId: yup.string().required('Loan type is required'),
-  amount: yup
-    .number()
-    .required('Loan amount is required')
-    .positive('Amount must be positive'),
-  tenure: yup
-    .number()
-    .required('Tenure is required')
-    .positive('Tenure must be positive')
-    .integer('Tenure must be a whole number'),
-  purpose: yup.string().required('Loan purpose is required'),
-});
+// Dynamic schema based on loan type
+const createLoanApplicationSchema = (selectedLoanType: LoanTypeInterface | null) => {
+  const baseSchema = yup.object().shape({
+    // Step 1: Loan Details
+    loanTypeId: yup.string().required('Loan type is required'),
+    amount: yup
+      .number()
+      .required('Loan amount is required')
+      .positive('Amount must be positive')
+      .min(selectedLoanType?.minAmount || 1000, `Minimum amount is ${selectedLoanType?.minAmount?.toLocaleString() || 1000}`)
+      .max(selectedLoanType?.maxAmount || 50000, `Maximum amount is ${selectedLoanType?.maxAmount?.toLocaleString() || 50000}`),
+    tenure: yup
+      .number()
+      .required('Tenure is required')
+      .positive('Tenure must be positive')
+      .integer('Tenure must be a whole number')
+      .min(selectedLoanType?.minTenure || 3, `Minimum tenure is ${selectedLoanType?.minTenure || 3} months`)
+      .max(selectedLoanType?.maxTenure || 36, `Maximum tenure is ${selectedLoanType?.maxTenure || 36} months`),
+    purpose: yup.string().required('Loan purpose is required').min(10, 'Purpose must be at least 10 characters'),
 
-// Step 2: Financial Information Schema
-const financialInfoSchema = yup.object().shape({
-  employmentType: yup
-    .string()
-    .oneOf(['SALARIED', 'SELF_EMPLOYED', 'BUSINESS', 'OTHER'], 'Invalid employment type')
-    .required('Employment type is required'),
-  monthlyIncome: yup
-    .number()
-    .required('Monthly income is required')
-    .positive('Monthly income must be positive'),
-  existingEmi: yup
-    .number()
-    .required('Existing EMI is required')
-    .min(0, 'Existing EMI cannot be negative'),
-  creditScore: yup
-    .number()
-    .nullable()
-    .transform((value) => (isNaN(value) ? null : value)),
-  bankName: yup.string().required('Bank name is required'),
-  accountNumber: yup
-    .string()
-    .required('Account number is required')
-    .matches(/^\d{9,18}$/, 'Account number must be 9-18 digits'),
-  ifscCode: yup
-    .string()
-    .required('IFSC code is required')
-    .matches(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC code format'),
-});
+    // Step 2: Financial Information
+    employmentType: yup
+      .string()
+      .oneOf(['SALARIED', 'SELF_EMPLOYED', 'BUSINESS', 'OTHER'], 'Invalid employment type')
+      .required('Employment type is required'),
+    monthlyIncome: yup
+      .number()
+      .required('Monthly income is required')
+      .positive('Monthly income must be positive')
+      .min(1000, 'Monthly income must be at least 1000'),
+    existingEmi: yup
+      .number()
+      .required('Existing EMI is required')
+      .min(0, 'Existing EMI cannot be negative'),
+    creditScore: yup
+      .number()
+      .nullable()
+      .transform((value) => (isNaN(value) ? null : value))
+      .min(300, 'Credit score must be at least 300')
+      .max(900, 'Credit score must be at most 900'),
+    bankName: yup.string().required('Bank name is required'),
+    accountNumber: yup
+      .string()
+      .required('Account number is required')
+      .matches(/^\d{9,18}$/, 'Account number must be 9-18 digits'),
+    ifscCode: yup
+      .string()
+      .required('IFSC code is required')
+      .matches(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC code format'),
 
-// Step 3: Additional Information Schema
-const additionalInfoSchema = yup.object().shape({
-  residenceType: yup
-    .string()
-    .oneOf(['OWNED', 'RENTED', 'FAMILY_OWNED', 'COMPANY_PROVIDED', 'OTHER'], 'Invalid residence type')
-    .required('Residence type is required'),
-  yearsAtCurrentAddress: yup
-    .number()
-    .required('Years at current address is required')
-    .min(0, 'Years cannot be negative'),
-  maritalStatus: yup
-    .string()
-    .oneOf(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED'], 'Invalid marital status')
-    .required('Marital status is required'),
-  dependents: yup
-    .number()
-    .required('Number of dependents is required')
-    .min(0, 'Dependents cannot be negative')
-    .integer('Dependents must be a whole number'),
-  emergencyContactName: yup.string().required('Emergency contact name is required'),
-  emergencyContactPhone: yup
-    .string()
-    .required('Emergency contact phone is required')
-    .matches(/^\d{10}$/, 'Phone number must be 10 digits'),
-  emergencyContactRelation: yup.string().required('Relationship is required'),
-});
+    // Step 3: Additional Information
+    residenceType: yup
+      .string()
+      .oneOf(['OWNED', 'RENTED', 'FAMILY_OWNED', 'COMPANY_PROVIDED', 'OTHER'], 'Invalid residence type')
+      .required('Residence type is required'),
+    yearsAtCurrentAddress: yup
+      .number()
+      .required('Years at current address is required')
+      .min(0, 'Years cannot be negative')
+      .max(50, 'Years cannot exceed 50'),
+    maritalStatus: yup
+      .string()
+      .oneOf(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED'], 'Invalid marital status')
+      .required('Marital status is required'),
+    dependents: yup
+      .number()
+      .required('Number of dependents is required')
+      .min(0, 'Dependents cannot be negative')
+      .max(10, 'Dependents cannot exceed 10')
+      .integer('Dependents must be a whole number'),
+    emergencyContactName: yup.string().required('Emergency contact name is required'),
+    emergencyContactPhone: yup
+      .string()
+      .required('Emergency contact phone is required')
+      .matches(/^\d{10}$/, 'Phone number must be 10 digits'),
+    emergencyContactRelation: yup.string().required('Relationship is required'),
+  });
 
-// Combined schema for all steps
-const loanApplicationSchema = yup.object().shape({
-  ...loanDetailsSchema.fields,
-  ...financialInfoSchema.fields,
-  ...additionalInfoSchema.fields,
-});
+  return baseSchema;
+};
 
 // Form data interface
-interface LoanApplicationFormData {
+interface ExtendedLoanApplicationFormData {
   // Step 1: Loan Details
   loanTypeId: string;
   amount: number;
@@ -114,76 +118,59 @@ interface LoanApplicationFormData {
 
 // Step 1: Loan Details Component
 const LoanDetailsStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
-  const { formState: { errors }, register, watch, setValue } = useFormContext<LoanApplicationFormData>();
+  const { formState: { errors }, register, watch, setValue, trigger } = useFormContext<ExtendedLoanApplicationFormData>();
   const [selectedLoanType, setSelectedLoanType] = useState<LoanTypeInterface | null>(null);
+  const [emiCalculation, setEmiCalculation] = useState<EMICalculationResult | null>(null);
+  const [isCalculatingEmi, setIsCalculatingEmi] = useState(false);
+  
   const watchLoanTypeId = watch('loanTypeId');
   const watchAmount = watch('amount');
   const watchTenure = watch('tenure');
 
   // Fetch loan types
-  const { data, isLoading: isLoadingLoanTypes } = useQuery(
+  const { data: loanTypesData, isLoading: isLoadingLoanTypes, error: loanTypesError } = useQuery(
     'loanTypes',
-    () => loanService.getLoanTypes(),
+    () => loanService.getLoanTypes({ active: true }),
     {
       staleTime: 60 * 60 * 1000, // 1 hour
+      retry: 3,
     }
   );
   
-  // Ensure loanTypes is always an array
-  const loanTypes = Array.isArray(data) ? data : [];
-  
-  // Mock data for development
-  const mockLoanTypes: LoanTypeInterface[] = [
-    {
-      id: '1',
-      name: 'Personal Loan',
-      code: 'PL',
-      interestType: 'FLAT',
-      minAmount: 1000,
-      maxAmount: 50000,
-      minTenure: 3,
-      maxTenure: 36,
-      interestRate: 12,
-      processingFeePercent: 2,
-      lateFeeAmount: 500,
-      isActive: true,
-    },
-    {
-      id: '2',
-      name: 'Business Loan',
-      code: 'BL',
-      interestType: 'DIMINISHING',
-      minAmount: 5000,
-      maxAmount: 200000,
-      minTenure: 6,
-      maxTenure: 60,
-      interestRate: 15,
-      processingFeePercent: 2.5,
-      lateFeeAmount: 750,
-      isActive: true,
-    },
-    {
-      id: '3',
-      name: 'Education Loan',
-      code: 'EL',
-      interestType: 'DIMINISHING',
-      minAmount: 10000,
-      maxAmount: 100000,
-      minTenure: 12,
-      maxTenure: 84,
-      interestRate: 10,
-      processingFeePercent: 1.5,
-      lateFeeAmount: 300,
-      isActive: true,
-    },
-  ];
+  const loanTypes = loanTypesData?.data || [];
+
+  // Calculate EMI when loan type, amount, or tenure changes
+  useEffect(() => {
+    const calculateEMI = async () => {
+      if (selectedLoanType && watchAmount && watchTenure) {
+        setIsCalculatingEmi(true);
+        try {
+          const result = await loanService.calculateEMI({
+            amount: watchAmount,
+            tenure: watchTenure,
+            interestRate: selectedLoanType.interestRate,
+            interestType: selectedLoanType.interestType,
+          });
+          setEmiCalculation(result);
+        } catch (error) {
+          console.error('EMI calculation failed:', error);
+          setEmiCalculation(null);
+        } finally {
+          setIsCalculatingEmi(false);
+        }
+      } else {
+        setEmiCalculation(null);
+      }
+    };
+
+    const debounceTimer = setTimeout(calculateEMI, 500);
+    return () => clearTimeout(debounceTimer);
+  }, [selectedLoanType, watchAmount, watchTenure]);
 
   // Update form values when loan type changes
   useEffect(() => {
-    if (watchLoanTypeId) {
-      // Try to find the loan type in the fetched data or fall back to mock data
-      const loanType = loanTypes.find(lt => lt.id === watchLoanTypeId) || 
-                      mockLoanTypes.find(lt => lt.id === watchLoanTypeId);
+    if (watchLoanTypeId && loanTypes.length > 0) {
+      const loanType = loanTypes.find(lt => lt.id === watchLoanTypeId);
       
       if (loanType) {
         setSelectedLoanType(loanType);
@@ -198,28 +185,26 @@ const LoanDetailsStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
         }
       }
     }
-  }, [loanTypes, mockLoanTypes, watchLoanTypeId, setValue, watchAmount, watchTenure]);
+  }, [loanTypes, watchLoanTypeId, setValue, watchAmount, watchTenure]);
 
-  // Calculate EMI (simplified formula)
-  const calculateEMI = () => {
-    if (!selectedLoanType || !watchAmount || !watchTenure) return 0;
-    
-    const principal = watchAmount;
-    const ratePerMonth = selectedLoanType.interestRate / 12 / 100;
-    const tenure = watchTenure;
-    
-    if (selectedLoanType.interestType === 'FLAT') {
-      // Flat rate calculation
-      const totalInterest = principal * selectedLoanType.interestRate / 100 * (tenure / 12);
-      return (principal + totalInterest) / tenure;
-    } else {
-      // Diminishing balance calculation
-      return (principal * ratePerMonth * Math.pow(1 + ratePerMonth, tenure)) / 
-             (Math.pow(1 + ratePerMonth, tenure) - 1);
+  const handleNext = async () => {
+    const isValid = await trigger(['loanTypeId', 'amount', 'tenure', 'purpose']);
+    if (isValid) {
+      onNext();
     }
   };
 
-  const emi = calculateEMI();
+  if (loanTypesError) {
+    return (
+      <div className="text-center py-8">
+        <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-red-500" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900">Failed to load loan types</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          Please refresh the page to try again.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -237,7 +222,7 @@ const LoanDetailsStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
             disabled={isLoadingLoanTypes}
           >
             <option value="">Select Loan Type</option>
-            {loanTypes?.map(loanType => (
+            {loanTypes.map(loanType => (
               <option key={loanType.id} value={loanType.id}>
                 {loanType.name} ({loanType.interestRate}% - {loanType.interestType === 'FLAT' ? 'Flat' : 'Reducing'})
               </option>
@@ -259,13 +244,14 @@ const LoanDetailsStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
             {...register('amount')}
             min={selectedLoanType?.minAmount || 1000}
             max={selectedLoanType?.maxAmount || 50000}
+            step="100"
           />
           {errors.amount && (
             <p className="form-error">{errors.amount.message}</p>
           )}
           {selectedLoanType && (
             <p className="mt-1 text-xs text-gray-500">
-              Min: ${selectedLoanType.minAmount.toLocaleString()} | Max: ${selectedLoanType.maxAmount.toLocaleString()}
+              Min: ₹{selectedLoanType.minAmount.toLocaleString()} | Max: ₹{selectedLoanType.maxAmount.toLocaleString()}
             </p>
           )}
         </div>
@@ -312,24 +298,30 @@ const LoanDetailsStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
       {selectedLoanType && watchAmount && watchTenure && (
         <div className="mt-6 p-4 bg-gray-50 rounded-md border border-gray-200">
           <h4 className="text-sm font-medium text-gray-900">Loan Summary</h4>
-          <div className="mt-2 grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs text-gray-500">Monthly EMI</p>
-              <p className="text-sm font-medium text-gray-900">${emi.toFixed(2)}</p>
+          {isCalculatingEmi ? (
+            <div className="mt-2 text-sm text-gray-500">Calculating EMI...</div>
+          ) : emiCalculation ? (
+            <div className="mt-2 grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-gray-500">Monthly EMI</p>
+                <p className="text-sm font-medium text-gray-900">₹{emiCalculation.emi.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Interest Rate</p>
+                <p className="text-sm font-medium text-gray-900">{selectedLoanType.interestRate}% per annum</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Total Amount Payable</p>
+                <p className="text-sm font-medium text-gray-900">₹{emiCalculation.totalAmount.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Total Interest</p>
+                <p className="text-sm font-medium text-gray-900">₹{emiCalculation.totalInterest.toFixed(2)}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-gray-500">Interest Rate</p>
-              <p className="text-sm font-medium text-gray-900">{selectedLoanType.interestRate}% per annum</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Total Amount Payable</p>
-              <p className="text-sm font-medium text-gray-900">${(emi * watchTenure).toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Total Interest</p>
-              <p className="text-sm font-medium text-gray-900">${(emi * watchTenure - watchAmount).toFixed(2)}</p>
-            </div>
-          </div>
+          ) : (
+            <div className="mt-2 text-sm text-gray-500">Unable to calculate EMI</div>
+          )}
         </div>
       )}
 
@@ -337,9 +329,10 @@ const LoanDetailsStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
         <Button
           type="button"
           variant="primary"
-          onClick={onNext}
+          onClick={handleNext}
           icon={<ArrowRightIcon className="h-5 w-5 ml-1" />}
           iconPosition="right"
+          disabled={isLoadingLoanTypes}
         >
           Next: Financial Information
         </Button>
@@ -350,7 +343,17 @@ const LoanDetailsStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
 
 // Step 2: Financial Information Component
 const FinancialInfoStep: React.FC<{ onNext: () => void; onPrevious: () => void }> = ({ onNext, onPrevious }) => {
-  const { formState: { errors }, register } = useFormContext<LoanApplicationFormData>();
+  const { formState: { errors }, register, trigger } = useFormContext<ExtendedLoanApplicationFormData>();
+
+  const handleNext = async () => {
+    const isValid = await trigger([
+      'employmentType', 'monthlyIncome', 'existingEmi', 'creditScore', 
+      'bankName', 'accountNumber', 'ifscCode'
+    ]);
+    if (isValid) {
+      onNext();
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -385,8 +388,10 @@ const FinancialInfoStep: React.FC<{ onNext: () => void; onPrevious: () => void }
             id="monthlyIncome"
             type="number"
             className={`form-input ${errors.monthlyIncome ? 'border-red-300' : ''}`}
-            placeholder="e.g., 5000"
+            placeholder="e.g., 50000"
             {...register('monthlyIncome')}
+            min="1000"
+            step="1000"
           />
           {errors.monthlyIncome && (
             <p className="form-error">{errors.monthlyIncome.message}</p>
@@ -403,6 +408,8 @@ const FinancialInfoStep: React.FC<{ onNext: () => void; onPrevious: () => void }
             className={`form-input ${errors.existingEmi ? 'border-red-300' : ''}`}
             placeholder="e.g., 0"
             {...register('existingEmi')}
+            min="0"
+            step="100"
           />
           {errors.existingEmi && (
             <p className="form-error">{errors.existingEmi.message}</p>
@@ -419,8 +426,8 @@ const FinancialInfoStep: React.FC<{ onNext: () => void; onPrevious: () => void }
             className={`form-input ${errors.creditScore ? 'border-red-300' : ''}`}
             placeholder="e.g., 750"
             {...register('creditScore')}
-            min={300}
-            max={900}
+            min="300"
+            max="900"
           />
           {errors.creditScore && (
             <p className="form-error">{errors.creditScore.message}</p>
@@ -492,7 +499,7 @@ const FinancialInfoStep: React.FC<{ onNext: () => void; onPrevious: () => void }
         <Button
           type="button"
           variant="primary"
-          onClick={onNext}
+          onClick={handleNext}
           icon={<ArrowRightIcon className="h-5 w-5 ml-1" />}
           iconPosition="right"
         >
@@ -505,7 +512,17 @@ const FinancialInfoStep: React.FC<{ onNext: () => void; onPrevious: () => void }
 
 // Step 3: Additional Information Component
 const AdditionalInfoStep: React.FC<{ onPrevious: () => void }> = ({ onPrevious }) => {
-  const { formState: { errors }, register } = useFormContext<LoanApplicationFormData>();
+  const { formState: { errors }, register, trigger } = useFormContext<ExtendedLoanApplicationFormData>();
+
+  const handleSubmit = async () => {
+    const isValid = await trigger([
+      'residenceType', 'yearsAtCurrentAddress', 'maritalStatus', 'dependents',
+      'emergencyContactName', 'emergencyContactPhone', 'emergencyContactRelation'
+    ]);
+    if (isValid) {
+      // Form will be submitted by the parent component
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -543,8 +560,9 @@ const AdditionalInfoStep: React.FC<{ onPrevious: () => void }> = ({ onPrevious }
             className={`form-input ${errors.yearsAtCurrentAddress ? 'border-red-300' : ''}`}
             placeholder="e.g., 3"
             {...register('yearsAtCurrentAddress')}
-            min={0}
-            step={0.5}
+            min="0"
+            max="50"
+            step="0.5"
           />
           {errors.yearsAtCurrentAddress && (
             <p className="form-error">{errors.yearsAtCurrentAddress.message}</p>
@@ -581,7 +599,8 @@ const AdditionalInfoStep: React.FC<{ onPrevious: () => void }> = ({ onPrevious }
             className={`form-input ${errors.dependents ? 'border-red-300' : ''}`}
             placeholder="e.g., 2"
             {...register('dependents')}
-            min={0}
+            min="0"
+            max="10"
           />
           {errors.dependents && (
             <p className="form-error">{errors.dependents.message}</p>
@@ -678,6 +697,7 @@ const AdditionalInfoStep: React.FC<{ onPrevious: () => void }> = ({ onPrevious }
           variant="primary"
           icon={<CheckCircleIcon className="h-5 w-5 ml-1" />}
           iconPosition="right"
+          onClick={handleSubmit}
         >
           Submit Application
         </Button>
@@ -745,13 +765,44 @@ const SuccessStep: React.FC<{ applicationId: string }> = ({ applicationId }) => 
 
 // Main Form Component
 const LoanApplicationForm: React.FC<{ onSuccess?: (applicationId: string) => void }> = ({ onSuccess }) => {
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [applicationId, setApplicationId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedLoanType, setSelectedLoanType] = useState<LoanTypeInterface | null>(null);
 
-  const methods = useForm<LoanApplicationFormData>({
-    resolver: yupResolver(loanApplicationSchema),
+  // Create loan application mutation
+  const createApplicationMutation = useMutation(
+    (data: ExtendedLoanApplicationFormData) => {
+      const serviceData = {
+        loanTypeId: data.loanTypeId,
+        amount: data.amount,
+        tenure: data.tenure,
+        purpose: data.purpose,
+      };
+      return loanService.createLoanApplication(serviceData);
+    },
+    {
+      onSuccess: (result) => {
+        setApplicationId(result.id);
+        setCurrentStep(4);
+        if (onSuccess) {
+          onSuccess(result.id);
+        }
+      },
+      onError: (error: any) => {
+        setErrorMessage(error?.message || 'Failed to submit loan application');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+    }
+  );
+
+  // Create dynamic schema based on selected loan type
+  const dynamicSchema = createLoanApplicationSchema(selectedLoanType);
+
+  const methods = useForm<ExtendedLoanApplicationFormData>({
+    resolver: yupResolver(dynamicSchema),
     defaultValues: {
       // Step 1: Loan Details
       loanTypeId: '',
@@ -773,40 +824,37 @@ const LoanApplicationForm: React.FC<{ onSuccess?: (applicationId: string) => voi
       yearsAtCurrentAddress: 0,
       maritalStatus: 'SINGLE',
       dependents: 0,
-      emergencyContactName: '',
-      emergencyContactPhone: '',
+      emergencyContactName: user?.fullName || '',
+      emergencyContactPhone: user?.contactNumber || '',
       emergencyContactRelation: '',
     },
     mode: 'onChange',
   });
 
-  const onSubmit: SubmitHandler<LoanApplicationFormData> = async (data) => {
+  // Update schema when loan type changes
+  useEffect(() => {
+    const subscription = methods.watch((value, { name }) => {
+      if (name === 'loanTypeId' && value.loanTypeId) {
+        // This will trigger a re-render with the new schema
+        setSelectedLoanType(null); // Will be set in the step component
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [methods]);
+
+  const onSubmit: SubmitHandler<ExtendedLoanApplicationFormData> = async (data) => {
+    if (!user?.id) {
+      setErrorMessage('User not authenticated');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
     
     try {
-      // In a real implementation, we would call the API
-      // const result = await loanService.createLoanApplication(data);
-      
-      // Mock response for now
-      const result = await new Promise<{ id: string; status: string }>((resolve) => {
-        setTimeout(() => {
-          resolve({
-            id: 'LA-' + Math.floor(Math.random() * 10000),
-            status: 'PENDING',
-          });
-        }, 1500);
-      });
-      
-      setApplicationId(result.id);
-      setCurrentStep(4); // Move to success step
-      
-      if (onSuccess) {
-        onSuccess(result.id);
-      }
+      await createApplicationMutation.mutateAsync(data);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to submit loan application');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Error is handled by the mutation
     } finally {
       setIsSubmitting(false);
     }
@@ -863,6 +911,18 @@ const LoanApplicationForm: React.FC<{ onSuccess?: (applicationId: string) => voi
       </div>
     );
   };
+
+  if (!user) {
+    return (
+      <div className="text-center py-8">
+        <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-red-500" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900">Authentication Required</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          Please log in to apply for a loan.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <FormProvider {...methods}>

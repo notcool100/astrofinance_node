@@ -5,6 +5,7 @@ import staffRoutes from './staff.routes';
 import roleRoutes from './role.routes';
 import navigationRoutes from './navigation.routes';
 import dashboardRoutes from './dashboard.routes';
+import settingsRoutes from './settings.routes';
 
 const router = Router();
 
@@ -25,5 +26,8 @@ router.use('/roles', roleRoutes);
 
 // Navigation routes
 router.use('/navigation', navigationRoutes);
+
+// Settings routes
+router.use('/settings', settingsRoutes);
 
 export default router;

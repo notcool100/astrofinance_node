@@ -45,6 +45,9 @@ async function main() {
 	// Seed report templates
 	await seedReportTemplates();
 
+	// Seed system settings
+	await seedSystemSettings();
+
 	console.log("Database seeding completed successfully!");
 }
 
@@ -1726,6 +1729,398 @@ async function seedStaffUsers() {
 			console.log("Assigned Accountant role to STAFF002");
 		}
 	}
+}
+
+async function seedSystemSettings() {
+	console.log("Seeding system settings...");
+
+	// Create setting categories
+	const categories = [
+		{
+			name: "GENERAL",
+			displayName: "General",
+			description: "General application settings",
+			icon: "cog",
+			order: 1,
+		},
+		{
+			name: "BUSINESS",
+			displayName: "Business",
+			description: "Business-related settings",
+			icon: "building",
+			order: 2,
+		},
+		{
+			name: "CONTACT",
+			displayName: "Contact",
+			description: "Contact information settings",
+			icon: "globe",
+			order: 3,
+		},
+		{
+			name: "LOAN",
+			displayName: "Loan",
+			description: "Loan-related settings",
+			icon: "currency-dollar",
+			order: 4,
+		},
+		{
+			name: "NOTIFICATION",
+			displayName: "Notifications",
+			description: "Notification settings",
+			icon: "bell",
+			order: 5,
+		},
+		{
+			name: "SECURITY",
+			displayName: "Security",
+			description: "Security settings",
+			icon: "shield-check",
+			order: 6,
+		},
+		{
+			name: "SYSTEM",
+			displayName: "System",
+			description: "System settings",
+			icon: "chart-bar",
+			order: 7,
+		},
+	];
+
+	for (const category of categories) {
+		await prisma.settingCategory.create({ data: category });
+		console.log(`Created setting category: ${category.name}`);
+	}
+
+	// Create default settings
+	const defaultSettings = [
+		// General Settings
+		{
+			key: "app.name",
+			value: "AstroFinance",
+			description: "Application name",
+			category: "GENERAL",
+			dataType: SettingDataType.STRING,
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "app.description",
+			value: "Financial Management System",
+			description: "Application description",
+			category: "GENERAL",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "app.version",
+			value: "1.0.0",
+			description: "Application version",
+			category: "GENERAL",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "app.timezone",
+			value: "Asia/Kathmandu",
+			description: "Default timezone",
+			category: "GENERAL",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "app.language",
+			value: "en",
+			description: "Default language",
+			category: "GENERAL",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+
+		// Contact Information
+		{
+			key: "contact.email",
+			value: "info@astrofinance.com",
+			description: "Primary contact email",
+			category: "CONTACT",
+			dataType: "EMAIL",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "contact.phone",
+			value: "+977-1-1234567",
+			description: "Primary contact phone",
+			category: "CONTACT",
+			dataType: "PHONE",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "contact.address",
+			value: "Kathmandu, Nepal",
+			description: "Business address",
+			category: "CONTACT",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "contact.website",
+			value: "https://astrofinance.com",
+			description: "Business website",
+			category: "CONTACT",
+			dataType: "URL",
+			isPublic: true,
+			isEncrypted: false,
+		},
+
+		// Business Settings
+		{
+			key: "business.name",
+			value: "AstroFinance Pvt. Ltd.",
+			description: "Business name",
+			category: "BUSINESS",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "business.registration_number",
+			value: "123456789",
+			description: "Business registration number",
+			category: "BUSINESS",
+			dataType: "STRING",
+			isPublic: false,
+			isEncrypted: false,
+		},
+		{
+			key: "business.tax_id",
+			value: "TAX123456",
+			description: "Business tax ID",
+			category: "BUSINESS",
+			dataType: "STRING",
+			isPublic: false,
+			isEncrypted: false,
+		},
+		{
+			key: "business.currency",
+			value: "NPR",
+			description: "Default currency",
+			category: "BUSINESS",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "business.financial_year_start",
+			value: "2024-04-01",
+			description: "Financial year start date",
+			category: "BUSINESS",
+			dataType: "DATE",
+			isPublic: true,
+			isEncrypted: false,
+		},
+
+		// Loan Settings
+		{
+			key: "loan.max_amount",
+			value: "1000000",
+			description: "Maximum loan amount",
+			category: "LOAN",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "loan.min_amount",
+			value: "1000",
+			description: "Minimum loan amount",
+			category: "LOAN",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "loan.max_tenure",
+			value: "84",
+			description: "Maximum loan tenure in months",
+			category: "LOAN",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "loan.min_tenure",
+			value: "3",
+			description: "Minimum loan tenure in months",
+			category: "LOAN",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "loan.processing_fee_percent",
+			value: "2.5",
+			description: "Default processing fee percentage",
+			category: "LOAN",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "loan.late_fee_amount",
+			value: "500",
+			description: "Default late fee amount",
+			category: "LOAN",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+
+		// Notification Settings
+		{
+			key: "notification.email_enabled",
+			value: "true",
+			description: "Enable email notifications",
+			category: "NOTIFICATION",
+			dataType: "BOOLEAN",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "notification.sms_enabled",
+			value: "true",
+			description: "Enable SMS notifications",
+			category: "NOTIFICATION",
+			dataType: "BOOLEAN",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "notification.push_enabled",
+			value: "false",
+			description: "Enable push notifications",
+			category: "NOTIFICATION",
+			dataType: "BOOLEAN",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "notification.sms_provider",
+			value: "twilio",
+			description: "SMS provider",
+			category: "NOTIFICATION",
+			dataType: "STRING",
+			isPublic: false,
+			isEncrypted: false,
+		},
+
+		// Security Settings
+		{
+			key: "security.password_min_length",
+			value: "8",
+			description: "Minimum password length",
+			category: "SECURITY",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "security.password_require_special",
+			value: "true",
+			description: "Require special characters in password",
+			category: "SECURITY",
+			dataType: "BOOLEAN",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "security.session_timeout",
+			value: "3600",
+			description: "Session timeout in seconds",
+			category: "SECURITY",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "security.max_login_attempts",
+			value: "5",
+			description: "Maximum login attempts",
+			category: "SECURITY",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "security.two_factor_enabled",
+			value: "false",
+			description: "Enable two-factor authentication",
+			category: "SECURITY",
+			dataType: "BOOLEAN",
+			isPublic: true,
+			isEncrypted: false,
+		},
+
+		// System Settings
+		{
+			key: "system.maintenance_mode",
+			value: "false",
+			description: "Enable maintenance mode",
+			category: "SYSTEM",
+			dataType: "BOOLEAN",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "system.debug_mode",
+			value: "false",
+			description: "Enable debug mode",
+			category: "SYSTEM",
+			dataType: "BOOLEAN",
+			isPublic: false,
+			isEncrypted: false,
+		},
+		{
+			key: "system.log_level",
+			value: "info",
+			description: "Log level",
+			category: "SYSTEM",
+			dataType: "STRING",
+			isPublic: false,
+			isEncrypted: false,
+		},
+		{
+			key: "system.backup_enabled",
+			value: "true",
+			description: "Enable automatic backups",
+			category: "SYSTEM",
+			dataType: "BOOLEAN",
+			isPublic: false,
+			isEncrypted: false,
+		},
+		{
+			key: "system.backup_frequency",
+			value: "daily",
+			description: "Backup frequency",
+			category: "SYSTEM",
+			dataType: "STRING",
+			isPublic: false,
+			isEncrypted: false,
+		},
+	];
+
+	for (const setting of defaultSettings) {
+		await prisma.systemSetting.create({ data: setting });
+		console.log(`Created setting: ${setting.key}`);
+	}
+
+	console.log("System settings seeded successfully");
 }
 
 main()

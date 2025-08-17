@@ -45,6 +45,8 @@ model AdminUser {
   performedTransactions UserAccountTransaction[] @relation("PerformedByAdmin")
   generatedStatements UserAccountStatement[] @relation("GeneratedByAdmin")
   verifiedDocuments LoanDocument[] @relation("VerifiedByAdmin")
+  updatedSettings SystemSetting[] @relation("UpdatedByAdmin")
+  settingChanges SettingAuditLog[] @relation("ChangedByAdmin")
 
   @@index([username])
   @@index([email])
@@ -1497,4 +1499,73 @@ enum LeaveStatus {
   APPROVED
   REJECTED
   CANCELLED
+}
+
+// ==================== System Settings Module ====================
+
+model SystemSetting {
+  id            String        @id @default(uuid())
+  key           String        @unique
+  value         String
+  description   String?
+  category      String        @default("GENERAL")
+  isPublic      Boolean       @default(false)
+  isEncrypted   Boolean       @default(false)
+  dataType      SettingDataType @default(STRING)
+  validation    String?       // JSON validation rules
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  updatedById   String?
+
+  // Relations
+  updatedBy     AdminUser?    @relation("UpdatedByAdmin", fields: [updatedById], references: [id])
+  auditLogs     SettingAuditLog[]
+
+  @@index([key])
+  @@index([category])
+  @@map("system_settings")
+}
+
+enum SettingDataType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+  DATE
+  EMAIL
+  URL
+  PHONE
+}
+
+model SettingCategory {
+  id            String        @id @default(uuid())
+  name          String        @unique
+  displayName   String
+  description   String?
+  icon          String?
+  order         Int           @default(0)
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("setting_categories")
+}
+
+model SettingAuditLog {
+  id            String        @id @default(uuid())
+  settingId     String
+  oldValue      String?
+  newValue      String?
+  action        AuditAction
+  reason        String?
+  changedById   String
+  changedAt     DateTime      @default(now())
+
+  // Relations
+  setting       SystemSetting @relation(fields: [settingId], references: [id])
+  changedBy     AdminUser     @relation("ChangedByAdmin", fields: [changedById], references: [id])
+
+  @@index([settingId])
+  @@index([changedAt])
+  @@map("setting_audit_logs")
 }
