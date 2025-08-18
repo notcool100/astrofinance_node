@@ -1,7 +1,7 @@
 import api from './api';
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://62.171.175.112:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://82.180.144.91:5000/api';
 
 export interface AccountBalance {
   account: {

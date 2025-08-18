@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: ['localhost', '62.171.175.112'],
+    domains: ['localhost', '82.180.144.91'],
   },
   
   eslint: {
