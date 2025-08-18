@@ -148,17 +148,17 @@ stages:
       displayName: 'Extract Frontend Build'
 
     - script: |
-        # Check if we're running as the astro user
-        if [ "$(whoami)" = "astro" ]; then
-          # Running as astro, no need for sudo
-          export PATH=$PATH:/home/astro/.nvm/versions/node/v24.4.1/bin
-          export PM2_HOME=/home/astro/.pm2
+        # Check if we're running as the azureagent user
+        if [ "$(whoami)" = "azureagent" ]; then
+          # Running as azureagent, no need for sudo
+          export PATH=$PATH:/home/azureagent/.nvm/versions/node/v24.4.1/bin
+          export PM2_HOME=/home/azureagent/.pm2
           cd /var/www/astrofinance/frontend-dev
           pm2 restart frontend-dev || pm2 start npm --name "frontend-dev" --cwd /var/www/astrofinance/frontend-dev -- start
           pm2 save
         else
           # We need to use a different approach since sudo is not available
-          echo "Current user is not astro and sudo is not available. Please configure the pipeline to run as the astro user."
+          echo "Current user is not azureagent and sudo is not available. Please configure the pipeline to run as the azureagent user."
           echo "Alternatively, add the pipeline user to the sudoers file with the appropriate permissions."
           exit 1
         fi
@@ -198,17 +198,17 @@ stages:
       displayName: 'Extract Backend Build'
 
     - script: |
-        # Check if we're running as the astro user
-        if [ "$(whoami)" = "astro" ]; then
-          # Running as astro, no need for sudo
-          export PATH=$PATH:/home/astro/.nvm/versions/node/v24.4.1/bin
-          export PM2_HOME=/home/astro/.pm2
+        # Check if we're running as the azureagent user
+        if [ "$(whoami)" = "azureagent" ]; then
+          # Running as azureagent, no need for sudo
+          export PATH=$PATH:/home/azureagent/.nvm/versions/node/v24.4.1/bin
+          export PM2_HOME=/home/azureagent/.pm2
           cd /var/www/astrofinance/backend-dev
           pm2 restart backend-dev || pm2 start npm --name "backend-dev" --cwd /var/www/astrofinance/backend-dev -- start
           pm2 save
         else
           # We need to use a different approach since sudo is not available
-          echo "Current user is not astro and sudo is not available. Please configure the pipeline to run as the astro user."
+          echo "Current user is not azureagent and sudo is not available. Please configure the pipeline to run as the azureagent user."
           echo "Alternatively, add the pipeline user to the sudoers file with the appropriate permissions."
           exit 1
         fi
