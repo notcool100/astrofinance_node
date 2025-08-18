@@ -1800,7 +1800,7 @@ async function seedSystemSettings() {
 			value: "AstroFinance",
 			description: "Application name",
 			category: "GENERAL",
-			dataType: SettingDataType.STRING,
+			dataType: "STRING",
 			isPublic: true,
 			isEncrypted: false,
 		},
@@ -2115,8 +2115,16 @@ async function seedSystemSettings() {
 		},
 	];
 
+	// Import SettingDataType from your Prisma client
+	const { SettingDataType } = await import("@prisma/client");
+
 	for (const setting of defaultSettings) {
-		await prisma.systemSetting.create({ data: setting });
+		await prisma.systemSetting.create({
+			data: {
+				...setting,
+				dataType: SettingDataType[setting.dataType as keyof typeof SettingDataType],
+			},
+		});
 		console.log(`Created setting: ${setting.key}`);
 	}
 
