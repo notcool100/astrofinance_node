@@ -62,16 +62,18 @@ async function cleanupDatabase() {
 		console.log("Checking for journal entries...");
 		const journalEntryLinesCount = await prisma.journalEntryLine.count();
 		if (journalEntryLinesCount > 0) {
-			console.log(`Found ${journalEntryLinesCount} journal entry lines. Deleting...`);
+			console.log(
+				`Found ${journalEntryLinesCount} journal entry lines. Deleting...`,
+			);
 			await prisma.journalEntryLine.deleteMany({});
 		}
-		
+
 		const journalEntriesCount = await prisma.journalEntry.count();
 		if (journalEntriesCount > 0) {
 			console.log(`Found ${journalEntriesCount} journal entries. Deleting...`);
 			await prisma.journalEntry.deleteMany({});
 		}
-		
+
 		// Now proceed with the rest of the cleanup
 		await prisma.adminUserRole.deleteMany({});
 		await prisma.rolePermission.deleteMany({});
@@ -79,24 +81,24 @@ async function cleanupDatabase() {
 		await prisma.navigationItem.deleteMany({});
 		await prisma.navigationGroup.deleteMany({});
 		await prisma.permission.deleteMany({});
-		await prisma.staffRole.deleteMany({}); 
+		await prisma.staffRole.deleteMany({});
 		await prisma.staffDocument.deleteMany({});
 		await prisma.staff.deleteMany({});
 		await prisma.role.deleteMany({});
 		await prisma.adminUser.deleteMany({});
 		await prisma.loanType.deleteMany({});
-		
+
 		// Check for any other dependencies on account_COA
 		console.log("Checking for other dependencies on accounts...");
 		await prisma.account_COA.deleteMany({});
-		
+
 		await prisma.smsTemplate.deleteMany({});
 		await prisma.smsEvent.deleteMany({});
 		await prisma.taxRate.deleteMany({});
 		await prisma.taxType.deleteMany({});
 		await prisma.expenseCategory.deleteMany({});
 		await prisma.reportTemplate.deleteMany({});
-		
+
 		console.log("Database cleanup completed successfully");
 	} catch (error) {
 		console.error("Error during database cleanup:", error);
@@ -203,7 +205,7 @@ async function seedRolesAndPermissions() {
 		"tax",
 		"expenses",
 		"usertransactions",
-		"staff"
+		"staff",
 	];
 
 	const actions = ["view", "create", "edit", "delete", "approve"];
@@ -721,20 +723,20 @@ async function seedLoanTypes() {
 	for (const loanType of loanTypes) {
 		try {
 			const existingLoanType = await prisma.loanType.findUnique({
-				where: { code: loanType.code }
+				where: { code: loanType.code },
 			});
 
 			if (existingLoanType) {
 				// Update existing loan type
 				const updated = await prisma.loanType.update({
 					where: { code: loanType.code },
-					data: loanType
+					data: loanType,
 				});
 				console.log(`Updated loan type: ${updated.name} (${updated.code})`);
 			} else {
 				// Create new loan type
-				const created = await prisma.loanType.create({ 
-					data: loanType 
+				const created = await prisma.loanType.create({
+					data: loanType,
 				});
 				console.log(`Created loan type: ${created.name} (${created.code})`);
 			}
@@ -2122,7 +2124,8 @@ async function seedSystemSettings() {
 		await prisma.systemSetting.create({
 			data: {
 				...setting,
-				dataType: SettingDataType[setting.dataType as keyof typeof SettingDataType],
+				dataType:
+					SettingDataType[setting.dataType as keyof typeof SettingDataType],
 			},
 		});
 		console.log(`Created setting: ${setting.key}`);
@@ -2139,4 +2142,3 @@ main()
 	.finally(async () => {
 		await prisma.$disconnect();
 	});
-
