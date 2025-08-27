@@ -90,7 +90,7 @@ model DayBook {
 ```json
 {
   "physicalCashBalance": 4950.00,
-  "discrepancyNotes": "Cash drawer short by $50. Will investigate with cashiers."
+  "discrepancyNotes": "Cash drawer short by Rs 50. Will investigate with cashiers."
 }
 ```
 
@@ -102,7 +102,7 @@ model DayBook {
   "systemCashBalance": 5000.00,
   "physicalCashBalance": 4950.00,
   "discrepancyAmount": -50.00,
-  "discrepancyNotes": "Cash drawer short by $50. Will investigate with cashiers.",
+  "discrepancyNotes": "Cash drawer short by Rs 50. Will investigate with cashiers.",
   "isReconciled": true,
   "isClosed": false,
   "createdAt": "2023-07-15T09:00:00.000Z",

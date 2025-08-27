@@ -4,6 +4,7 @@ import { ApiError } from "../../../common/middleware/error.middleware";
 import { createAuditLog } from "../../../common/utils/audit.util";
 import prisma from "../../../config/database";
 import logger from "../../../config/logger";
+import { generateDayBookNumber } from "./daybook-transaction.controller";
 
 /**
  * Get all day books with pagination and filtering
@@ -64,6 +65,20 @@ export const getAllDayBooks = async (req: Request, res: Response) => {
 						fullName: true,
 					},
 				},
+				transactions: {
+					select: {
+						id: true,
+						transactionType: true,
+						amount: true,
+						description: true,
+					},
+				},
+				_count: {
+					select: {
+						transactions: true,
+						journalEntries: true,
+					},
+				},
 			},
 			orderBy: {
 				transactionDate: "desc",
@@ -106,6 +121,38 @@ export const getDayBookById = async (req: Request, res: Response) => {
 						fullName: true,
 					},
 				},
+				transactions: {
+					include: {
+						journalEntry: {
+							include: {
+								journalEntryLines: {
+									include: {
+										account: true,
+									},
+								},
+							},
+						},
+						createdBy: {
+							select: {
+								id: true,
+								username: true,
+								fullName: true,
+							},
+						},
+					},
+					orderBy: {
+						createdAt: "desc",
+					},
+				},
+				journalEntries: {
+					include: {
+						journalEntryLines: {
+							include: {
+								account: true,
+							},
+						},
+					},
+				},
 			},
 		});
 
@@ -130,7 +177,7 @@ export const getDayBookById = async (req: Request, res: Response) => {
  */
 export const createDayBook = async (req: Request, res: Response) => {
 	try {
-		const { transactionDate, systemCashBalance } = req.body;
+		const { transactionDate, openingBalance = 0 } = req.body;
 
 		// Check if a day book already exists for this date
 		const existingDayBook = await prisma.dayBook.findFirst({
@@ -146,11 +193,17 @@ export const createDayBook = async (req: Request, res: Response) => {
 			);
 		}
 
+		// Generate unique book number
+		const bookNumber = await generateDayBookNumber();
+
 		// Create day book
 		const dayBook = await prisma.dayBook.create({
 			data: {
+				bookNumber,
 				transactionDate: new Date(transactionDate),
-				systemCashBalance: parseFloat(systemCashBalance),
+				openingBalance: parseFloat(openingBalance),
+				closingBalance: parseFloat(openingBalance),
+				systemCashBalance: parseFloat(openingBalance),
 				isReconciled: false,
 				isClosed: false,
 			},
@@ -398,4 +451,3 @@ export const getDayBookSummary = async (req: Request, res: Response) => {
 		throw new ApiError(500, "Failed to get day book summary");
 	}
 };
-

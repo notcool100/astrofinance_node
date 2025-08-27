@@ -7,13 +7,21 @@ import {
   closeDayBook, 
   getDayBookSummary 
 } from '../controllers/day-book.controller';
+import {
+  addTransactionToDayBook,
+  getDayBookTransactions,
+  deleteDayBookTransaction
+} from '../controllers/daybook-transaction.controller';
 import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import { 
   createDayBookValidation, 
   reconcileDayBookValidation,
   closeDayBookValidation, 
-  getDayBooksValidation 
+  getDayBooksValidation,
+  addTransactionValidation,
+  getDayBookTransactionsValidation,
+  deleteTransactionValidation
 } from '../validations/day-book.validation';
 
 const router = Router();
@@ -65,6 +73,32 @@ router.put(
   hasPermission('accounting.edit'), 
   validate(closeDayBookValidation), 
   closeDayBook
+);
+
+// ==================== Daybook Transaction Routes ====================
+
+// Add transaction to daybook
+router.post(
+  '/:dayBookId/transactions',
+  hasPermission('accounting.create'),
+  validate(addTransactionValidation),
+  addTransactionToDayBook
+);
+
+// Get daybook transactions
+router.get(
+  '/:dayBookId/transactions',
+  hasPermission('accounting.view'),
+  validate(getDayBookTransactionsValidation),
+  getDayBookTransactions
+);
+
+// Delete transaction from daybook
+router.delete(
+  '/transactions/:transactionId',
+  hasPermission('accounting.delete'),
+  validate(deleteTransactionValidation),
+  deleteDayBookTransaction
 );
 
 export default router;

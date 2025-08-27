@@ -47,6 +47,7 @@ model AdminUser {
   verifiedDocuments LoanDocument[] @relation("VerifiedByAdmin")
   updatedSettings SystemSetting[] @relation("UpdatedByAdmin")
   settingChanges SettingAuditLog[] @relation("ChangedByAdmin")
+  createdDayBookTransactions DayBookTransaction[] @relation("CreatedDayBookTransaction")
 
   @@index([username])
   @@index([email])
@@ -639,6 +640,7 @@ model JournalEntry {
   recurringInterval String?
   recurringDay      Int?
   status            JournalEntryStatus @default(POSTED)
+  dayBookId         String?       // Link to daybook if auto-generated
   createdById       String?
   approvedById      String?
   createdAt         DateTime      @default(now())
@@ -647,14 +649,17 @@ model JournalEntry {
   // Relations
   createdBy         AdminUser?    @relation("CreatedByAdmin", fields: [createdById], references: [id])
   approvedBy        AdminUser?    @relation("ApprovedByAdmin", fields: [approvedById], references: [id])
+  dayBook           DayBook?      @relation("DayBookJournalEntries", fields: [dayBookId], references: [id])
   journalEntryLines JournalEntryLine[]
   accountTransactions UserAccountTransaction[]
+  dayBookTransactions DayBookTransaction[] @relation("DayBookTransactionJournalEntry")
 
   @@index([entryDate])
   @@index([status])
   @@index([isRecurring])
   @@index([createdById])
   @@index([approvedById])
+  @@index([dayBookId])
   @@map("journal_entries")
 }
 
@@ -682,7 +687,10 @@ model JournalEntryLine {
 
 model DayBook {
   id                String        @id @default(uuid())
+  bookNumber        String        @unique
   transactionDate   DateTime
+  openingBalance    Decimal       @db.Decimal(15, 2) @default(0)
+  closingBalance    Decimal       @db.Decimal(15, 2) @default(0)
   isReconciled      Boolean       @default(false)
   isClosed          Boolean       @default(false)
   systemCashBalance Decimal       @db.Decimal(15, 2)
@@ -696,8 +704,63 @@ model DayBook {
 
   // Relations
   closedBy          AdminUser?    @relation("ClosedByAdmin", fields: [closedById], references: [id])
+  transactions      DayBookTransaction[]
+  journalEntries    JournalEntry[] @relation("DayBookJournalEntries")
 
+  @@index([transactionDate])
+  @@index([bookNumber])
   @@map("day_book")
+}
+
+model DayBookTransaction {
+  id                String        @id @default(uuid())
+  dayBookId         String
+  transactionNumber String        @unique
+  transactionType   DayBookTransactionType
+  amount            Decimal       @db.Decimal(15, 2)
+  description       String
+  referenceNumber   String?
+  counterparty      String?       // Person/entity involved in transaction
+  paymentMethod     PaymentMethod @default(CASH)
+  journalEntryId    String?       // Link to auto-created journal entry
+  createdById       String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  dayBook           DayBook       @relation(fields: [dayBookId], references: [id], onDelete: Cascade)
+  journalEntry      JournalEntry? @relation("DayBookTransactionJournalEntry", fields: [journalEntryId], references: [id])
+  createdBy         AdminUser     @relation("CreatedDayBookTransaction", fields: [createdById], references: [id])
+
+  @@index([dayBookId])
+  @@index([transactionType])
+  @@index([createdAt])
+  @@map("day_book_transactions")
+}
+
+enum DayBookTransactionType {
+  CASH_RECEIPT
+  CASH_PAYMENT
+  BANK_DEPOSIT
+  BANK_WITHDRAWAL
+  INTERNAL_TRANSFER
+  LOAN_DISBURSEMENT
+  LOAN_PAYMENT
+  INTEREST_RECEIVED
+  INTEREST_PAID
+  FEE_RECEIVED
+  FEE_PAID
+  OTHER_INCOME
+  OTHER_EXPENSE
+}
+
+enum PaymentMethod {
+  CASH
+  CHEQUE
+  BANK_TRANSFER
+  ONLINE
+  CARD
+  OTHER
 }
 
 model AccountBalance {

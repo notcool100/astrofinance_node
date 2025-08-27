@@ -170,11 +170,11 @@ const LoanRepaymentPage = () => {
   const scheduleData = schedule || mockSchedule;
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    const formattedNumber = new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
+    return `Rs ${formattedNumber}`;
   };
 
   const formatDate = (dateString: string) => {

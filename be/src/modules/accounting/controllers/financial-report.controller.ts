@@ -425,11 +425,11 @@ const generateExcelReport = async (type: string, data: any): Promise<Buffer> => 
   
   // Format currency
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
+    const formattedNumber = new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
+    return `Rs ${formattedNumber}`;
   };
   
   // Format date
@@ -660,11 +660,11 @@ const generatePdfReport = async (type: string, data: any): Promise<Buffer> => {
     
     // Format currency
     const formatCurrency = (amount: number) => {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2
+      const formattedNumber = new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
       }).format(amount);
+      return `Rs ${formattedNumber}`;
     };
     
     // Format date
