@@ -110,7 +110,7 @@ async function seedAdminUsers() {
 	console.log("Seeding admin users...");
 
 	// Create default admin user
-	const passwordHash = await bcrypt.hash("Admin@123", 10);
+	const passwordHash = await bcrypt.hash("admin@123", 12);
 
 	const adminUser = await prisma.adminUser.create({
 		data: {

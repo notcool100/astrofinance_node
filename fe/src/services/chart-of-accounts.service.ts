@@ -75,8 +75,16 @@ export const deleteAccount = async (id: string): Promise<void> => {
 };
 
 // Get account structure (hierarchical)
-export const getAccountStructure = async (): Promise<Account[]> => {
-  const response = await apiService.get<{success: boolean, message: string, data: Account[]}>('/accounting/accounts/structure');
+export const getAccountStructure = async (
+  type?: string,
+  active?: boolean
+): Promise<Account[]> => {
+  const params = new URLSearchParams();
+  if (type) params.append('type', type);
+  if (active !== undefined) params.append('active', active.toString());
+  
+  const url = `/accounting/accounts/structure${params.toString() ? `?${params.toString()}` : ''}`;
+  const response = await apiService.get<{success: boolean, message: string, data: Account[]}>(url);
   return response.data || [];
 };
 

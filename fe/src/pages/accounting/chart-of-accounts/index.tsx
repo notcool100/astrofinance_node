@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { PlusIcon, PencilIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
@@ -15,25 +15,30 @@ const ChartOfAccountsPage: React.FC = () => {
   const [expandedAccounts, setExpandedAccounts] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState({
     type: '',
-    active: true
+    active: ''
   });
 
-  useEffect(() => {
-    fetchAccounts();
-  }, [filter]);
-
-  const fetchAccounts = async () => {
+  const fetchAccounts = useCallback(async () => {
     setLoading(true);
     try {
-      // For hierarchical view, use getAccountStructure
-      const data = await chartOfAccountsService.getAccountStructure();
+      // For hierarchical view, use getAccountStructure with filters
+      const data = await chartOfAccountsService.getAccountStructure(
+        filter.type || undefined,
+        filter.active ? filter.active === 'true' : undefined
+      );
       setAccounts(data);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter.type, filter.active]);
+
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
+
+
 
   const handleCreateAccount = () => {
     router.push('/accounting/chart-of-accounts/create');
@@ -66,7 +71,7 @@ const ChartOfAccountsPage: React.FC = () => {
     const { name, value } = e.target;
     setFilter(prev => ({
       ...prev,
-      [name]: name === 'active' ? value === 'true' : value
+      [name]: value
     }));
   };
 
@@ -99,6 +104,7 @@ const ChartOfAccountsPage: React.FC = () => {
               <div style={{ marginLeft: `${level * 20}px` }} className="flex items-center">
                 {hasChildren && (
                   <button
+                    type="button"
                     onClick={() => toggleExpand(account.id)}
                     className="mr-2 text-gray-500 hover:text-gray-700"
                   >
@@ -138,12 +144,14 @@ const ChartOfAccountsPage: React.FC = () => {
           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
             <div className="flex justify-end space-x-2">
               <button
+                type="button"
                 onClick={() => handleEditAccount(account.id)}
                 className="text-indigo-600 hover:text-indigo-900"
               >
                 <PencilIcon className="h-5 w-5" />
               </button>
               <button
+                type="button"
                 onClick={() => handleDeleteAccount(account.id)}
                 className="text-red-600 hover:text-red-900"
               >
@@ -205,13 +213,13 @@ const ChartOfAccountsPage: React.FC = () => {
                   <select
                     id="active"
                     name="active"
-                    value={filter.active.toString()}
+                    value={filter.active}
                     onChange={handleFilterChange}
                     className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                   >
+                    <option value="">All</option>
                     <option value="true">Active</option>
                     <option value="false">Inactive</option>
-                    <option value="">All</option>
                   </select>
                 </div>
               </div>

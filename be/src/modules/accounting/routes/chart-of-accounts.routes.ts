@@ -32,6 +32,7 @@ router.get(
 router.get(
   '/structure', 
   hasPermission('accounting.view'), 
+  validate(getAccountsValidation), 
   getAccountStructure
 );
 
