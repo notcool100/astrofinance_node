@@ -171,7 +171,7 @@ const NewAccountPage: React.FC = () => {
 					) : (
 						<AccountForm
 							userId={selectedUserId}
-							onSuccess={() => router.push("/accounts")}
+							onSuccess={() => router.push("/users/accounts")}
 						/>
 					)}
 				</div>

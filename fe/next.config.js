@@ -25,6 +25,24 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
   
+  // Webpack configuration to fix module resolution issues
+  webpack: (config, { isServer }) => {
+    // Fix for __webpack_require__.t is not a function error
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+    
+    // Ensure proper module resolution
+    config.resolve.alias = {
+      ...config.resolve.alias,
+    };
+    
+    return config;
+  },
+  
   // Exclude problematic routes from static generation
   exportPathMap: async function (
     defaultPathMap,

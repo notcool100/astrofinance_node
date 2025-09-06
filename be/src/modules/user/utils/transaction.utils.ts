@@ -28,7 +28,8 @@ export const calculateInterest = async (accountId: string): Promise<number> => {
   let interestAmount = new Decimal(0);
   
   switch (account.accountType) {
-    case AccountType.SAVINGS:
+    case AccountType.SB:
+    case AccountType.BB:
       // Simple interest calculation for savings accounts (monthly)
       // (balance * interestRate / 100) / 12
       interestAmount = balance
@@ -37,7 +38,7 @@ export const calculateInterest = async (accountId: string): Promise<number> => {
         .div(new Decimal(12));
       break;
       
-    case AccountType.FIXED_DEPOSIT:
+    case AccountType.FD:
       // For fixed deposits, interest might be calculated differently
       // This is a simplified version
       interestAmount = balance

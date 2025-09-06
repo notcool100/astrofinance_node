@@ -50,7 +50,7 @@ const iconMap: Record<
 	description: DocumentTextIcon,
 	document: DocumentIcon,
 	expenses: CurrencyDollarIcon,
-	currency_dollar: CurrencyDollarIcon,
+	currency_rupee: CurrencyDollarIcon,
 	money: CurrencyDollarIcon,
 	reports: ChartBarIcon,
 	analytics: ChartBarIcon,
@@ -115,29 +115,46 @@ function classNames(...classes: string[]) {
 
 // Helper function to determine if a navigation item is active
 function isActive(itemPath: string, currentPath: string): boolean {
-	console.log(`Checking if ${itemPath} is active for current path ${currentPath}`);
-	
+	console.log(
+		`Checking if ${itemPath} is active for current path ${currentPath}`,
+	);
+
 	// Ensure paths start with a slash for consistent comparison
 	let normalizedItemPath = itemPath;
-	if (normalizedItemPath && normalizedItemPath !== "#" && !normalizedItemPath.startsWith('/')) {
-		normalizedItemPath = '/' + normalizedItemPath;
+	if (
+		normalizedItemPath &&
+		normalizedItemPath !== "#" &&
+		!normalizedItemPath.startsWith("/")
+	) {
+		normalizedItemPath = "/" + normalizedItemPath;
 	}
-	
+
 	// Normalize paths for comparison
-	normalizedItemPath = normalizedItemPath.endsWith("/") ? normalizedItemPath.slice(0, -1) : normalizedItemPath;
-	const normalizedCurrentPath = currentPath.endsWith("/") ? currentPath.slice(0, -1) : currentPath;
-	
+	normalizedItemPath = normalizedItemPath.endsWith("/")
+		? normalizedItemPath.slice(0, -1)
+		: normalizedItemPath;
+	const normalizedCurrentPath = currentPath.endsWith("/")
+		? currentPath.slice(0, -1)
+		: currentPath;
+
 	// Exact match
 	if (normalizedItemPath === normalizedCurrentPath) {
-		console.log(`✅ Exact match: ${normalizedItemPath} === ${normalizedCurrentPath}`);
+		console.log(
+			`✅ Exact match: ${normalizedItemPath} === ${normalizedCurrentPath}`,
+		);
 		return true;
 	}
-	
+
 	// Special case for problematic paths like /user and /users
 	// These should only match exactly, not as prefixes
-	const problematicPaths = ['/user', '/users', '/staff', '/team'];
-	if (problematicPaths.includes(normalizedItemPath) || problematicPaths.includes(normalizedCurrentPath)) {
-		console.log(`❌ Problematic path requires exact match: ${normalizedItemPath} vs ${normalizedCurrentPath}`);
+	const problematicPaths = ["/user", "/users", "/staff", "/team"];
+	if (
+		problematicPaths.includes(normalizedItemPath) ||
+		problematicPaths.includes(normalizedCurrentPath)
+	) {
+		console.log(
+			`❌ Problematic path requires exact match: ${normalizedItemPath} vs ${normalizedCurrentPath}`,
+		);
 		return false;
 	}
 
@@ -149,70 +166,85 @@ function isActive(itemPath: string, currentPath: string): boolean {
 
 	// For paths with specific IDs (e.g., /users/123), we want to highlight the parent
 	// Only if the parent path is not just a root path
-	if (normalizedItemPath.length > 1 && normalizedCurrentPath.startsWith(normalizedItemPath + "/")) {
+	if (
+		normalizedItemPath.length > 1 &&
+		normalizedCurrentPath.startsWith(normalizedItemPath + "/")
+	) {
 		// Check if this is a detail page pattern
-		const remainingPath = normalizedCurrentPath.substring(normalizedItemPath.length + 1);
+		const remainingPath = normalizedCurrentPath.substring(
+			normalizedItemPath.length + 1,
+		);
 		// If the remaining path looks like an ID (no additional slashes), consider it active
 		if (remainingPath && !remainingPath.includes("/")) {
 			// Additional check for problematic paths
-			const itemLastSegment = normalizedItemPath.split('/').pop() || '';
-			const currentParentSegment = normalizedCurrentPath.split('/').slice(0, -1).pop() || '';
-			
+			const itemLastSegment = normalizedItemPath.split("/").pop() || "";
+			const currentParentSegment =
+				normalizedCurrentPath.split("/").slice(0, -1).pop() || "";
+
 			// Make sure we're not matching partial segments (e.g., /user shouldn't match /users/123)
 			if (itemLastSegment === currentParentSegment) {
-				console.log(`✅ Detail page match: ${normalizedItemPath} is parent of ${normalizedCurrentPath}`);
+				console.log(
+					`✅ Detail page match: ${normalizedItemPath} is parent of ${normalizedCurrentPath}`,
+				);
 				return true;
 			} else {
-				console.log(`❌ Detail page segment mismatch: ${itemLastSegment} !== ${currentParentSegment}`);
+				console.log(
+					`❌ Detail page segment mismatch: ${itemLastSegment} !== ${currentParentSegment}`,
+				);
 				return false;
 			}
 		}
 	}
-	
+
 	// Check for path segments to avoid partial matches
 	// For example, /user should not match /users
-	const itemSegments = normalizedItemPath.split('/').filter(Boolean);
-	const currentSegments = normalizedCurrentPath.split('/').filter(Boolean);
-	
+	const itemSegments = normalizedItemPath.split("/").filter(Boolean);
+	const currentSegments = normalizedCurrentPath.split("/").filter(Boolean);
+
 	// Special case for common prefixes like "user" vs "users"
 	// This prevents /users from matching when /user is the current path and vice versa
 	if (itemSegments.length > 0 && currentSegments.length > 0) {
 		const itemFirstSegment = itemSegments[0];
 		const currentFirstSegment = currentSegments[0];
-		
+
 		// Check if one is a prefix of the other but not exactly the same
 		if (itemFirstSegment !== currentFirstSegment) {
-			if ((itemFirstSegment.startsWith(currentFirstSegment) || currentFirstSegment.startsWith(itemFirstSegment)) &&
-				itemFirstSegment !== currentFirstSegment) {
-				console.log(`❌ Prefix mismatch: ${itemFirstSegment} vs ${currentFirstSegment}`);
+			// Allow exact matches only - don't match partial segments
+			if (itemFirstSegment !== currentFirstSegment) {
+				console.log(
+					`❌ First segment mismatch: ${itemFirstSegment} !== ${currentFirstSegment}`,
+				);
 				return false;
 			}
-			
-			console.log(`❌ First segment mismatch: ${itemFirstSegment} !== ${currentFirstSegment}`);
-			return false;
 		}
 	}
-	
+
 	// Final check: For navigation items, we want exact path matching
 	// This ensures that similar paths like /user and /users don't both get highlighted
-	const itemPathSegments = normalizedItemPath.split('/').filter(Boolean);
-	const currentPathSegments = normalizedCurrentPath.split('/').filter(Boolean);
-	
+	const itemPathSegments = normalizedItemPath.split("/").filter(Boolean);
+	const currentPathSegments = normalizedCurrentPath.split("/").filter(Boolean);
+
 	// If the segments don't match exactly, it's not active
 	if (itemPathSegments.length !== currentPathSegments.length) {
-		console.log(`❌ Path segment count mismatch: ${itemPathSegments.length} !== ${currentPathSegments.length}`);
+		console.log(
+			`❌ Path segment count mismatch: ${itemPathSegments.length} !== ${currentPathSegments.length}`,
+		);
 		return false;
 	}
-	
+
 	// Check each segment
 	for (let i = 0; i < itemPathSegments.length; i++) {
 		if (itemPathSegments[i] !== currentPathSegments[i]) {
-			console.log(`❌ Path segment mismatch at position ${i}: ${itemPathSegments[i]} !== ${currentPathSegments[i]}`);
+			console.log(
+				`❌ Path segment mismatch at position ${i}: ${itemPathSegments[i]} !== ${currentPathSegments[i]}`,
+			);
 			return false;
 		}
 	}
-	
-	console.log(`❌ No match: ${normalizedItemPath} !== ${normalizedCurrentPath}`);
+
+	console.log(
+		`❌ No match: ${normalizedItemPath} !== ${normalizedCurrentPath}`,
+	);
 	return false;
 }
 
@@ -255,15 +287,21 @@ const DynamicNavigation: React.FC = () => {
 			// Process items in this group
 			const processedItems = group.items.map((item) => {
 				// Convert API URL to our format
-                let href = item.url || "#";
+				let href = item.url || "#";
 				// Ensure URLs start with a slash for proper routing
-				if (href && href !== "#" && !href.startsWith('/')) {
-					href = '/' + href;
+				if (href && href !== "#" && !href.startsWith("/")) {
+					href = "/" + href;
 				}
-                // Prefix admin routes
-                if (href.startsWith('/roles') || href.startsWith('/navigation') || href.startsWith('/settings') || href.startsWith('/sms') || href.startsWith('/tax')) {
-                  href = '/admin' + href;
-                }
+				// Prefix admin routes
+				if (
+					href.startsWith("/roles") ||
+					href.startsWith("/navigation") ||
+					href.startsWith("/settings") ||
+					href.startsWith("/sms") ||
+					href.startsWith("/tax")
+				) {
+					href = "/admin" + href;
+				}
 				console.log(`Original href: ${href} (normalized)`);
 
 				// Get icon component from map or use default
@@ -282,14 +320,20 @@ const DynamicNavigation: React.FC = () => {
 					current: isActive(href, router.pathname),
 					children: (item.children as any)?.map((child: any) => {
 						// Process child items
-                        let childHref = child.url || "#";
+						let childHref = child.url || "#";
 						// Ensure child URLs also start with a slash
-						if (childHref && childHref !== "#" && !childHref.startsWith('/')) {
-							childHref = '/' + childHref;
+						if (childHref && childHref !== "#" && !childHref.startsWith("/")) {
+							childHref = "/" + childHref;
 						}
-                        if (childHref.startsWith('/roles') || childHref.startsWith('/navigation') || childHref.startsWith('/settings') || childHref.startsWith('/sms') || childHref.startsWith('/tax')) {
-                          childHref = '/admin' + childHref;
-                        }
+						if (
+							childHref.startsWith("/roles") ||
+							childHref.startsWith("/navigation") ||
+							childHref.startsWith("/settings") ||
+							childHref.startsWith("/sms") ||
+							childHref.startsWith("/tax")
+						) {
+							childHref = "/admin" + childHref;
+						}
 						console.log(`Original child href: ${childHref} (normalized)`);
 
 						const childIconName = child.icon?.toLowerCase() || "";
@@ -418,4 +462,3 @@ const DynamicNavigation: React.FC = () => {
 };
 
 export default DynamicNavigation;
-

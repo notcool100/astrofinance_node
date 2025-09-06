@@ -1763,7 +1763,7 @@ async function seedSystemSettings() {
 			name: "LOAN",
 			displayName: "Loan",
 			description: "Loan-related settings",
-			icon: "currency-dollar",
+			icon: "currency-rupee",
 			order: 4,
 		},
 		{

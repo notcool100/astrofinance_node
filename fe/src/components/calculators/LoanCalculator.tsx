@@ -650,8 +650,7 @@ const LoanCalculator: React.FC = () => {
 								)}
 								{selectedLoanType && (
 									<p className="mt-1 text-xs text-gray-500">
-										Min: ${selectedLoanType.minAmount.toLocaleString()} | Max: $
-										{selectedLoanType.maxAmount.toLocaleString()}
+										Min: {formatCurrency(selectedLoanType.minAmount)} | Max: {formatCurrency(selectedLoanType.maxAmount)}
 									</p>
 								)}
 							</div>
