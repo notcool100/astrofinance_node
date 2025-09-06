@@ -22,6 +22,7 @@ import {
 	UserGroupIcon,
 	UsersIcon,
 	WrenchScrewdriverIcon,
+	ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -77,6 +78,9 @@ const iconMap: Record<
 	team: UserGroupIcon,
 	tools: WrenchScrewdriverIcon,
 	maintenance: WrenchScrewdriverIcon,
+	sms: ChatBubbleLeftRightIcon,
+	message: ChatBubbleLeftRightIcon,
+	chat: ChatBubbleLeftRightIcon,
 };
 
 // Default icon to use if the icon name is not found in the map

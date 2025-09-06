@@ -572,7 +572,7 @@ async function seedNavigation() {
 			data: {
 				label: "SMS Templates",
 				icon: "sms",
-				url: "/sms-templates",
+				url: "/admin/sms",
 				order: 5,
 				groupId: adminGroup.id,
 			},
@@ -1022,6 +1022,35 @@ async function seedSmsTemplates() {
 			isActive: true,
 		},
 		{
+			name: "Transfer Confirmation",
+			category: "Transaction",
+			content:
+				"Dear {{name}}, Rs. {{amount}} has been transferred from your account {{accountNumber}} to {{recipientAccount}} on {{date}}. Available balance: Rs. {{balance}}.",
+			variables: {
+				name: "User Name",
+				accountNumber: "Account Number",
+				amount: "Amount",
+				recipientAccount: "Recipient Account",
+				date: "Date",
+				balance: "Balance",
+			},
+			characterCount: 180,
+			isActive: true,
+		},
+		{
+			name: "Loan Application Received",
+			category: "Loan",
+			content:
+				"Dear {{name}}, we have received your loan application {{applicationNumber}} for Rs. {{amount}}. We will review and get back to you within 2-3 business days.",
+			variables: {
+				name: "User Name",
+				applicationNumber: "Application Number",
+				amount: "Amount",
+			},
+			characterCount: 160,
+			isActive: true,
+		},
+		{
 			name: "Loan Approval",
 			category: "Loan",
 			content:
@@ -1035,13 +1064,25 @@ async function seedSmsTemplates() {
 			isActive: true,
 		},
 		{
+			name: "Loan Rejection",
+			category: "Loan",
+			content:
+				"Dear {{name}}, your loan application {{applicationNumber}} has been reviewed. Unfortunately, we cannot approve it at this time. Please contact us for more details.",
+			variables: {
+				name: "User Name",
+				applicationNumber: "Application Number",
+			},
+			characterCount: 160,
+			isActive: true,
+		},
+		{
 			name: "EMI Due Reminder",
 			category: "Loan",
 			content:
-				"Dear {{name}}, your loan EMI of Rs. {{amount}} for loan {{loanNumber}} is due on {{dueDate}}. Please ensure timely payment to avoid late fees.",
+				"Dear {{name}}, your EMI of Rs. {{emiAmount}} for loan {{loanNumber}} is due on {{dueDate}}. Please ensure timely payment to avoid late fees.",
 			variables: {
 				name: "User Name",
-				amount: "Amount",
+				emiAmount: "EMI Amount",
 				loanNumber: "Loan Number",
 				dueDate: "Due Date",
 			},
@@ -1052,13 +1093,51 @@ async function seedSmsTemplates() {
 			name: "EMI Payment Confirmation",
 			category: "Loan",
 			content:
-				"Dear {{name}}, we have received your EMI payment of Rs. {{amount}} for loan {{loanNumber}}. Thank you for your payment.",
+				"Dear {{name}}, we have received your EMI payment of Rs. {{emiAmount}} for loan {{loanNumber}}. Thank you for your payment.",
 			variables: {
 				name: "User Name",
-				amount: "Amount",
+				emiAmount: "EMI Amount",
 				loanNumber: "Loan Number",
 			},
 			characterCount: 130,
+			isActive: true,
+		},
+		{
+			name: "Marketing Offer",
+			category: "Marketing",
+			content:
+				"Dear {{name}}, {{offer}} is now available! Valid until {{validUntil}}. Contact us at {{contactNumber}} for more details.",
+			variables: {
+				name: "User Name",
+				offer: "Special Offer",
+				validUntil: "Valid Until",
+				contactNumber: "Contact Number",
+			},
+			characterCount: 140,
+			isActive: true,
+		},
+		{
+			name: "System Maintenance",
+			category: "System",
+			content:
+				"Dear {{name}}, our system will be under maintenance on {{date}} from {{time}}. We apologize for any inconvenience.",
+			variables: {
+				name: "User Name",
+				date: "Date",
+				time: "Time",
+			},
+			characterCount: 120,
+			isActive: true,
+		},
+		{
+			name: "Password Reset",
+			category: "System",
+			content:
+				"Dear {{name}}, your password has been reset successfully. If you didn't request this, please contact us immediately.",
+			variables: {
+				name: "User Name",
+			},
+			characterCount: 110,
 			isActive: true,
 		},
 	];
@@ -1083,14 +1162,32 @@ async function seedSmsTemplates() {
 	const withdrawalTemplate = await prisma.smsTemplate.findFirst({
 		where: { name: "Withdrawal Confirmation" },
 	});
+	const transferTemplate = await prisma.smsTemplate.findFirst({
+		where: { name: "Transfer Confirmation" },
+	});
+	const loanApplicationTemplate = await prisma.smsTemplate.findFirst({
+		where: { name: "Loan Application Received" },
+	});
 	const loanApprovalTemplate = await prisma.smsTemplate.findFirst({
 		where: { name: "Loan Approval" },
+	});
+	const loanRejectionTemplate = await prisma.smsTemplate.findFirst({
+		where: { name: "Loan Rejection" },
 	});
 	const emiDueTemplate = await prisma.smsTemplate.findFirst({
 		where: { name: "EMI Due Reminder" },
 	});
 	const emiPaymentTemplate = await prisma.smsTemplate.findFirst({
 		where: { name: "EMI Payment Confirmation" },
+	});
+	const marketingTemplate = await prisma.smsTemplate.findFirst({
+		where: { name: "Marketing Offer" },
+	});
+	const maintenanceTemplate = await prisma.smsTemplate.findFirst({
+		where: { name: "System Maintenance" },
+	});
+	const passwordResetTemplate = await prisma.smsTemplate.findFirst({
+		where: { name: "Password Reset" },
 	});
 
 	const events = [
@@ -1113,9 +1210,27 @@ async function seedSmsTemplates() {
 			isActive: true,
 		},
 		{
+			eventCode: "TRANSFER",
+			description: "Triggered when a transfer is made",
+			templateId: transferTemplate?.id,
+			isActive: true,
+		},
+		{
+			eventCode: "LOAN_APPLICATION",
+			description: "Triggered when a loan application is received",
+			templateId: loanApplicationTemplate?.id,
+			isActive: true,
+		},
+		{
 			eventCode: "LOAN_APPROVAL",
 			description: "Triggered when a loan is approved",
 			templateId: loanApprovalTemplate?.id,
+			isActive: true,
+		},
+		{
+			eventCode: "LOAN_REJECTION",
+			description: "Triggered when a loan is rejected",
+			templateId: loanRejectionTemplate?.id,
 			isActive: true,
 		},
 		{
@@ -1128,6 +1243,24 @@ async function seedSmsTemplates() {
 			eventCode: "EMI_PAYMENT",
 			description: "Triggered when an EMI payment is received",
 			templateId: emiPaymentTemplate?.id,
+			isActive: true,
+		},
+		{
+			eventCode: "MARKETING",
+			description: "Triggered for marketing campaigns",
+			templateId: marketingTemplate?.id,
+			isActive: true,
+		},
+		{
+			eventCode: "SYSTEM_MAINTENANCE",
+			description: "Triggered for system maintenance notifications",
+			templateId: maintenanceTemplate?.id,
+			isActive: true,
+		},
+		{
+			eventCode: "PASSWORD_RESET",
+			description: "Triggered when password is reset",
+			templateId: passwordResetTemplate?.id,
 			isActive: true,
 		},
 	];
