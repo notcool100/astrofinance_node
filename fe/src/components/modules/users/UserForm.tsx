@@ -8,6 +8,7 @@ interface UserFormProps {
 	onSubmit: (data: any) => void;
 	isSubmitting: boolean;
 	isEditMode: boolean;
+	fieldErrors?: Record<string, string>;
 }
 
 const UserForm: React.FC<UserFormProps> = ({
@@ -15,6 +16,7 @@ const UserForm: React.FC<UserFormProps> = ({
 	onSubmit,
 	isSubmitting,
 	isEditMode,
+	fieldErrors = {},
 }) => {
 	const [formData, setFormData] = useState<CreateUserData | UpdateUserData>({
 		fullName: user?.fullName || "",
@@ -74,8 +76,17 @@ const UserForm: React.FC<UserFormProps> = ({
 								value={formData.fullName || ""}
 								onChange={handleChange}
 								required
-								className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${
+									fieldErrors.fullName
+										? "border-red-300 focus:border-red-500"
+										: "border-gray-300 focus:border-primary-500"
+								}`}
 							/>
+							{fieldErrors.fullName && (
+								<p className="mt-1 text-sm text-red-600">
+									{fieldErrors.fullName}
+								</p>
+							)}
 						</div>
 					</div>
 
@@ -138,9 +149,19 @@ const UserForm: React.FC<UserFormProps> = ({
 								id="contactNumber"
 								value={formData.contactNumber || ""}
 								onChange={handleChange}
+								placeholder="e.g., +1234567890 or 1234567890"
 								required
-								className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${
+									fieldErrors.contactNumber
+										? "border-red-300 focus:border-red-500"
+										: "border-gray-300 focus:border-primary-500"
+								}`}
 							/>
+							{fieldErrors.contactNumber && (
+								<p className="mt-1 text-sm text-red-600">
+									{fieldErrors.contactNumber}
+								</p>
+							)}
 						</div>
 					</div>
 
@@ -159,8 +180,15 @@ const UserForm: React.FC<UserFormProps> = ({
 								id="email"
 								value={formData.email || ""}
 								onChange={handleChange}
-								className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${
+									fieldErrors.email
+										? "border-red-300 focus:border-red-500"
+										: "border-gray-300 focus:border-primary-500"
+								}`}
 							/>
+							{fieldErrors.email && (
+								<p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+							)}
 						</div>
 					</div>
 
@@ -225,8 +253,17 @@ const UserForm: React.FC<UserFormProps> = ({
 								value={formData.identificationNumber || ""}
 								onChange={handleChange}
 								required
-								className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${
+									fieldErrors.identificationNumber
+										? "border-red-300 focus:border-red-500"
+										: "border-gray-300 focus:border-primary-500"
+								}`}
 							/>
+							{fieldErrors.identificationNumber && (
+								<p className="mt-1 text-sm text-red-600">
+									{fieldErrors.identificationNumber}
+								</p>
+							)}
 						</div>
 					</div>
 

@@ -177,7 +177,7 @@ export const createUser = async (req: Request, res: Response) => {
 			...user,
 			passwordHash: "[REDACTED]",
 		});
-
+		console.log("User created:", user);
 		// Return user data
 		return res.status(201).json(user);
 	} catch (error) {

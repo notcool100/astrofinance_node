@@ -27,23 +27,19 @@ import { getUserAccountsValidation } from "../validations/account.validation";
 
 const router = Router();
 
-// Temporarily disable authentication for testing
-// router.use(authenticateAdmin);
+// Enable authentication for admin operations
+router.use(authenticateAdmin);
 
 // Get all users
 router.get(
 	"/",
-	// hasPermission('users.view'),
+	hasPermission("users.view"),
 	validate(getUsersValidation),
 	getAllUsers,
 );
 
 // Get user by ID
-router.get(
-	"/:id",
-	// hasPermission('users.view'),
-	getUserById,
-);
+router.get("/:id", hasPermission("users.view"), getUserById);
 
 // Create new user
 router.post(
