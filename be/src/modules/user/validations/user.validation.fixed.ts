@@ -10,12 +10,6 @@ export const createUserValidation = [
 		.isLength({ min: 3, max: 100 })
 		.withMessage("Full name must be between 3 and 100 characters"),
 
-	body("email")
-		.optional()
-		.isEmail()
-		.withMessage("Invalid email format")
-		.normalizeEmail(),
-
 	body("contactNumber")
 		.notEmpty()
 		.withMessage("Contact number is required")
