@@ -10,6 +10,7 @@ import MainLayout from "../../../components/layout/MainLayout";
 import ProtectedRoute from "../../../components/common/ProtectedRoute";
 import Button from "../../../components/common/Button";
 import ClientOnly from "../../../components/common/ClientOnly";
+import SearchableDropdown from "../../../components/common/SearchableDropdown";
 import transactionService from "../../../services/transaction.service";
 import { getAccountById, getAllAccounts } from "../../../services/user.service";
 import { formatCurrency } from "../../../utils/dateUtils";
@@ -17,6 +18,7 @@ import { formatCurrency } from "../../../utils/dateUtils";
 import type React from "react";
 import type { CreateTransactionData } from "../../../services/transaction.service";
 import type { Account } from "../../../services/user.service";
+import type { SearchableDropdownOption } from "../../../components/common/SearchableDropdown";
 
 const CreateTransaction: React.FC = () => {
 	const router = useRouter();
@@ -37,6 +39,15 @@ const CreateTransaction: React.FC = () => {
 		transactionDate: format(new Date(), "yyyy-MM-dd"),
 	});
 	const [errors, setErrors] = useState<Record<string, string>>({});
+
+	// Convert accounts to dropdown options
+	const getAccountOptions = (): SearchableDropdownOption[] => {
+		return allAccounts.map((acc) => ({
+			value: acc.id,
+			label: `${acc.accountNumber} (${acc.accountType}) - ${formatCurrency(acc.balance)} - ${acc.user?.fullName || "Unknown User"}`,
+			disabled: acc.status !== "ACTIVE",
+		}));
+	};
 
 	const fetchAllAccounts = useCallback(async () => {
 		setAccountsLoading(true);
@@ -144,11 +155,6 @@ const CreateTransaction: React.FC = () => {
 	) => {
 		const { name, value } = e.target;
 		setFormData((prev) => ({ ...prev, [name]: value }));
-
-		// If account is selected, fetch its details
-		if (name === "accountId" && value) {
-			fetchAccountDetails(value);
-		}
 	};
 
 	const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -356,34 +362,27 @@ const CreateTransaction: React.FC = () => {
 										>
 											Select Account <span className="text-red-500">*</span>
 										</label>
-										<div className="mt-1 relative">
-											{accountsLoading && (
-												<div className="absolute right-2 top-2">
-													<div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-primary-500"></div>
-												</div>
-											)}
-											<select
-												id="accountId"
-												name="accountId"
+										<div className="mt-1">
+											<SearchableDropdown
+												options={getAccountOptions()}
 												value={formData.accountId}
-												onChange={handleInputChange}
-												className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+												onChange={(value) => {
+													setFormData((prev) => ({
+														...prev,
+														accountId: value,
+													}));
+													// If account is selected, fetch its details
+													if (value) {
+														fetchAccountDetails(value);
+													}
+												}}
+												placeholder="Select an account"
 												disabled={accountsLoading || !!accountId}
-											>
-												<option value="">Select an account</option>
-												{allAccounts.map((acc) => (
-													<option key={acc.id} value={acc.id}>
-														{acc.accountNumber} ({acc.accountType}) -{" "}
-														{formatCurrency(acc.balance)} -{" "}
-														{acc.user?.fullName || "Unknown User"}
-													</option>
-												))}
-											</select>
-											{errors.accountId && (
-												<p className="mt-2 text-sm text-red-600">
-													{errors.accountId}
-												</p>
-											)}
+												loading={accountsLoading}
+												error={errors.accountId}
+												searchPlaceholder="Search accounts..."
+												noResultsText="No accounts found"
+											/>
 											{!accountsLoading && allAccounts.length === 0 && (
 												<p className="mt-2 text-sm text-amber-600">
 													No active accounts found
