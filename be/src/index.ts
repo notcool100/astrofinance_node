@@ -6,6 +6,7 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import path from "path";
 import prisma from "./config/database";
 import logger from "./config/logger";
 import { errorHandler, notFound } from "./common/middleware/error.middleware";
@@ -55,6 +56,9 @@ const corsOptions =
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+
+// Serve static files from uploads directory
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Basic route
 app.get("/", (req, res) => {

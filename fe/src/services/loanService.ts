@@ -85,6 +85,7 @@ export interface LoanDocument {
 	id: string;
 	loanApplicationId: string;
 	documentType: string;
+	documentName: string;
 	documentUrl: string;
 	uploadDate: string;
 	status?: "PENDING" | "UPLOADED" | "VERIFIED" | "REJECTED";
@@ -205,12 +206,41 @@ const loanService = {
 
 	uploadLoanDocument: (id: string, formData: FormData) =>
 		apiService.upload<LoanDocument>(
-			`/loan/applications/${id}/documents`,
+			`/loan/documents/application/${id}`,
 			formData,
 		),
 
+	uploadMultipleDocuments: async (id: string, formData: FormData) => {
+		// Extract files and metadata from formData
+		const files = formData.getAll("files") as File[];
+		const documentTypes = formData.getAll("documentTypes") as string[];
+		const documentNames = formData.getAll("documentNames") as string[];
+
+		const uploadPromises = files.map((file, index) => {
+			const singleFormData = new FormData();
+			singleFormData.append("document", file);
+			singleFormData.append("documentType", documentTypes[index]);
+			singleFormData.append("documentName", documentNames[index]);
+
+			return apiService.upload<LoanDocument>(
+				`/loan/documents/application/${id}`,
+				singleFormData,
+			);
+		});
+
+		return Promise.all(uploadPromises);
+	},
+
 	getLoanDocuments: (id: string) =>
-		apiService.get<LoanDocument[]>(`/loan/applications/${id}/documents`),
+		apiService.get<LoanDocument[]>(`/loan/documents/application/${id}`),
+
+	verifyLoanDocument: (
+		id: string,
+		data: { status: string; verificationNotes: string },
+	) => apiService.put<LoanDocument>(`/loan/documents/verify/${id}`, data),
+
+	deleteLoanDocument: (id: string) =>
+		apiService.delete(`/loan/documents/${id}`),
 
 	submitDocuments: (id: string) =>
 		apiService.post<LoanApplication>(

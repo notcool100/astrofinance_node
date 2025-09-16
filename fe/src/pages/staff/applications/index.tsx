@@ -17,6 +17,7 @@ import {
 	EyeIcon,
 	CheckCircleIcon,
 	XCircleIcon,
+	DocumentIcon,
 } from "@heroicons/react/24/outline";
 
 // Types for loan application data
@@ -348,6 +349,17 @@ const LoanApplicationsPage = () => {
 															title="View Details"
 														>
 															<EyeIcon className="h-5 w-5" />
+														</button>
+														<button
+															onClick={() =>
+																router.push(
+																	`/staff/applications/${application.id}/documents`,
+																)
+															}
+															className="text-blue-600 hover:text-blue-900"
+															title="View Documents"
+														>
+															<DocumentIcon className="h-5 w-5" />
 														</button>
 														{application.status === "PENDING" && (
 															<>
