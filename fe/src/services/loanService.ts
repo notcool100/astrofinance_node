@@ -200,7 +200,7 @@ const loanService = {
 
 	updateLoanApplicationStatus: (
 		id: string,
-		data: { status: string; notes?: string },
+		data: { status: string; rejectionReason?: string },
 	) => apiService.put<LoanApplication>(`/loan/applications/${id}/status`, data),
 
 	uploadLoanDocument: (id: string, formData: FormData) =>
