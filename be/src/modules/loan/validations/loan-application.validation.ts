@@ -68,7 +68,7 @@ export const updateLoanApplicationStatusValidation = [
 	body("status")
 		.notEmpty()
 		.withMessage("Status is required")
-		.isIn(["PENDING", "APPROVED", "REJECTED"])
+		.isIn(["PENDING", "APPROVED", "REJECTED", "DISBURSED"])
 		.withMessage("Invalid status"),
 
 	body("rejectionReason")

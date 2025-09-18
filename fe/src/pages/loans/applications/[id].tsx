@@ -142,6 +142,23 @@ const LoanApplicationDetailPage = () => {
 		},
 	);
 
+	// Disburse loan mutation
+	const disburseMutation = useMutation(
+		() =>
+			loanService.updateLoanApplicationStatus(id as string, {
+				status: "DISBURSED",
+			}),
+		{
+			onSuccess: () => {
+				toast.success("Loan disbursed successfully");
+				refetch();
+			},
+			onError: (error: any) => {
+				toast.error(error?.message || "Failed to disburse loan");
+			},
+		},
+	);
+
 	// Mock data for now
 	const mockApplication: LoanApplication = {
 		id: (id as string) || "LA-1001",
@@ -249,6 +266,17 @@ const LoanApplicationDetailPage = () => {
 		await rejectMutation.mutateAsync();
 	};
 
+	const handleDisburseLoan = async () => {
+		if (
+			!confirm(
+				"Are you sure you want to disburse this loan? This action cannot be undone.",
+			)
+		) {
+			return;
+		}
+		await disburseMutation.mutateAsync();
+	};
+
 	// Use mock data for now
 	const applicationData = application || mockApplication;
 
@@ -303,6 +331,18 @@ const LoanApplicationDetailPage = () => {
 										Reject Application
 									</Button>
 								</>
+							)}
+
+							{/* Disburse Loan Action */}
+							{applicationData.status === "APPROVED" && (
+								<Button
+									variant="primary"
+									icon={<CheckCircleIcon className="h-5 w-5 mr-1" />}
+									onClick={handleDisburseLoan}
+									isLoading={disburseMutation.isLoading}
+								>
+									Disburse Loan
+								</Button>
 							)}
 						</div>
 					</div>
@@ -663,21 +703,60 @@ const LoanApplicationDetailPage = () => {
 					)}
 
 					{applicationData.status === "APPROVED" && (
-						<Card title="Application Approved">
+						<Card title="Loan Disbursement Panel">
 							<div className="px-4 py-5 sm:p-6">
-								<div className="flex items-center">
+								<div className="flex items-center mb-4">
 									<div className="flex-shrink-0">
 										<CheckCircleIcon className="h-8 w-8 text-green-500" />
 									</div>
 									<div className="ml-3">
 										<h3 className="text-lg font-medium text-gray-900">
-											Application Approved
+											Application Approved - Ready for Disbursement
 										</h3>
 										<p className="text-sm text-gray-500">
-											This application has been approved and is ready for
-											disbursement.
+											This application has been approved. You can now disburse
+											the loan amount to the applicant.
 										</p>
 									</div>
+								</div>
+
+								<div className="bg-green-50 border border-green-200 rounded-md p-4 mb-4">
+									<div className="flex">
+										<div className="flex-shrink-0">
+											<CheckCircleIcon className="h-5 w-5 text-green-400" />
+										</div>
+										<div className="ml-3">
+											<h4 className="text-sm font-medium text-green-800">
+												Pre-Disbursement Checklist
+											</h4>
+											<div className="mt-2 text-sm text-green-700">
+												<ul className="list-disc list-inside space-y-1">
+													<li>All required documents have been verified</li>
+													<li>Application meets all eligibility criteria</li>
+													<li>Loan amount and terms are confirmed</li>
+													<li>Applicant's account details are verified</li>
+													<li>Disbursement authorization is complete</li>
+												</ul>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div className="flex space-x-3">
+									<Button
+										variant="primary"
+										icon={<CheckCircleIcon className="h-5 w-5 mr-2" />}
+										onClick={handleDisburseLoan}
+										isLoading={disburseMutation.isLoading}
+									>
+										Disburse Loan Amount
+									</Button>
+									<Button
+										variant="outline"
+										onClick={() => router.push(`/loans/${applicationData.id}`)}
+									>
+										View Loan Details
+									</Button>
 								</div>
 							</div>
 						</Card>
@@ -710,21 +789,62 @@ const LoanApplicationDetailPage = () => {
 					)}
 
 					{applicationData.status === "DISBURSED" && (
-						<Card title="Loan Disbursed">
+						<Card title="Loan Successfully Disbursed">
 							<div className="px-4 py-5 sm:p-6">
-								<div className="flex items-center">
+								<div className="flex items-center mb-4">
 									<div className="flex-shrink-0">
 										<CheckCircleIcon className="h-8 w-8 text-green-500" />
 									</div>
 									<div className="ml-3">
 										<h3 className="text-lg font-medium text-gray-900">
-											Loan Disbursed
+											Loan Successfully Disbursed
 										</h3>
 										<p className="text-sm text-gray-500">
 											This loan has been successfully disbursed and is now
-											active.
+											active. The applicant can now manage their loan.
 										</p>
 									</div>
+								</div>
+
+								<div className="bg-green-50 border border-green-200 rounded-md p-4 mb-4">
+									<div className="flex">
+										<div className="flex-shrink-0">
+											<CheckCircleIcon className="h-5 w-5 text-green-400" />
+										</div>
+										<div className="ml-3">
+											<h4 className="text-sm font-medium text-green-800">
+												Post-Disbursement Actions
+											</h4>
+											<div className="mt-2 text-sm text-green-700">
+												<ul className="list-disc list-inside space-y-1">
+													<li>Loan is now active and accruing interest</li>
+													<li>EMI schedule has been generated</li>
+													<li>
+														Applicant can make payments through the system
+													</li>
+													<li>Loan monitoring and management is available</li>
+													<li>Support team can assist with any queries</li>
+												</ul>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div className="flex space-x-3">
+									<Button
+										variant="primary"
+										onClick={() => router.push(`/loans/${applicationData.id}`)}
+									>
+										View Active Loan
+									</Button>
+									<Button
+										variant="outline"
+										onClick={() =>
+											router.push(`/loans/${applicationData.id}/payments`)
+										}
+									>
+										Manage Payments
+									</Button>
 								</div>
 							</div>
 						</Card>

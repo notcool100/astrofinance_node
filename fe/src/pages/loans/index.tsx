@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "react-query";
 import { useRouter } from "next/router";
-import { useAuth } from "@/contexts/AuthContext";
 import MainLayout from "@/components/layout/MainLayout";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
@@ -11,7 +10,6 @@ import ProtectedRoute from "@/components/common/ProtectedRoute";
 import loanService, { Loan } from "@/services/loanService";
 import { Column } from "react-table";
 import {
-	PlusIcon,
 	FunnelIcon,
 	CalculatorIcon,
 	EyeIcon,
@@ -39,19 +37,12 @@ const LoanStatusBadge = ({ status }: { status: string }) => {
 
 const LoansPage = () => {
 	const router = useRouter();
-	const { user } = useAuth();
 	const [filter, setFilter] = useState({
 		status: "",
 		loanType: "",
 	});
 	const [search, setSearch] = useState("");
 	const [searchInput, setSearchInput] = useState("");
-
-	// Check if user is admin/staff
-	const isAdmin = user?.roles?.some(
-		(role: { id: string; name: string }) =>
-			role.name === "admin" || role.name === "staff",
-	);
 
 	// Fetch loans
 	const { data: loansData, isLoading } = useQuery(
@@ -124,70 +115,49 @@ const LoansPage = () => {
 							<EyeIcon className="h-4 w-4" />
 						</button>
 
-						{/* Admin/Staff Actions */}
-						{isAdmin && (
-							<>
-								<button
-									type="button"
-									onClick={() =>
-										router.push(`/loans/${row.original.id}/documents`)
-									}
-									className="text-blue-600 hover:text-blue-900"
-									title="View Documents"
-								>
-									<DocumentIcon className="h-4 w-4" />
-								</button>
+						{/* Admin Actions */}
+						<button
+							type="button"
+							onClick={() => router.push(`/loans/${row.original.id}/documents`)}
+							className="text-blue-600 hover:text-blue-900"
+							title="View Documents"
+						>
+							<DocumentIcon className="h-4 w-4" />
+						</button>
 
-								{row.original.status === "ACTIVE" && (
-									<button
-										type="button"
-										onClick={() =>
-											router.push(`/loans/${row.original.id}/payments`)
-										}
-										className="text-green-600 hover:text-green-900"
-										title="Manage Payments"
-									>
-										Pay
-									</button>
-								)}
-
-								{row.original.status === "ACTIVE" && (
-									<button
-										type="button"
-										onClick={() => {
-											if (
-												confirm("Are you sure you want to close this loan?")
-											) {
-												// Add close loan functionality
-												toast.success("Loan closure initiated");
-											}
-										}}
-										className="text-red-600 hover:text-red-900"
-										title="Close Loan"
-									>
-										<XCircleIcon className="h-4 w-4" />
-									</button>
-								)}
-							</>
-						)}
-
-						{/* Regular User Actions */}
-						{!isAdmin && row.original.status === "ACTIVE" && (
+						{row.original.status === "ACTIVE" && (
 							<button
 								type="button"
 								onClick={() =>
 									router.push(`/loans/${row.original.id}/payments`)
 								}
-								className="text-primary-600 hover:text-primary-900"
+								className="text-green-600 hover:text-green-900"
+								title="Manage Payments"
 							>
 								Pay
+							</button>
+						)}
+
+						{row.original.status === "ACTIVE" && (
+							<button
+								type="button"
+								onClick={() => {
+									if (confirm("Are you sure you want to close this loan?")) {
+										// Add close loan functionality
+										toast.success("Loan closure initiated");
+									}
+								}}
+								className="text-red-600 hover:text-red-900"
+								title="Close Loan"
+							>
+								<XCircleIcon className="h-4 w-4" />
 							</button>
 						)}
 					</div>
 				),
 			},
 		],
-		[router, isAdmin],
+		[router],
 	);
 
 	const handleRowClick = (row: any) => {
@@ -282,42 +252,38 @@ const LoansPage = () => {
 
 	return (
 		<ProtectedRoute>
-			<MainLayout title="My Loans">
+			<MainLayout title="Loan Management">
 				<div className="space-y-6">
 					<div className="flex justify-between items-center">
 						<div>
 							<h1 className="text-2xl font-semibold text-gray-900">
-								{isAdmin ? "Loan Management" : "My Loans"}
+								Loan Management System
 							</h1>
 							<p className="mt-1 text-sm text-gray-500">
-								{isAdmin
-									? "Manage and monitor all loans in the system"
-									: "View and manage your active and past loans"}
+								Manage and monitor all loans in the system
 							</p>
 						</div>
 						<div className="flex space-x-3">
-							{isAdmin && (
-								<form onSubmit={handleSearch} className="flex">
-									<div className="relative rounded-md shadow-sm">
-										<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-											<MagnifyingGlassIcon
-												className="h-5 w-5 text-gray-400"
-												aria-hidden="true"
-											/>
-										</div>
-										<input
-											type="text"
-											className="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
-											placeholder="Search loans..."
-											value={searchInput}
-											onChange={(e) => setSearchInput(e.target.value)}
+							<form onSubmit={handleSearch} className="flex">
+								<div className="relative rounded-md shadow-sm">
+									<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+										<MagnifyingGlassIcon
+											className="h-5 w-5 text-gray-400"
+											aria-hidden="true"
 										/>
 									</div>
-									<Button type="submit" variant="secondary" className="ml-2">
-										Search
-									</Button>
-								</form>
-							)}
+									<input
+										type="text"
+										className="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
+										placeholder="Search loans..."
+										value={searchInput}
+										onChange={(e) => setSearchInput(e.target.value)}
+									/>
+								</div>
+								<Button type="submit" variant="secondary" className="ml-2">
+									Search
+								</Button>
+							</form>
 							<Button
 								variant="secondary"
 								icon={<CalculatorIcon className="h-5 w-5 mr-2" />}
@@ -325,94 +291,85 @@ const LoansPage = () => {
 							>
 								Loan Calculator
 							</Button>
-							<Button
-								variant="primary"
-								icon={<PlusIcon className="h-5 w-5 mr-2" />}
-								onClick={() => router.push("/loans/apply")}
-							>
-								Apply for Loan
-							</Button>
 						</div>
 					</div>
 
-					{/* Admin Verification Status */}
-					{isAdmin && (
-						<Card>
-							<div className="px-4 py-5 sm:p-6">
-								<div className="flex items-center">
-									<div className="flex-shrink-0">
-										<CheckCircleIcon className="h-8 w-8 text-green-500" />
-									</div>
-									<div className="ml-3">
-										<h3 className="text-lg font-medium text-gray-900">
-											Loan Management Panel
-										</h3>
-										<p className="text-sm text-gray-500">
-											Monitor and manage all loans in the system. View
-											documents, manage payments, and track loan performance.
-										</p>
+					{/* Admin Loan Management Panel */}
+					<Card>
+						<div className="px-4 py-5 sm:p-6">
+							<div className="flex items-center">
+								<div className="flex-shrink-0">
+									<CheckCircleIcon className="h-8 w-8 text-green-500" />
+								</div>
+								<div className="ml-3">
+									<h3 className="text-lg font-medium text-gray-900">
+										Loan Management Panel
+									</h3>
+									<p className="text-sm text-gray-500">
+										Monitor and manage all loans in the system. View documents,
+										manage payments, and track loan performance.
+									</p>
+								</div>
+							</div>
+							<div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+								<div className="bg-green-50 border border-green-200 rounded-md p-4">
+									<div className="flex">
+										<div className="flex-shrink-0">
+											<CheckCircleIcon className="h-5 w-5 text-green-400" />
+										</div>
+										<div className="ml-3">
+											<h4 className="text-sm font-medium text-green-800">
+												Active Loans
+											</h4>
+											<p className="text-sm text-green-700">
+												{
+													mockLoans.filter((loan) => loan.status === "ACTIVE")
+														.length
+												}{" "}
+												loans currently active
+											</p>
+										</div>
 									</div>
 								</div>
-								<div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-									<div className="bg-green-50 border border-green-200 rounded-md p-4">
-										<div className="flex">
-											<div className="flex-shrink-0">
-												<CheckCircleIcon className="h-5 w-5 text-green-400" />
-											</div>
-											<div className="ml-3">
-												<h4 className="text-sm font-medium text-green-800">
-													Active Loans
-												</h4>
-												<p className="text-sm text-green-700">
-													{
-														mockLoans.filter((loan) => loan.status === "ACTIVE")
-															.length
-													}{" "}
-													loans currently active
-												</p>
-											</div>
+								<div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+									<div className="flex">
+										<div className="flex-shrink-0">
+											<DocumentIcon className="h-5 w-5 text-blue-400" />
+										</div>
+										<div className="ml-3">
+											<h4 className="text-sm font-medium text-blue-800">
+												Document Management
+											</h4>
+											<p className="text-sm text-blue-700">
+												View and manage loan documents
+											</p>
 										</div>
 									</div>
-									<div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-										<div className="flex">
-											<div className="flex-shrink-0">
-												<DocumentIcon className="h-5 w-5 text-blue-400" />
-											</div>
-											<div className="ml-3">
-												<h4 className="text-sm font-medium text-blue-800">
-													Document Management
-												</h4>
-												<p className="text-sm text-blue-700">
-													View and manage loan documents
-												</p>
-											</div>
+								</div>
+								<div className="bg-purple-50 border border-purple-200 rounded-md p-4">
+									<div className="flex">
+										<div className="flex-shrink-0">
+											<CalculatorIcon className="h-5 w-5 text-purple-400" />
 										</div>
-									</div>
-									<div className="bg-purple-50 border border-purple-200 rounded-md p-4">
-										<div className="flex">
-											<div className="flex-shrink-0">
-												<CalculatorIcon className="h-5 w-5 text-purple-400" />
-											</div>
-											<div className="ml-3">
-												<h4 className="text-sm font-medium text-purple-800">
-													Payment Management
-												</h4>
-												<p className="text-sm text-purple-700">
-													Track and manage loan payments
-												</p>
-											</div>
+										<div className="ml-3">
+											<h4 className="text-sm font-medium text-purple-800">
+												Payment Management
+											</h4>
+											<p className="text-sm text-purple-700">
+												Track and manage loan payments
+											</p>
 										</div>
 									</div>
 								</div>
 							</div>
-						</Card>
-					)}
+						</div>
+					</Card>
 
 					<Card>
 						<div className="px-4 py-5 sm:p-6">
 							<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
 								<h3 className="text-lg font-medium leading-6 text-gray-900">
-									{isAdmin ? "All Loans" : "Loan List"}
+									All Loans
 								</h3>
 								<div className="mt-3 sm:mt-0 flex items-center space-x-2">
 									<FunnelIcon className="h-5 w-5 text-gray-400" />
@@ -448,11 +405,7 @@ const LoansPage = () => {
 								data={loansData?.data || mockLoans}
 								isLoading={isLoading}
 								onRowClick={handleRowClick}
-								emptyMessage={
-									isAdmin
-										? "No loans found in the system. Loans will appear here when applications are approved and disbursed."
-										: "You don't have any loans yet. Apply for a loan to get started."
-								}
+								emptyMessage="No loans found in the system. Loans will appear here when applications are approved and disbursed."
 							/>
 						</div>
 					</Card>
@@ -461,16 +414,16 @@ const LoansPage = () => {
 						<Card>
 							<div className="px-4 py-5 sm:p-6">
 								<h3 className="text-lg font-medium leading-6 text-gray-900">
-									{isAdmin ? "System Overview" : "Active Loans"}
+									System Overview
 								</h3>
 								<div className="mt-2 max-w-xl text-sm text-gray-500">
 									<p>
-										{isAdmin ? "System has" : "You have"}{" "}
+										System has{" "}
 										{
 											mockLoans.filter((loan) => loan.status === "ACTIVE")
 												.length
 										}{" "}
-										{isAdmin ? "total active loans" : "active loans"}.
+										total active loans.
 									</p>
 								</div>
 								<div className="mt-5">
@@ -478,7 +431,7 @@ const LoansPage = () => {
 										<div className="sm:flex sm:items-start">
 											<div className="mt-3 sm:mt-0 sm:ml-4">
 												<div className="text-sm font-medium text-gray-900">
-													{isAdmin ? "Total Outstanding" : "Total Outstanding"}
+													Total Outstanding
 												</div>
 												<div className="mt-1 text-sm text-gray-600 sm:flex sm:items-center">
 													<div>
@@ -496,7 +449,7 @@ const LoansPage = () => {
 												variant="secondary"
 												onClick={() => router.push("/loans/applications")}
 											>
-												{isAdmin ? "Manage Applications" : "View Applications"}
+												Manage Applications
 											</Button>
 										</div>
 									</div>
@@ -507,13 +460,12 @@ const LoansPage = () => {
 						<Card>
 							<div className="px-4 py-5 sm:p-6">
 								<h3 className="text-lg font-medium leading-6 text-gray-900">
-									{isAdmin ? "Payment Overview" : "Monthly Payments"}
+									Payment Overview
 								</h3>
 								<div className="mt-2 max-w-xl text-sm text-gray-500">
 									<p>
-										{isAdmin
-											? "Total monthly EMI payments across all active loans in the system."
-											: "Your total monthly EMI payments across all active loans."}
+										Total monthly EMI payments across all active loans in the
+										system.
 									</p>
 								</div>
 								<div className="mt-5">
@@ -521,7 +473,7 @@ const LoansPage = () => {
 										<div className="sm:flex sm:items-start">
 											<div className="mt-3 sm:mt-0 sm:ml-4">
 												<div className="text-sm font-medium text-gray-900">
-													{isAdmin ? "Total System EMI" : "Total Monthly EMI"}
+													Total System EMI
 												</div>
 												<div className="mt-1 text-sm text-gray-600 sm:flex sm:items-center">
 													<div>
@@ -539,7 +491,7 @@ const LoansPage = () => {
 												variant="secondary"
 												onClick={() => router.push("/loans/payments")}
 											>
-												{isAdmin ? "Payment Management" : "Payment History"}
+												Payment Management
 											</Button>
 										</div>
 									</div>
@@ -550,48 +502,27 @@ const LoansPage = () => {
 						<Card>
 							<div className="px-4 py-5 sm:p-6">
 								<h3 className="text-lg font-medium leading-6 text-gray-900">
-									{isAdmin ? "Admin Tools" : "Need Help?"}
+									Admin Tools
 								</h3>
 								<div className="mt-2 max-w-xl text-sm text-gray-500">
 									<p>
-										{isAdmin
-											? "Access administrative tools and system management features."
-											: "If you have any questions about your loans or need assistance, our support team is here to help."}
+										Access administrative tools and system management features.
 									</p>
 								</div>
 								<div className="mt-5">
 									<div className="flex space-x-4">
-										{isAdmin ? (
-											<>
-												<Button
-													variant="outline"
-													onClick={() => router.push("/admin/dashboard")}
-												>
-													Admin Dashboard
-												</Button>
-												<Button
-													variant="outline"
-													onClick={() => router.push("/admin/settings")}
-												>
-													System Settings
-												</Button>
-											</>
-										) : (
-											<>
-												<Button
-													variant="outline"
-													onClick={() => router.push("/help")}
-												>
-													Help Center
-												</Button>
-												<Button
-													variant="outline"
-													onClick={() => router.push("/contact")}
-												>
-													Contact Support
-												</Button>
-											</>
-										)}
+										<Button
+											variant="outline"
+											onClick={() => router.push("/admin/dashboard")}
+										>
+											Admin Dashboard
+										</Button>
+										<Button
+											variant="outline"
+											onClick={() => router.push("/admin/settings")}
+										>
+											System Settings
+										</Button>
 									</div>
 								</div>
 							</div>
