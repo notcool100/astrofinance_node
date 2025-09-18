@@ -188,7 +188,7 @@ const loanService = {
 		page?: number;
 		limit?: number;
 	}) =>
-		apiService.get<{ data: LoanApplication[]; pagination: any }>(
+		apiService.get<{ data: LoanApplication[]; pagination: any; totalAmount: number }>(
 			"/loan/applications",
 			params,
 		),

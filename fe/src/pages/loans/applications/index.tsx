@@ -218,13 +218,14 @@ const LoanApplicationsPage = () => {
 		const disbursed = filteredApplications.filter(
 			(app: any) => app.status === "DISBURSED",
 		).length;
-		const totalAmount = filteredApplications.reduce(
+		// Use totalAmount from backend if available, else fallback to client calculation
+		const totalAmount = applicationsData?.totalAmount ?? filteredApplications.reduce(
 			(sum: number, app: any) => sum + app.amount,
 			0,
 		);
 
 		return { total, pending, approved, rejected, disbursed, totalAmount };
-	}, [filteredApplications]);
+	}, [filteredApplications, applicationsData]);
 
 	// Show error state if there's an error
 	if (error) {

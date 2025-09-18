@@ -31,7 +31,14 @@ export const getAllLoanApplications = async (req: Request, res: Response) => {
     
     // Get total count for pagination
     const totalCount = await prisma.loanApplication.count({ where });
-    
+
+    // Get sum of all loan amounts (matching filter)
+    const totalAmountResult = await prisma.loanApplication.aggregate({
+      _sum: { amount: true },
+      where
+    });
+    const totalAmount = totalAmountResult._sum.amount || 0;
+
     // Get loan applications with pagination
     const applications = await prisma.loanApplication.findMany({
       where,
@@ -64,9 +71,10 @@ export const getAllLoanApplications = async (req: Request, res: Response) => {
       skip,
       take: limitNumber
     });
-    
+
     return res.json({
       data: applications,
+      totalAmount,
       pagination: {
         total: totalCount,
         page: pageNumber,
