@@ -9,7 +9,6 @@ import ProtectedRoute from "@/components/common/ProtectedRoute";
 import loanService, { type LoanApplication } from "@/services/loanService";
 import {
 	ArrowLeftIcon,
-	DocumentArrowUpIcon,
 	CheckCircleIcon,
 	XCircleIcon,
 	DocumentIcon,
@@ -17,7 +16,6 @@ import {
 } from "@heroicons/react/24/outline";
 import { useMutation } from "react-query";
 import { toast } from "react-hot-toast";
-import DocumentUploadModal from "@/components/modals/DocumentUploadModal";
 
 const ApplicationStatusBadge = ({ status }: { status: string }) => {
 	switch (status) {
@@ -37,8 +35,6 @@ const ApplicationStatusBadge = ({ status }: { status: string }) => {
 const LoanApplicationDetailPage = () => {
 	const router = useRouter();
 	const { id } = router.query;
-	const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [selectedDocument, setSelectedDocument] = useState<{
 		id: string;
 		documentType: string;
@@ -47,6 +43,7 @@ const LoanApplicationDetailPage = () => {
 	} | null>(null);
 	const [verificationNotes, setVerificationNotes] = useState("");
 	const [isVerifying, setIsVerifying] = useState(false);
+	const [rejectionReason, setRejectionReason] = useState("");
 
 	// Fetch loan application details
 	const { data: application, refetch } = useQuery(
@@ -110,6 +107,41 @@ const LoanApplicationDetailPage = () => {
 		},
 	);
 
+	// Approve application mutation
+	const approveMutation = useMutation(
+		() =>
+			loanService.updateLoanApplicationStatus(id as string, {
+				status: "APPROVED",
+			}),
+		{
+			onSuccess: () => {
+				toast.success("Application approved successfully");
+				refetch();
+			},
+			onError: (error: any) => {
+				toast.error(error?.message || "Failed to approve application");
+			},
+		},
+	);
+
+	// Reject application mutation
+	const rejectMutation = useMutation(
+		() =>
+			loanService.updateLoanApplicationStatus(id as string, {
+				status: "REJECTED",
+				rejectionReason: rejectionReason.trim(),
+			}),
+		{
+			onSuccess: () => {
+				toast.success("Application rejected successfully");
+				refetch();
+			},
+			onError: (error: any) => {
+				toast.error(error?.message || "Failed to reject application");
+			},
+		},
+	);
+
 	// Mock data for now
 	const mockApplication: LoanApplication = {
 		id: (id as string) || "LA-1001",
@@ -138,31 +170,6 @@ const LoanApplicationDetailPage = () => {
 			lateFeeAmount: 500,
 			isActive: true,
 		},
-	};
-
-	const handleUploadDocuments = () => {
-		setIsUploadModalOpen(true);
-	};
-
-	const handleDocumentUpload = async (formData: FormData) => {
-		setIsSubmitting(true);
-		try {
-			// Upload multiple documents
-			await loanService.uploadMultipleDocuments(id as string, formData);
-
-			toast.success("Documents uploaded successfully");
-			setIsUploadModalOpen(false);
-			refetch();
-			refetchDocuments();
-		} catch (error: unknown) {
-			toast.error(
-				(error as { message?: string })?.message ||
-					"Failed to upload documents",
-			);
-			console.error("Error uploading documents:", error);
-		} finally {
-			setIsSubmitting(false);
-		}
 	};
 
 	const handleViewDocument = (documentUrl: string) => {
@@ -220,25 +227,26 @@ const LoanApplicationDetailPage = () => {
 		}
 	};
 
-	const handleCancelApplication = async () => {
-		if (!confirm("Are you sure you want to cancel this application?")) return;
-
-		setIsSubmitting(true);
-		try {
-			// In a real implementation, we would call the API
-			// await loanService.updateLoanApplicationStatus(id as string, { status: 'CANCELLED' });
-
-			// Mock success
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-
-			toast.success("Application cancelled successfully");
-			router.push("/loans/applications");
-		} catch (error) {
-			toast.error("Failed to cancel application");
-			console.error("Error cancelling application:", error);
-		} finally {
-			setIsSubmitting(false);
+	const handleApproveApplication = async () => {
+		if (!confirm("Are you sure you want to approve this loan application?")) {
+			return;
 		}
+		await approveMutation.mutateAsync();
+	};
+
+	const handleRejectApplication = async () => {
+		if (!rejectionReason.trim()) {
+			toast.error("Please provide a reason for rejection");
+			return;
+		}
+		if (rejectionReason.trim().length < 10) {
+			toast.error("Rejection reason must be at least 10 characters long");
+			return;
+		}
+		if (!confirm("Are you sure you want to reject this loan application?")) {
+			return;
+		}
+		await rejectMutation.mutateAsync();
 	};
 
 	// Use mock data for now
@@ -259,28 +267,42 @@ const LoanApplicationDetailPage = () => {
 								Back to Applications
 							</Button>
 							<h1 className="text-2xl font-semibold text-gray-900">
-								Application {applicationData.id}
+								Application Review - {applicationData.id}
 							</h1>
 						</div>
 						<div className="flex space-x-2">
-							{applicationData.status === "APPROVED" && (
-								<Button
-									variant="primary"
-									icon={<DocumentArrowUpIcon className="h-5 w-5 mr-1" />}
-									onClick={handleUploadDocuments}
-								>
-									Upload Documents
-								</Button>
-							)}
+							{/* Admin Actions */}
 							{applicationData.status === "PENDING" && (
-								<Button
-									variant="danger"
-									icon={<XCircleIcon className="h-5 w-5 mr-1" />}
-									onClick={handleCancelApplication}
-									isLoading={isSubmitting}
-								>
-									Cancel Application
-								</Button>
+								<>
+									<Button
+										variant="success"
+										icon={<CheckCircleIcon className="h-5 w-5 mr-1" />}
+										onClick={handleApproveApplication}
+										isLoading={approveMutation.isLoading}
+									>
+										Approve Application
+									</Button>
+									<Button
+										variant="danger"
+										icon={<XCircleIcon className="h-5 w-5 mr-1" />}
+										onClick={() => {
+											const reason = prompt(
+												"Please provide a reason for rejection:",
+											);
+											if (reason && reason.trim().length >= 10) {
+												setRejectionReason(reason.trim());
+												handleRejectApplication();
+											} else if (reason) {
+												toast.error(
+													"Rejection reason must be at least 10 characters long",
+												);
+											}
+										}}
+										isLoading={rejectMutation.isLoading}
+									>
+										Reject Application
+									</Button>
+								</>
 							)}
 						</div>
 					</div>
@@ -289,7 +311,7 @@ const LoanApplicationDetailPage = () => {
 						<div className="px-4 py-5 sm:p-6">
 							<div className="flex justify-between items-center mb-6">
 								<h3 className="text-lg font-medium leading-6 text-gray-900">
-									Application Details
+									Application Details & Verification
 								</h3>
 								<ApplicationStatusBadge status={applicationData.status} />
 							</div>
@@ -361,9 +383,132 @@ const LoanApplicationDetailPage = () => {
 										</dd>
 									</div>
 								)}
+
+								{/* Admin-specific information */}
+								<div className="sm:col-span-2">
+									<dt className="text-sm font-medium text-gray-500">
+										Application ID
+									</dt>
+									<dd className="mt-1 text-sm text-gray-900 font-mono">
+										{applicationData.id}
+									</dd>
+								</div>
+								<div>
+									<dt className="text-sm font-medium text-gray-500">User ID</dt>
+									<dd className="mt-1 text-sm text-gray-900 font-mono">
+										{applicationData.userId}
+									</dd>
+								</div>
+								<div>
+									<dt className="text-sm font-medium text-gray-500">
+										Application Number
+									</dt>
+									<dd className="mt-1 text-sm text-gray-900">
+										{applicationData.applicationNumber || "N/A"}
+									</dd>
+								</div>
+								<div>
+									<dt className="text-sm font-medium text-gray-500">
+										Created Date
+									</dt>
+									<dd className="mt-1 text-sm text-gray-900">
+										{applicationData.createdAt
+											? new Date(applicationData.createdAt).toLocaleDateString()
+											: "N/A"}
+									</dd>
+								</div>
+								<div>
+									<dt className="text-sm font-medium text-gray-500">
+										Last Updated
+									</dt>
+									<dd className="mt-1 text-sm text-gray-900">
+										{applicationData.updatedAt
+											? new Date(applicationData.updatedAt).toLocaleDateString()
+											: "N/A"}
+									</dd>
+								</div>
 							</div>
 						</div>
 					</Card>
+
+					{/* Admin Verification Panel */}
+					{applicationData.status === "PENDING" && (
+						<Card title="Admin Verification Panel">
+							<div className="px-4 py-5 sm:p-6">
+								<div className="flex items-center mb-4">
+									<div className="flex-shrink-0">
+										<CheckCircleIcon className="h-8 w-8 text-yellow-500" />
+									</div>
+									<div className="ml-3">
+										<h3 className="text-lg font-medium text-gray-900">
+											Application Review Required
+										</h3>
+										<p className="text-sm text-gray-500">
+											Review the application details and documents before making
+											a decision.
+										</p>
+									</div>
+								</div>
+
+								<div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4">
+									<div className="flex">
+										<div className="flex-shrink-0">
+											<XCircleIcon className="h-5 w-5 text-yellow-400" />
+										</div>
+										<div className="ml-3">
+											<h4 className="text-sm font-medium text-yellow-800">
+												Verification Checklist
+											</h4>
+											<div className="mt-2 text-sm text-yellow-700">
+												<ul className="list-disc list-inside space-y-1">
+													<li>
+														Verify applicant identity and contact information
+													</li>
+													<li>
+														Review financial information and income details
+													</li>
+													<li>Check all uploaded documents for authenticity</li>
+													<li>Ensure applicant meets eligibility criteria</li>
+													<li>Verify loan amount and tenure are appropriate</li>
+												</ul>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div className="flex space-x-3">
+									<Button
+										variant="success"
+										icon={<CheckCircleIcon className="h-5 w-5 mr-2" />}
+										onClick={handleApproveApplication}
+										isLoading={approveMutation.isLoading}
+									>
+										Approve Application
+									</Button>
+									<Button
+										variant="danger"
+										icon={<XCircleIcon className="h-5 w-5 mr-2" />}
+										onClick={() => {
+											const reason = prompt(
+												"Please provide a detailed reason for rejection:",
+											);
+											if (reason && reason.trim().length >= 10) {
+												setRejectionReason(reason.trim());
+												handleRejectApplication();
+											} else if (reason) {
+												toast.error(
+													"Rejection reason must be at least 10 characters long",
+												);
+											}
+										}}
+										isLoading={rejectMutation.isLoading}
+									>
+										Reject Application
+									</Button>
+								</div>
+							</div>
+						</Card>
+					)}
 
 					<Card title="Application Timeline">
 						<div className="px-4 py-5 sm:p-6">
@@ -496,17 +641,21 @@ const LoanApplicationDetailPage = () => {
 						</div>
 					</Card>
 
+					{/* Admin Status Information */}
 					{applicationData.status === "PENDING" && (
-						<Card title="What's Next?">
+						<Card title="Application Status">
 							<div className="px-4 py-5 sm:p-6">
-								<p className="text-sm text-gray-500">
-									Your application is currently under review. This process
-									typically takes 1-2 business days. You will be notified once a
-									decision has been made.
-								</p>
-								<div className="mt-4 flex items-center">
-									<div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-										Pending Review
+								<div className="flex items-center">
+									<div className="flex-shrink-0">
+										<CheckCircleIcon className="h-8 w-8 text-yellow-500" />
+									</div>
+									<div className="ml-3">
+										<h3 className="text-lg font-medium text-gray-900">
+											Application Under Review
+										</h3>
+										<p className="text-sm text-gray-500">
+											This application is pending admin review and verification.
+										</p>
 									</div>
 								</div>
 							</div>
@@ -514,46 +663,47 @@ const LoanApplicationDetailPage = () => {
 					)}
 
 					{applicationData.status === "APPROVED" && (
-						<Card title="Next Steps">
+						<Card title="Application Approved">
 							<div className="px-4 py-5 sm:p-6">
-								<p className="text-sm text-gray-500">
-									Congratulations! Your loan application has been approved.
-									Please upload the required documents to proceed with the loan
-									disbursement.
-								</p>
-								<div className="mt-4">
-									<Button
-										variant="primary"
-										icon={<DocumentArrowUpIcon className="h-5 w-5 mr-1" />}
-										onClick={handleUploadDocuments}
-									>
-										Upload Documents
-									</Button>
+								<div className="flex items-center">
+									<div className="flex-shrink-0">
+										<CheckCircleIcon className="h-8 w-8 text-green-500" />
+									</div>
+									<div className="ml-3">
+										<h3 className="text-lg font-medium text-gray-900">
+											Application Approved
+										</h3>
+										<p className="text-sm text-gray-500">
+											This application has been approved and is ready for
+											disbursement.
+										</p>
+									</div>
 								</div>
 							</div>
 						</Card>
 					)}
 
 					{applicationData.status === "REJECTED" && (
-						<Card title="Application Status">
+						<Card title="Application Rejected">
 							<div className="px-4 py-5 sm:p-6">
-								<p className="text-sm text-gray-500">
-									We regret to inform you that your loan application has been
-									rejected.
-									{applicationData.notes && (
-										<span>
-											{" "}
-											Reason: <strong>{applicationData.notes}</strong>
-										</span>
-									)}
-								</p>
-								<div className="mt-4">
-									<Button
-										variant="primary"
-										onClick={() => router.push("/loans/apply")}
-									>
-										Apply for a New Loan
-									</Button>
+								<div className="flex items-center">
+									<div className="flex-shrink-0">
+										<XCircleIcon className="h-8 w-8 text-red-500" />
+									</div>
+									<div className="ml-3">
+										<h3 className="text-lg font-medium text-gray-900">
+											Application Rejected
+										</h3>
+										<p className="text-sm text-gray-500">
+											This application has been rejected.
+											{applicationData.notes && (
+												<span>
+													{" "}
+													Reason: <strong>{applicationData.notes}</strong>
+												</span>
+											)}
+										</p>
+									</div>
 								</div>
 							</div>
 						</Card>
@@ -562,24 +712,26 @@ const LoanApplicationDetailPage = () => {
 					{applicationData.status === "DISBURSED" && (
 						<Card title="Loan Disbursed">
 							<div className="px-4 py-5 sm:p-6">
-								<p className="text-sm text-gray-500">
-									Your loan has been successfully disbursed. You can view the
-									loan details and repayment schedule in the Loans section.
-								</p>
-								<div className="mt-4">
-									<Button
-										variant="primary"
-										onClick={() => router.push("/loans")}
-									>
-										View My Loans
-									</Button>
+								<div className="flex items-center">
+									<div className="flex-shrink-0">
+										<CheckCircleIcon className="h-8 w-8 text-green-500" />
+									</div>
+									<div className="ml-3">
+										<h3 className="text-lg font-medium text-gray-900">
+											Loan Disbursed
+										</h3>
+										<p className="text-sm text-gray-500">
+											This loan has been successfully disbursed and is now
+											active.
+										</p>
+									</div>
 								</div>
 							</div>
 						</Card>
 					)}
 
 					{/* Documents Section */}
-					<Card title="Uploaded Documents">
+					<Card title="Document Verification & Management">
 						<div className="px-4 py-5 sm:p-6">
 							{isLoadingDocuments ? (
 								<div className="flex justify-center items-center py-8">
@@ -589,15 +741,33 @@ const LoanApplicationDetailPage = () => {
 								<div className="text-center py-8">
 									<DocumentIcon className="mx-auto h-12 w-12 text-gray-400" />
 									<h3 className="mt-2 text-sm font-medium text-gray-900">
-										No documents uploaded
+										No documents uploaded yet
 									</h3>
 									<p className="mt-1 text-sm text-gray-500">
-										Upload the required documents to proceed with your loan
-										application.
+										The applicant has not uploaded any documents yet. Documents
+										will appear here once uploaded.
 									</p>
 								</div>
 							) : (
 								<div className="space-y-4">
+									{/* Admin Document Verification Summary */}
+									<div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
+										<div className="flex">
+											<div className="flex-shrink-0">
+												<CheckCircleIcon className="h-5 w-5 text-blue-400" />
+											</div>
+											<div className="ml-3">
+												<h4 className="text-sm font-medium text-blue-800">
+													Document Verification Status
+												</h4>
+												<p className="text-sm text-blue-700">
+													Review and verify each document before approving the
+													application.
+												</p>
+											</div>
+										</div>
+									</div>
+
 									{documents.map((document) => (
 										<div
 											key={document.id}
@@ -633,6 +803,7 @@ const LoanApplicationDetailPage = () => {
 														<EyeIcon className="h-4 w-4 mr-1" />
 														View
 													</Button>
+													{/* Admin Document Verification */}
 													{(document.status === "PENDING" ||
 														document.status === "UPLOADED") && (
 														<Button
@@ -651,7 +822,7 @@ const LoanApplicationDetailPage = () => {
 															}}
 														>
 															<CheckCircleIcon className="h-4 w-4 mr-1" />
-															Verify
+															Verify Document
 														</Button>
 													)}
 												</div>
@@ -672,42 +843,13 @@ const LoanApplicationDetailPage = () => {
 					</Card>
 				</div>
 
-				<DocumentUploadModal
-					isOpen={isUploadModalOpen}
-					onClose={() => setIsUploadModalOpen(false)}
-					onUpload={handleDocumentUpload}
-					isSubmitting={isSubmitting}
-					requiredDocuments={[
-						{
-							id: "identity",
-							name: "Identity Proof",
-							description: "Aadhar Card, PAN Card, Passport, etc.",
-						},
-						{
-							id: "address",
-							name: "Address Proof",
-							description: "Utility Bill, Rental Agreement, etc.",
-						},
-						{
-							id: "income",
-							name: "Income Proof",
-							description: "Salary Slips, Bank Statements, etc.",
-						},
-						{
-							id: "photo",
-							name: "Photograph",
-							description: "Recent passport-sized photograph",
-						},
-					]}
-				/>
-
 				{/* Document Verification Modal */}
 				{selectedDocument && (
 					<div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
 						<div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
 							<div className="mt-3">
 								<h3 className="text-lg font-medium text-gray-900 mb-4">
-									Verify Document
+									Admin Document Verification
 								</h3>
 								<div className="mb-4">
 									<p className="text-sm text-gray-600">
@@ -759,16 +901,16 @@ const LoanApplicationDetailPage = () => {
 										}
 										icon={<XCircleIcon className="h-5 w-5 mr-1" />}
 									>
-										Reject
+										Reject Document
 									</Button>
 									<Button
-										variant="primary"
+										variant="success"
 										onClick={() => handleVerifyDocument("VERIFIED")}
 										isLoading={isVerifying}
 										disabled={isVerifying}
 										icon={<CheckCircleIcon className="h-5 w-5 mr-1" />}
 									>
-										Approve
+										Approve Document
 									</Button>
 								</div>
 							</div>
