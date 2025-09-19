@@ -116,7 +116,7 @@ stages:
 
     - script: |
         mkdir -p /var/www/astrofinance/frontend-live
-        tar -xzf $(System.ArtifactsDirectory)/frontend/frontend_live.tar.gz -C /var/www/astrofinance/frontend-live
+        tar -xzf $(System.ArtifactsDirectory)/frontend_live/frontend_live.tar.gz -C /var/www/astrofinance/frontend-live
         echo "Frontend deployed to /var/www/astrofinance/frontend-live"
       displayName: 'Extract Frontend Build'
 
@@ -137,7 +137,7 @@ stages:
 
     - script: |
         mkdir -p /var/www/astrofinance/backend-live
-        tar -xzf $(System.ArtifactsDirectory)/backend/backend-live.tar.gz -C /var/www/astrofinance/backend-live
+        tar -xzf $(System.ArtifactsDirectory)/backend_live/backend-live.tar.gz -C /var/www/astrofinance/backend-live
         echo "Backend deployed to /var/www/astrofinance/backend-live"
       displayName: 'Extract Backend Build'
 
