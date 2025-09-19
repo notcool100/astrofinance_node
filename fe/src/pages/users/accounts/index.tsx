@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import { PlusIcon } from "@heroicons/react/24/outline";
-import MainLayout from "@/components/layout/MainLayout";
-import ProtectedRoute from "@/components/common/ProtectedRoute";
-import Button from "@/components/common/Button";
-import Table from "@/components/common/Table";
-import Badge from "@/components/common/Badge";
-import { formatDate, formatCurrency } from "@/utils/dateUtils";
-import { getAllAccounts, Account } from "@/services/user.service";
-import { Column } from "react-table";
+import Link from "next/link";
+import type React from "react";
+import { useEffect, useState } from "react";
+import type { Column } from "react-table";
 import { toast } from "react-toastify";
+import Badge from "@/components/common/Badge";
+import Button from "@/components/common/Button";
+import ProtectedRoute from "@/components/common/ProtectedRoute";
+import Table from "@/components/common/Table";
+import MainLayout from "@/components/layout/MainLayout";
+import { type Account, getAllAccounts } from "@/services/user.service";
+import { formatCurrency, formatDate } from "@/utils/dateUtils";
 
 const AccountsPage: React.FC = () => {
 	const [accounts, setAccounts] = useState<Account[]>([]);
@@ -41,7 +42,7 @@ const AccountsPage: React.FC = () => {
 			setTotalCount(response.pagination.total);
 		} catch (error) {
 			console.error("Error fetching accounts:", error);
-			toast.error("Failed to load accounts");
+			//	toast.error("Failed to load accounts");
 		} finally {
 			setLoading(false);
 		}

@@ -4,7 +4,161 @@ import logger from "../../../config/logger";
 import { createAuditLog } from "../../../common/utils/audit.util";
 import { AuditAction } from "@prisma/client";
 import { ApiError } from "../../../common/middleware/error.middleware";
-import { generateApplicationNumber } from "../utils/loan.utils";
+import {
+	generateApplicationNumber,
+	generateLoanNumber,
+	calculateEMI,
+	generateRepaymentSchedule,
+	InterestType,
+} from "../utils/loan.utils";
+
+// Helper function to convert Prisma Decimal to number
+const toNumber = (value: any): number => {
+	return typeof value === "number" ? value : parseFloat(value.toString());
+};
+
+// Helper function to convert string to InterestType
+const convertInterestType = (type: string): InterestType => {
+	return type === "FLAT" ? InterestType.FLAT : InterestType.DIMINISHING;
+};
+
+/**
+ * Create loan record and installments from approved application
+ */
+const createLoanFromApplication = async (application: any, req: Request) => {
+	try {
+		// Get application with relations
+		const fullApplication = await prisma.loanApplication.findUnique({
+			where: { id: application.id },
+			include: {
+				user: true,
+				loanType: true,
+			},
+		});
+
+		if (!fullApplication) {
+			throw new ApiError(404, "Application not found");
+		}
+
+		// Check if loan already exists for this application
+		const existingLoan = await prisma.loan.findFirst({
+			where: { applicationId: application.id },
+		});
+
+		if (existingLoan) {
+			throw new ApiError(
+				409,
+				"Loan has already been created for this application",
+			);
+		}
+
+		// Generate loan number
+		const loanNumber = await generateLoanNumber();
+
+		// Calculate EMI
+		const principalAmount = toNumber(fullApplication.amount);
+		const interestRate = toNumber(fullApplication.loanType.interestRate);
+		const interestType = convertInterestType(
+			fullApplication.loanType.interestType,
+		);
+		const emiAmount = calculateEMI(
+			principalAmount,
+			interestRate,
+			fullApplication.tenure,
+			interestType,
+		);
+
+		// Calculate total interest and total amount
+		let totalInterest = 0;
+		if (interestType === InterestType.FLAT) {
+			totalInterest =
+				(principalAmount * interestRate * fullApplication.tenure) / 1200;
+		} else {
+			totalInterest = emiAmount * fullApplication.tenure - principalAmount;
+		}
+
+		const totalAmount = principalAmount + totalInterest;
+		const processingFee = 0; // You can add processing fee calculation here
+
+		// Set disbursement date and first payment date
+		const disbursementDateTime = new Date();
+		const firstPaymentDateTime = new Date();
+		firstPaymentDateTime.setMonth(firstPaymentDateTime.getMonth() + 1); // First payment after 1 month
+
+		// Calculate last payment date
+		const lastPaymentDateTime = new Date(firstPaymentDateTime);
+		lastPaymentDateTime.setMonth(
+			lastPaymentDateTime.getMonth() + fullApplication.tenure - 1,
+		);
+
+		// Create loan and installments in a transaction
+		const loan = await prisma.$transaction(async (tx) => {
+			// Create loan
+			const newLoan = await tx.loan.create({
+				data: {
+					loanNumber,
+					applicationId: fullApplication.id,
+					userId: fullApplication.userId,
+					loanTypeId: fullApplication.loanTypeId,
+					principalAmount: fullApplication.amount,
+					interestRate: fullApplication.loanType.interestRate,
+					tenure: fullApplication.tenure,
+					emiAmount,
+					disbursementDate: disbursementDateTime,
+					firstPaymentDate: firstPaymentDateTime,
+					lastPaymentDate: lastPaymentDateTime,
+					totalInterest,
+					totalAmount,
+					processingFee,
+					outstandingPrincipal: fullApplication.amount,
+					outstandingInterest: totalInterest,
+					status: "ACTIVE",
+				},
+			});
+
+			// Generate repayment schedule
+			const installments = generateRepaymentSchedule(
+				principalAmount,
+				interestRate,
+				fullApplication.tenure,
+				interestType,
+				disbursementDateTime,
+				firstPaymentDateTime,
+			);
+
+			// Create installments
+			for (const installment of installments) {
+				await tx.loanInstallment.create({
+					data: {
+						loanId: newLoan.id,
+						installmentNumber: installment.installmentNumber,
+						dueDate: installment.dueDate,
+						principalAmount: installment.principalAmount,
+						interestAmount: installment.interestAmount,
+						totalAmount: installment.totalAmount,
+						paidAmount: 0,
+						remainingPrincipal: installment.remainingPrincipal || 0,
+						status: "PENDING",
+					},
+				});
+			}
+
+			return newLoan;
+		});
+
+		// Create audit log for loan creation
+		await createAuditLog(req, "Loan", loan.id, AuditAction.CREATE, null, loan);
+
+		logger.info(
+			`Loan created successfully: ${loan.loanNumber} for application ${application.id}`,
+		);
+		return loan;
+	} catch (error) {
+		logger.error(`Create loan from application error: ${error}`);
+		if (error instanceof ApiError) throw error;
+		throw new ApiError(500, "Failed to create loan from application");
+	}
+};
 
 /**
  * Get all loan applications
@@ -179,16 +333,16 @@ export const createLoanApplication = async (req: Request, res: Response) => {
 			throw new ApiError(400, "Loan type is not active");
 		}
 
-		// Validate loan amount
 		if (amount < loanType.minAmount || amount > loanType.maxAmount) {
+			// Validate loan amount
 			throw new ApiError(
 				400,
 				`Loan amount must be between ${loanType.minAmount} and ${loanType.maxAmount}`,
 			);
 		}
 
-		// Validate loan tenure
 		if (tenure < loanType.minTenure || tenure > loanType.maxTenure) {
+			// Validate loan tenure
 			throw new ApiError(
 				400,
 				`Loan tenure must be between ${loanType.minTenure} and ${loanType.maxTenure} months`,
@@ -327,12 +481,21 @@ export const updateLoanApplicationStatus = async (
 			},
 		});
 
+		// If status is DISBURSED, create the loan record and installments
+		if (status === "DISBURSED") {
+			await createLoanFromApplication(updatedApplication, req);
+		}
+
 		// Create audit log
 		await createAuditLog(
 			req,
 			"LoanApplication",
 			updatedApplication.id,
-			status === "APPROVED" ? AuditAction.APPROVE : AuditAction.REJECT,
+			status === "APPROVED"
+				? AuditAction.APPROVE
+				: status === "REJECTED"
+					? AuditAction.REJECT
+					: AuditAction.DISBURSE,
 			existingApplication,
 			updatedApplication,
 		);

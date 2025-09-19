@@ -151,7 +151,7 @@ model User {
   dateOfBirth             DateTime
   gender                  String?
   contactNumber           String
-  email                   String?                      @unique
+  email                   String?                      
   address                 String
   idType                  String
   idNumber                String

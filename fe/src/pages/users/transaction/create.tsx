@@ -1,24 +1,23 @@
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/router";
 import {
 	ArrowLeftIcon,
 	ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { format } from "date-fns";
+import { useRouter } from "next/router";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import MainLayout from "../../../components/layout/MainLayout";
-import ProtectedRoute from "../../../components/common/ProtectedRoute";
 import Button from "../../../components/common/Button";
 import ClientOnly from "../../../components/common/ClientOnly";
+import ProtectedRoute from "../../../components/common/ProtectedRoute";
+import type { SearchableDropdownOption } from "../../../components/common/SearchableDropdown";
 import SearchableDropdown from "../../../components/common/SearchableDropdown";
+import MainLayout from "../../../components/layout/MainLayout";
+import type { CreateTransactionData } from "../../../services/transaction.service";
 import transactionService from "../../../services/transaction.service";
+import type { Account } from "../../../services/user.service";
 import { getAccountById, getAllAccounts } from "../../../services/user.service";
 import { formatCurrency } from "../../../utils/dateUtils";
-
-import type React from "react";
-import type { CreateTransactionData } from "../../../services/transaction.service";
-import type { Account } from "../../../services/user.service";
-import type { SearchableDropdownOption } from "../../../components/common/SearchableDropdown";
 
 const CreateTransaction: React.FC = () => {
 	const router = useRouter();
@@ -32,7 +31,7 @@ const CreateTransaction: React.FC = () => {
 	const [formData, setFormData] = useState<CreateTransactionData>({
 		accountId: "",
 		transactionType: "DEPOSIT",
-		amount: 0,
+		amount: "",
 		description: "",
 		referenceNumber: "",
 		transactionMethod: "",

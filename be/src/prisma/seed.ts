@@ -446,7 +446,7 @@ async function seedNavigation() {
 			data: {
 				label: "EMI Calculator",
 				icon: "calculate",
-				url: "/emi-calculator",
+				url: "/calculator",
 				order: 4,
 				groupId: loanGroup.id,
 			},
