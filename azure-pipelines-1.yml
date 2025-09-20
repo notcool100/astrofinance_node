@@ -146,7 +146,7 @@ stages:
 - stage: DeployProduction
   displayName: 'Deploy to Production'
   dependsOn: PreDeploy
-  condition: and(succeeded('PreDeploy'))
+  condition: succeeded('PreDeploy')
   jobs:
   - job: DeployFrontendProd
     displayName: 'Deploy Frontend to Production'
@@ -375,7 +375,7 @@ stages:
 - stage: PostDeploy
   displayName: 'Post-Deployment Verification'
   dependsOn: DeployProduction
-  condition: and(succeeded('DeployProduction'))
+  condition: succeeded('DeployProduction')
   jobs:
   - job: PostDeployJob
     displayName: 'Verify Production Deployment'
