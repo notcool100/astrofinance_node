@@ -1,0 +1,148 @@
+trigger:
+  branches:
+    include:
+      - main
+      
+  paths:
+    include:
+      - fe/*
+      - be/*
+
+pool:
+  name: 'Astro'
+
+variables:
+  nodeVersion: '24.x'
+
+stages:
+- stage: BuildFrontend
+  displayName: 'Build Frontend'
+  jobs:
+  - job: BuildFrontendJob
+    displayName: 'Build Next.js App'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '$(nodeVersion)'
+      displayName: 'Install Node.js'
+    
+    - script: |
+        cd fe
+        npm install
+      displayName: 'Install Frontend Dependencies'
+    
+    - script: |
+        cd fe
+        npm run type-check
+      displayName: 'Run TypeScript Check'
+    
+    - script: |
+        cd fe
+        npm run build
+      displayName: 'Build Frontend Application'
+    
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: 'fe'
+        includeRootFolder: false
+        archiveType: 'tar'
+        tarCompression: 'gz'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/frontend_live.tar.gz'
+        replaceExistingArchive: true
+    
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/frontend_live.tar.gz'
+        ArtifactName: 'frontend'
+        publishLocation: 'Container'
+
+- stage: BuildBackend
+  displayName: 'Build Backend'
+  jobs:
+  - job: BuildBackendJob
+    displayName: 'Build Node.js API'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '$(nodeVersion)'
+      displayName: 'Install Node.js'
+    
+    - script: |
+        cd be
+        npm install
+      displayName: 'Install Backend Dependencies'
+
+    - script: |
+        cd be
+        npm run prisma:generate
+      displayName: 'Generate Prisma Client'
+    
+    - script: |
+        cd be
+        npm run build
+      displayName: 'Build Backend Application'
+    
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: 'be'
+        includeRootFolder: false
+        archiveType: 'tar'
+        tarCompression: 'gz'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/backend_live.tar.gz'
+        replaceExistingArchive: true
+    
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/backend_live.tar.gz'
+        ArtifactName: 'backend'
+        publishLocation: 'Container'
+
+- stage: DeployDev
+  displayName: 'Deploy to Development'
+  dependsOn: 
+    - BuildFrontend
+    - BuildBackend
+  condition: and(succeeded('BuildFrontend'), succeeded('BuildBackend'), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - job: DeployFrontendDev
+    displayName: 'Deploy Frontend to Dev'
+    steps:
+    - task: DownloadBuildArtifacts@1
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'frontend'
+        downloadPath: '$(System.ArtifactsDirectory)/frontend_live'
+
+    - script: |
+        mkdir -p /var/www/astrofinance/frontend-live
+        tar -xzf $(System.ArtifactsDirectory)/frontend_live/frontend_live.tar.gz -C /var/www/astrofinance/frontend-live
+        echo "Frontend deployed to /var/www/astrofinance/frontend-live"
+      displayName: 'Extract Frontend Build'
+
+    - script: |
+        npm install -g pm2
+        pm2 restart frontend-live || pm2 start npm --name "frontend-live" -- start
+      displayName: 'Restart Frontend with PM2'
+
+  - job: DeployBackendDev
+    displayName: 'Deploy Backend to Dev'
+    steps:
+    - task: DownloadBuildArtifacts@1
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'backend'
+        downloadPath: '$(System.ArtifactsDirectory)/backend_live'
+
+    - script: |
+        mkdir -p /var/www/astrofinance/backend-live
+        tar -xzf $(System.ArtifactsDirectory)/backend_live/backend-live.tar.gz -C /var/www/astrofinance/backend-live
+        echo "Backend deployed to /var/www/astrofinance/backend-live"
+      displayName: 'Extract Backend Build'
+
+    - script: |
+        cd /var/www/astrofinance/backend-live
+        npm install -g pm2
+        pm2 restart backend-live || pm2 start npm --name "backend-live" -- start
+      displayName: 'Restart Backend with PM2'
