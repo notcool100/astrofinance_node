@@ -183,8 +183,17 @@ stages:
         echo "Frontend artifact contents:"
         ls -la $(System.ArtifactsDirectory)/frontend/
         
+        # Ensure frontend directory has proper permissions before extraction
+        sudo chown -R $(whoami):$(whoami) $(productionPath)/frontend-live
+        sudo chmod -R 755 $(productionPath)/frontend-live
+        
         tar -xzf $(System.ArtifactsDirectory)/frontend/frontend_live.tar.gz -C $(productionPath)/frontend-live
         echo "Frontend extracted to $(productionPath)/frontend-live"
+        
+        # Fix permissions after extraction
+        sudo chown -R $(whoami):$(whoami) $(productionPath)/frontend-live
+        sudo chmod -R 755 $(productionPath)/frontend-live
+        echo "Frontend permissions fixed after extraction"
       displayName: 'Extract Frontend Build'
 
     - script: |
@@ -275,8 +284,17 @@ stages:
         echo "Backend artifact contents:"
         ls -la $(System.ArtifactsDirectory)/backend/
         
+        # Ensure backend directory has proper permissions before extraction
+        sudo chown -R $(whoami):$(whoami) $(productionPath)/backend-live
+        sudo chmod -R 755 $(productionPath)/backend-live
+        
         tar -xzf $(System.ArtifactsDirectory)/backend/backend_live.tar.gz -C $(productionPath)/backend-live
         echo "Backend extracted to $(productionPath)/backend-live"
+        
+        # Fix permissions after extraction
+        sudo chown -R $(whoami):$(whoami) $(productionPath)/backend-live
+        sudo chmod -R 755 $(productionPath)/backend-live
+        echo "Backend permissions fixed after extraction"
       displayName: 'Extract Backend Build'
 
     - script: |
