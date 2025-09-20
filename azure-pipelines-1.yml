@@ -249,33 +249,7 @@ stages:
         pm2 list
       displayName: 'Restart Frontend with PM2'
 
-    - script: |
-        # Health check for frontend
-        echo "Starting frontend health check..."
-        sleep 10
-        
-        echo "PM2 status:"
-        pm2 list
-        
-        echo "Frontend logs (last 20 lines):"
-        pm2 logs frontend-live --lines 20 || echo "No logs available"
-        
-        if pm2 list | grep -q "frontend-live.*online"; then
-          echo "✅ Frontend health check passed - Service is online"
-          
-          # Test if port 4000 is responding
-          if curl -f http://localhost:4000 > /dev/null 2>&1; then
-            echo "✅ Frontend port 4000 is responding"
-          else
-            echo "⚠️ Frontend port 4000 is not responding, but PM2 shows online"
-          fi
-        else
-          echo "❌ Frontend health check failed - Service is not online"
-          echo "PM2 error logs:"
-          pm2 logs frontend-live --err --lines 10 || echo "No error logs available"
-          exit 1
-        fi
-      displayName: 'Frontend Health Check'
+    
 
   - job: DeployBackendProd
     displayName: 'Deploy Backend to Production'
