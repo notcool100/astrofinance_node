@@ -78,7 +78,7 @@ const TransactionsPage: React.FC = () => {
 				undefined, // accountId is not used anymore
 				filters.accountNumber || undefined,
 			);
-			console.log(response.data.account, " this is response");
+			console.log(response.data, " this is response");
 			setTransactions(response.data);
 			setPagination(response.pagination);
 		} catch (error) {
@@ -299,4 +299,3 @@ const TransactionsPage: React.FC = () => {
 };
 
 export default TransactionsPage;
-

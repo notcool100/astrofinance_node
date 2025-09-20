@@ -138,7 +138,8 @@ const LoanApplicationsPage = () => {
 
 	// Check if user is admin/staff
 	const isAdmin =
-		user?.roles?.includes("admin") || user?.roles?.includes("staff");
+		user?.roles?.some((role) => role.name === "admin") ||
+		user?.roles?.some((role) => role.name === "staff");
 
 	const columns: any[] = React.useMemo(
 		() => [
