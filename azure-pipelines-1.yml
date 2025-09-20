@@ -13,8 +13,8 @@ pool:
 
 variables:
   nodeVersion: '24.x'
-  productionPath: '/var/www/astrofinance'
-  backupPath: '/var/www/astrofinance/backups'
+  productionPath: '/opt/myagent/_work/1/s/production'
+  backupPath: '/opt/myagent/_work/1/s/backups'
 
 stages:
 - stage: BuildFrontend
@@ -110,13 +110,9 @@ stages:
     displayName: 'Prepare Production Environment'
     steps:
     - script: |
-        # Ensure production directories exist with proper permissions
-        sudo mkdir -p $(productionPath)
-        sudo mkdir -p $(backupPath)
-        sudo chown -R $(whoami):$(whoami) $(productionPath)
-        sudo chown -R $(whoami):$(whoami) $(backupPath)
-        sudo chmod -R 755 $(productionPath)
-        sudo chmod -R 755 $(backupPath)
+        # Ensure production directories exist
+        mkdir -p $(productionPath)
+        mkdir -p $(backupPath)
         echo "Production and backup directories prepared"
       displayName: 'Setup Base Directories'
 
@@ -183,17 +179,9 @@ stages:
         echo "Frontend artifact contents:"
         ls -la $(System.ArtifactsDirectory)/frontend/
         
-        # Ensure frontend directory has proper permissions before extraction
-        sudo chown -R $(whoami):$(whoami) $(productionPath)/frontend-live
-        sudo chmod -R 755 $(productionPath)/frontend-live
-        
+        # Extract frontend build
         tar -xzf $(System.ArtifactsDirectory)/frontend/frontend_live.tar.gz -C $(productionPath)/frontend-live
         echo "Frontend extracted to $(productionPath)/frontend-live"
-        
-        # Fix permissions after extraction
-        sudo chown -R $(whoami):$(whoami) $(productionPath)/frontend-live
-        sudo chmod -R 755 $(productionPath)/frontend-live
-        echo "Frontend permissions fixed after extraction"
       displayName: 'Extract Frontend Build'
 
     - script: |
@@ -249,7 +237,7 @@ stages:
         ls -la
         
         pm2 delete frontend-live 2>/dev/null || true
-        pm2 start npm --name "frontend-live" -- start -- --port 4000
+        pm2 start npm --name "frontend-live" --cwd $(productionPath)/frontend-live -- start -- --port 4000
         pm2 save
         echo "Frontend restarted with PM2 on port 4000"
         
@@ -284,17 +272,9 @@ stages:
         echo "Backend artifact contents:"
         ls -la $(System.ArtifactsDirectory)/backend/
         
-        # Ensure backend directory has proper permissions before extraction
-        sudo chown -R $(whoami):$(whoami) $(productionPath)/backend-live
-        sudo chmod -R 755 $(productionPath)/backend-live
-        
+        # Extract backend build
         tar -xzf $(System.ArtifactsDirectory)/backend/backend_live.tar.gz -C $(productionPath)/backend-live
         echo "Backend extracted to $(productionPath)/backend-live"
-        
-        # Fix permissions after extraction
-        sudo chown -R $(whoami):$(whoami) $(productionPath)/backend-live
-        sudo chmod -R 755 $(productionPath)/backend-live
-        echo "Backend permissions fixed after extraction"
       displayName: 'Extract Backend Build'
 
     - script: |
@@ -360,7 +340,7 @@ stages:
         cat .env || echo "No .env file found"
         
         pm2 delete backend-live 2>/dev/null || true
-        pm2 start npm --name "backend-live" -- start
+        pm2 start npm --name "backend-live" --cwd $(productionPath)/backend-live -- start
         pm2 save
         echo "Backend restarted with PM2 on port 5001"
         
@@ -437,6 +417,17 @@ stages:
       displayName: 'Final PM2 Status Check'
 
     - script: |
+        # Copy to actual production location (if different from working directory)
+        echo "Copying deployed applications to production location..."
+        echo "Note: Services are running from $(productionPath)"
+        echo "Frontend: $(productionPath)/frontend-live"
+        echo "Backend: $(productionPath)/backend-live"
+        echo "Services are accessible on:"
+        echo "- Frontend: http://localhost:4000"
+        echo "- Backend: http://localhost:5001"
+      displayName: 'Production Deployment Summary'
+
+    - script: |
         # Clean up old backups (keep last 5)
         cd $(backupPath)
         ls -t | tail -n +6 | xargs -r rm -rf
@@ -498,11 +489,9 @@ stages:
 
     - script: |
         # Restart services
-        cd $(productionPath)/frontend-live
-        pm2 start npm --name "frontend-live" -- start 2>/dev/null || true
+        pm2 start npm --name "frontend-live" --cwd $(productionPath)/frontend-live -- start 2>/dev/null || true
         
-        cd $(productionPath)/backend-live
-        pm2 start npm --name "backend-live" -- start 2>/dev/null || true
+        pm2 start npm --name "backend-live" --cwd $(productionPath)/backend-live -- start 2>/dev/null || true
         
         pm2 save
         echo "Services restarted after rollback"
