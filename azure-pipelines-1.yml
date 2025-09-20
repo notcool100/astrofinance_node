@@ -210,17 +210,17 @@ stages:
         cd $(productionPath)/frontend-live
         if [ ! -f ".env.local" ]; then
           echo "Creating frontend .env.local file..."
-          echo "# API Configuration" > .env.local
-          echo "NEXT_PUBLIC_API_URL=http://localhost:5001" >> .env.local
-          echo "NEXT_PUBLIC_FRONTEND_URL=http://localhost:80" >> .env.local
-          echo "" >> .env.local
-          echo "# App Configuration" >> .env.local
-          echo "NEXT_PUBLIC_APP_NAME=\"AstroFinance\"" >> .env.local
-          echo "NEXT_PUBLIC_APP_VERSION=\"1.0.0\"" >> .env.local
-          echo "" >> .env.local
-          echo "# Environment" >> .env.local
-          echo "NODE_ENV=production" >> .env.local
-          echo "PORT=80" >> .env.local
+        echo "# API Configuration" > .env.local
+        echo "NEXT_PUBLIC_API_URL=http://localhost:5001" >> .env.local
+        echo "NEXT_PUBLIC_FRONTEND_URL=http://localhost:4000" >> .env.local
+        echo "" >> .env.local
+        echo "# App Configuration" >> .env.local
+        echo "NEXT_PUBLIC_APP_NAME=\"AstroFinance\"" >> .env.local
+        echo "NEXT_PUBLIC_APP_VERSION=\"1.0.0\"" >> .env.local
+        echo "" >> .env.local
+        echo "# Environment" >> .env.local
+        echo "NODE_ENV=production" >> .env.local
+        echo "PORT=4000" >> .env.local
           echo "" >> .env.local
           echo "# Features" >> .env.local
           echo "NEXT_PUBLIC_ENABLE_ANALYTICS=false" >> .env.local
@@ -240,9 +240,9 @@ stages:
         ls -la
         
         pm2 delete frontend-live 2>/dev/null || true
-        pm2 start npm --name "frontend-live" -- start -- --port 80
+        pm2 start npm --name "frontend-live" -- start -- --port 4000
         pm2 save
-        echo "Frontend restarted with PM2 on port 80"
+        echo "Frontend restarted with PM2 on port 4000"
         
         # Show PM2 logs for debugging
         echo "PM2 status after frontend start:"
@@ -263,11 +263,11 @@ stages:
         if pm2 list | grep -q "frontend-live.*online"; then
           echo "✅ Frontend health check passed - Service is online"
           
-          # Test if port 80 is responding
-          if curl -f http://localhost:80 > /dev/null 2>&1; then
-            echo "✅ Frontend port 80 is responding"
+          # Test if port 4000 is responding
+          if curl -f http://localhost:4000 > /dev/null 2>&1; then
+            echo "✅ Frontend port 4000 is responding"
           else
-            echo "⚠️ Frontend port 80 is not responding, but PM2 shows online"
+            echo "⚠️ Frontend port 4000 is not responding, but PM2 shows online"
           fi
         else
           echo "❌ Frontend health check failed - Service is not online"
@@ -341,7 +341,7 @@ stages:
           echo "" >> .env
           echo "# API" >> .env
           echo "API_BASE_URL=\"http://localhost:5001\"" >> .env
-          echo "FRONTEND_URL=\"http://localhost:80\"" >> .env
+          echo "FRONTEND_URL=\"http://localhost:4000\"" >> .env
           echo "" >> .env
           echo "# Email (if needed)" >> .env
           echo "SMTP_HOST=\"\"" >> .env
@@ -452,8 +452,8 @@ stages:
         echo ""
         
         echo "=== PORT CHECKS ==="
-        echo "Checking port 80 (frontend):"
-        netstat -tlnp | grep :80 || echo "Port 80 not listening"
+        echo "Checking port 4000 (frontend):"
+        netstat -tlnp | grep :4000 || echo "Port 4000 not listening"
         echo ""
         echo "Checking port 5001 (backend):"
         netstat -tlnp | grep :5001 || echo "Port 5001 not listening"
