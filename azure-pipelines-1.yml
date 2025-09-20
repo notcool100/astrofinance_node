@@ -186,23 +186,21 @@ stages:
         cd $(productionPath)/frontend-live
         if [ ! -f ".env.local" ]; then
           echo "Creating frontend .env.local file..."
-          cat > .env.local << EOF
-# API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:5001
-NEXT_PUBLIC_FRONTEND_URL=http://localhost:80
-
-# App Configuration
-NEXT_PUBLIC_APP_NAME="AstroFinance"
-NEXT_PUBLIC_APP_VERSION="1.0.0"
-
-# Environment
-NODE_ENV=production
-PORT=80
-
-# Features
-NEXT_PUBLIC_ENABLE_ANALYTICS=false
-NEXT_PUBLIC_DEBUG_MODE=false
-EOF
+          echo "# API Configuration" > .env.local
+          echo "NEXT_PUBLIC_API_URL=http://localhost:5001" >> .env.local
+          echo "NEXT_PUBLIC_FRONTEND_URL=http://localhost:80" >> .env.local
+          echo "" >> .env.local
+          echo "# App Configuration" >> .env.local
+          echo "NEXT_PUBLIC_APP_NAME=\"AstroFinance\"" >> .env.local
+          echo "NEXT_PUBLIC_APP_VERSION=\"1.0.0\"" >> .env.local
+          echo "" >> .env.local
+          echo "# Environment" >> .env.local
+          echo "NODE_ENV=production" >> .env.local
+          echo "PORT=80" >> .env.local
+          echo "" >> .env.local
+          echo "# Features" >> .env.local
+          echo "NEXT_PUBLIC_ENABLE_ANALYTICS=false" >> .env.local
+          echo "NEXT_PUBLIC_DEBUG_MODE=false" >> .env.local
           echo "Frontend .env.local file created"
         else
           echo "Frontend .env.local file already exists"
@@ -295,31 +293,29 @@ EOF
         cd $(productionPath)/backend-live
         if [ ! -f ".env" ]; then
           echo "Creating backend .env file..."
-          cat > .env << EOF
-# Database
-DATABASE_URL="postgresql://username:password@localhost:5432/astrofinance"
-
-# Server
-PORT=5001
-NODE_ENV=production
-
-# JWT
-JWT_SECRET="your-jwt-secret-key-here"
-JWT_EXPIRES_IN="24h"
-
-# API
-API_BASE_URL="http://localhost:5001"
-FRONTEND_URL="http://localhost:80"
-
-# Email (if needed)
-SMTP_HOST=""
-SMTP_PORT=""
-SMTP_USER=""
-SMTP_PASS=""
-
-# Other services
-REDIS_URL="redis://localhost:6379"
-EOF
+          echo "# Database" > .env
+          echo "DATABASE_URL=\"postgresql://username:password@localhost:5432/astrofinance\"" >> .env
+          echo "" >> .env
+          echo "# Server" >> .env
+          echo "PORT=5001" >> .env
+          echo "NODE_ENV=production" >> .env
+          echo "" >> .env
+          echo "# JWT" >> .env
+          echo "JWT_SECRET=\"your-jwt-secret-key-here\"" >> .env
+          echo "JWT_EXPIRES_IN=\"24h\"" >> .env
+          echo "" >> .env
+          echo "# API" >> .env
+          echo "API_BASE_URL=\"http://localhost:5001\"" >> .env
+          echo "FRONTEND_URL=\"http://localhost:80\"" >> .env
+          echo "" >> .env
+          echo "# Email (if needed)" >> .env
+          echo "SMTP_HOST=\"\"" >> .env
+          echo "SMTP_PORT=\"\"" >> .env
+          echo "SMTP_USER=\"\"" >> .env
+          echo "SMTP_PASS=\"\"" >> .env
+          echo "" >> .env
+          echo "# Other services" >> .env
+          echo "REDIS_URL=\"redis://localhost:6379\"" >> .env
           echo "Backend .env file created"
         else
           echo "Backend .env file already exists"
