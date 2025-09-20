@@ -243,6 +243,7 @@ const LoanCalculator: React.FC = () => {
 		watch,
 		setValue,
 		reset,
+		getValues,
 		formState: { errors },
 	} = useForm<CalculatorFormData>({
 		resolver: yupResolver(calculatorSchema),
@@ -261,11 +262,14 @@ const LoanCalculator: React.FC = () => {
 	const watchTenure = watch("tenure");
 	const watchInterestRate = watch("interestRate");
 	const watchInterestType = watch("interestType");
+	const watchStartDate = watch("startDate");
 
 	// Update form values when loan type changes
 	useEffect(() => {
 		if (loanTypes && watchLoanTypeId) {
-			const loanType = loanTypes.find((lt) => lt.id === watchLoanTypeId);
+			const loanType = loanTypes.data?.find(
+				(lt: any) => lt.id === watchLoanTypeId,
+			);
 			if (loanType) {
 				setSelectedLoanType(loanType);
 
@@ -600,7 +604,7 @@ const LoanCalculator: React.FC = () => {
 									aria-invalid={errors.loanTypeId ? "true" : "false"}
 								>
 									<option value="">Select Loan Type</option>
-									{loanTypes?.map((loanType) => (
+									{loanTypes?.data?.map((loanType: any) => (
 										<option key={loanType.id} value={loanType.id}>
 											{loanType.name} ({loanType.interestRate}%)
 										</option>
@@ -650,7 +654,8 @@ const LoanCalculator: React.FC = () => {
 								)}
 								{selectedLoanType && (
 									<p className="mt-1 text-xs text-gray-500">
-										Min: {formatCurrency(selectedLoanType.minAmount)} | Max: {formatCurrency(selectedLoanType.maxAmount)}
+										Min: {formatCurrency(selectedLoanType.minAmount)} | Max:{" "}
+										{formatCurrency(selectedLoanType.maxAmount)}
 									</p>
 								)}
 							</div>
@@ -850,6 +855,7 @@ const LoanCalculator: React.FC = () => {
 							aria-label="Loan calculation results tabs"
 						>
 							<button
+								type="button"
 								className={`${
 									activeTab === "calculator"
 										? `border-primary-500 text-primary-600 ${styles.activeTab}`
@@ -861,6 +867,7 @@ const LoanCalculator: React.FC = () => {
 								Loan Summary
 							</button>
 							<button
+								type="button"
 								className={`${
 									activeTab === "comparison"
 										? `border-primary-500 text-primary-600 ${styles.activeTab}`
@@ -872,6 +879,7 @@ const LoanCalculator: React.FC = () => {
 								Interest Comparison
 							</button>
 							<button
+								type="button"
 								className={`${
 									activeTab === "chart"
 										? `border-primary-500 text-primary-600 ${styles.activeTab}`
@@ -885,6 +893,7 @@ const LoanCalculator: React.FC = () => {
 							{user && (
 								<>
 									<button
+										type="button"
 										className={`${
 											activeTab === "presets"
 												? `border-primary-500 text-primary-600 ${styles.activeTab}`
@@ -897,6 +906,7 @@ const LoanCalculator: React.FC = () => {
 										Saved Presets
 									</button>
 									<button
+										type="button"
 										className={`${
 											activeTab === "history"
 												? `border-primary-500 text-primary-600 ${styles.activeTab}`
@@ -1572,7 +1582,8 @@ const LoanCalculator: React.FC = () => {
 											</div>
 										)}
 
-										{calculationHistory?.data?.length > 0 ? (
+										{calculationHistory?.data &&
+										calculationHistory.data.length > 0 ? (
 											<div className="overflow-x-auto">
 												<table className="min-w-full divide-y divide-gray-200">
 													<thead className="bg-gray-50">
@@ -1616,7 +1627,7 @@ const LoanCalculator: React.FC = () => {
 														</tr>
 													</thead>
 													<tbody className="bg-white divide-y divide-gray-200">
-														{calculationHistory.data.map((entry) => (
+														{calculationHistory.data.map((entry: any) => (
 															<tr key={entry.id}>
 																<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
 																	{new Date(
@@ -1660,44 +1671,47 @@ const LoanCalculator: React.FC = () => {
 											</div>
 										)}
 
-										{calculationHistory?.pagination?.pages > 1 && (
-											<div className="mt-4 flex justify-center">
-												<nav
-													className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-													aria-label="Pagination"
-												>
-													{Array.from({
-														length: calculationHistory.pagination.pages,
-													}).map((_, index) => (
-														<button
-															key={index}
-															onClick={() => {
-																if (user?.id) {
-																	loanService
-																		.getUserCalculationHistory(
-																			user.id,
-																			index + 1,
-																		)
-																		.then((data) => {
-																			queryClient.setQueryData(
-																				["calculationHistory", user.id],
-																				data,
-																			);
-																		});
-																}
-															}}
-															className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-																calculationHistory.pagination.page === index + 1
-																	? "z-10 bg-primary-50 border-primary-500 text-primary-600"
-																	: "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-															}`}
-														>
-															{index + 1}
-														</button>
-													))}
-												</nav>
-											</div>
-										)}
+										{calculationHistory?.pagination?.pages &&
+											calculationHistory.pagination.pages > 1 && (
+												<div className="mt-4 flex justify-center">
+													<nav
+														className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+														aria-label="Pagination"
+													>
+														{Array.from({
+															length: calculationHistory.pagination.pages,
+														}).map((_, index) => (
+															<button
+																type="button"
+																key={`page-${index + 1}`}
+																onClick={() => {
+																	if (user?.id) {
+																		loanService
+																			.getUserCalculationHistory(
+																				user.id,
+																				index + 1,
+																			)
+																			.then((data) => {
+																				queryClient.setQueryData(
+																					["calculationHistory", user.id],
+																					data,
+																				);
+																			});
+																	}
+																}}
+																className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+																	calculationHistory.pagination?.page ===
+																	index + 1
+																		? "z-10 bg-primary-50 border-primary-500 text-primary-600"
+																		: "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+																}`}
+															>
+																{index + 1}
+															</button>
+														))}
+													</nav>
+												</div>
+											)}
 									</>
 								)}
 							</div>
@@ -1908,8 +1922,9 @@ const LoanCalculator: React.FC = () => {
 										<p>
 											Loan Type:{" "}
 											{
-												loanTypes.find((lt) => lt.id === watch("loanTypeId"))
-													?.name
+												loanTypes.data?.find(
+													(lt: any) => lt.id === watch("loanTypeId"),
+												)?.name
 											}
 										</p>
 									)}

@@ -10,6 +10,7 @@ export interface SmsTemplate {
 	isActive: boolean;
 	createdAt: string;
 	updatedAt: string;
+	smsEventId?: string;
 	smsEvents?: SmsEvent[];
 }
 

@@ -10,11 +10,11 @@ interface ErrorPageProps {
 	err?: Error;
 }
 
-const ErrorPage: React.FC<ErrorPageProps> = ({
+const ErrorPage = ({
 	statusCode,
 	hasGetInitialPropsRun,
 	err,
-}) => {
+}: ErrorPageProps) => {
 	const router = useRouter();
 
 	// If this is a client-side error and we haven't run getInitialProps yet,

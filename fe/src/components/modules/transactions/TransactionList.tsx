@@ -149,7 +149,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
 							transactions.map((transaction) => (
 								<tr key={transaction.id}>
 									<td className="px-6 py-4 whitespace-nowrap">
-										{transaction.account.user.fullName}
+										{transaction.account?.user?.fullName || "Unknown User"}
 									</td>
 									<td className="px-6 py-4 whitespace-nowrap">
 										{getTransactionTypeBadge(transaction.transactionType)}
@@ -232,4 +232,3 @@ const TransactionList: React.FC<TransactionListProps> = ({
 };
 
 export default TransactionList;
-

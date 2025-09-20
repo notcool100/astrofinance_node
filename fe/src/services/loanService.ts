@@ -33,6 +33,12 @@ export interface LoanApplication {
 	rejectionReason?: string;
 	createdAt: string;
 	updatedAt: string;
+	user?: {
+		id: string;
+		fullName: string;
+		email?: string;
+		contactNumber: string;
+	};
 	// Legacy field for compatibility
 	applicationDate?: string;
 	notes?: string;
@@ -188,10 +194,11 @@ const loanService = {
 		page?: number;
 		limit?: number;
 	}) =>
-		apiService.get<{ data: LoanApplication[]; pagination: any; totalAmount: number }>(
-			"/loan/applications",
-			params,
-		),
+		apiService.get<{
+			data: LoanApplication[];
+			pagination: any;
+			totalAmount: number;
+		}>("/loan/applications", params),
 
 	getLoanApplicationById: (id: string) =>
 		apiService.get<LoanApplication>(`/loan/applications/${id}`),

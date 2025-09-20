@@ -31,7 +31,7 @@ const CreateTransaction: React.FC = () => {
 	const [formData, setFormData] = useState<CreateTransactionData>({
 		accountId: "",
 		transactionType: "DEPOSIT",
-		amount: "",
+		amount: 0,
 		description: "",
 		referenceNumber: "",
 		transactionMethod: "",
