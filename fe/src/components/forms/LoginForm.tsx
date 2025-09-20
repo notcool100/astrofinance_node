@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -23,6 +24,7 @@ const loginSchema = yup.object().shape({
 const LoginForm: React.FC<LoginFormProps> = ({ userType = 'STAFF' }) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
 
   const {
@@ -40,7 +42,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ userType = 'STAFF' }) => {
   const onSubmit = async (data: LoginFormData) => {
     setError(null);
     setIsLoading(true);
-    
+
     try {
       console.log(`Attempting ${userType} login with:`, data);
       await login(data, userType);
@@ -90,14 +92,27 @@ const LoginForm: React.FC<LoginFormProps> = ({ userType = 'STAFF' }) => {
         <label htmlFor="password" className="form-label">
           Password
         </label>
-        <div className="mt-1">
+        <div className="mt-1 relative">
           <input
             id="password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             autoComplete="current-password"
-            className="form-input"
+            className="form-input pr-10"
             {...register('password')}
           />
+          <button
+            type="button"
+            tabIndex={-1}
+            className="absolute inset-y-0 right-0 flex items-center px-2 focus:outline-none"
+            onClick={() => setShowPassword((prev) => !prev)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? (
+              <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+            ) : (
+              <EyeIcon className="h-5 w-5 text-gray-400" />
+            )}
+          </button>
           {errors.password && (
             <p className="form-error">{errors.password.message}</p>
           )}

@@ -81,6 +81,9 @@ const DatePicker: React.FC<DatePickerProps> = ({
             },
           },
         ]}
+        showMonthDropdown // 👈 Add this
+        showYearDropdown  // 👈 And this
+  dropdownMode="select" 
       />
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>

@@ -127,17 +127,30 @@ const authService = {
   
   isAdmin: (): boolean => {
     const user = authService.getCurrentUser();
-    return !!user && user.userType === 'ADMIN';
+    if (!user) return false;
+    
+    // Check both userType and roles for backward compatibility
+    const hasAdminRole = user.roles?.some(role => 
+      role.name === 'ADMIN' || role.name === 'admin' || role.name === 'Admin'
+    ) || false;
+    
+    return user.userType === 'ADMIN' || hasAdminRole;
   },
   
   isStaff: (): boolean => {
     const user = authService.getCurrentUser();
-    return !!user && user.userType === 'STAFF';
+    if (!user) return false;
+    
+    // Check both userType and roles for backward compatibility
+    const hasStaffRole = user.roles?.some(role => 
+      role.name === 'STAFF' || role.name === 'staff' || role.name === 'Staff'
+    ) || false;
+    
+    return user.userType === 'STAFF' || hasStaffRole;
   },
   
   isOfficeUser: (): boolean => {
-    const user = authService.getCurrentUser();
-    return !!user && (user.userType === 'ADMIN' || user.userType === 'STAFF');
+    return authService.isAdmin() || authService.isStaff();
   },
   
   isRegularUser: (): boolean => {

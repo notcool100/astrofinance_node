@@ -24,6 +24,36 @@ export const getAllNavigationGroups = async (req: Request, res: Response) => {
 };
 
 /**
+ * Get navigation group by ID
+ */
+export const getNavigationGroupById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const group = await prisma.navigationGroup.findUnique({
+      where: { id },
+      include: {
+        navigationItems: {
+          orderBy: {
+            order: 'asc'
+          }
+        }
+      }
+    });
+
+    if (!group) {
+      throw new ApiError(404, 'Navigation group not found');
+    }
+
+    return res.json(group);
+  } catch (error) {
+    logger.error('Get navigation group by ID error:', error);
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(500, 'Failed to fetch navigation group');
+  }
+};
+
+/**
  * Create navigation group
  */
 export const createNavigationGroup = async (req: Request, res: Response) => {
@@ -204,6 +234,48 @@ export const getAllNavigationItems = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Get all navigation items error:', error);
     throw new ApiError(500, 'Failed to fetch navigation items');
+  }
+};
+
+/**
+ * Get navigation item by ID
+ */
+export const getNavigationItemById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const item = await prisma.navigationItem.findUnique({
+      where: { id },
+      include: {
+        group: true,
+        parent: {
+          select: {
+            id: true,
+            label: true
+          }
+        },
+        children: {
+          orderBy: {
+            order: 'asc'
+          }
+        },
+        roleNavigation: {
+          include: {
+            role: true
+          }
+        }
+      }
+    });
+
+    if (!item) {
+      throw new ApiError(404, 'Navigation item not found');
+    }
+
+    return res.json(item);
+  } catch (error) {
+    logger.error('Get navigation item by ID error:', error);
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(500, 'Failed to fetch navigation item');
   }
 };
 

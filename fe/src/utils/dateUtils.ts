@@ -69,23 +69,21 @@ export const formatDateTime = (dateString: string): string => {
 };
 
 /**
- * Format a number as currency
+ * Format a number as currency (Nepali Rupees)
  * @param amount - Number to format
- * @param currency - Currency code (default: USD)
- * @returns Formatted currency string
+ * @returns Formatted currency string with Rs symbol
  */
 export const formatCurrency = (amount: number): string => {
   if (amount === null || amount === undefined) return '';
   
   try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    const formattedNumber = new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
+    return `Rs ${formattedNumber}`;
   } catch (error) {
     console.error('Error formatting currency:', error);
-    return `$${amount.toFixed(2)}`;
+    return `Rs ${amount.toFixed(2)}`;
   }
 };

@@ -4,7 +4,8 @@ import {
   getTrialBalance, 
   getIncomeStatement, 
   getBalanceSheet, 
-  getGeneralLedger 
+  getGeneralLedger,
+  exportReport
 } from '../controllers/financial-report.controller';
 import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
@@ -13,7 +14,8 @@ import {
   getTrialBalanceValidation, 
   getIncomeStatementValidation, 
   getBalanceSheetValidation, 
-  getGeneralLedgerValidation 
+  getGeneralLedgerValidation,
+  exportReportValidation
 } from '../validations/financial-report.validation';
 
 const router = Router();
@@ -59,6 +61,14 @@ router.get(
   hasPermission('accounting.view'), 
   validate(getGeneralLedgerValidation), 
   getGeneralLedger
+);
+
+// Export report
+router.get(
+  '/export/:type',
+  hasPermission('accounting.view'),
+  validate(exportReportValidation),
+  exportReport
 );
 
 export default router;

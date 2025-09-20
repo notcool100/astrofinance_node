@@ -5,27 +5,116 @@ import { createAuditLog } from '../../../common/utils/audit.util';
 import { AuditAction } from '@prisma/client';
 import { InterestType } from '../utils/loan.utils';
 import { ApiError } from '../../../common/middleware/error.middleware';
+import cacheUtil, { caches } from '../../../common/utils/cache.util';
 
 /**
- * Get all loan types
+ * Get all loan types with filtering, pagination, and search
  */
 export const getAllLoanTypes = async (req: Request, res: Response) => {
   try {
-    const { active } = req.query;
+    const { 
+      active, 
+      interestType, 
+      minInterestRate, 
+      maxInterestRate,
+      search,
+      page = '1', 
+      limit = '10',
+      sortBy = 'name',
+      sortOrder = 'asc'
+    } = req.query;
     
-    // Filter by active status if provided
-    const where = active !== undefined ? { isActive: active === 'true' } : {};
+    // Generate a cache key based on query parameters
+    const cacheKey = `loanTypes_${JSON.stringify({
+      active,
+      interestType,
+      minInterestRate,
+      maxInterestRate,
+      search,
+      page,
+      limit,
+      sortBy,
+      sortOrder
+    })}`;
     
-    const loanTypes = await prisma.loanType.findMany({
-      where,
-      orderBy: {
-        name: 'asc'
+    // Try to get from cache or fetch from database
+    const result = await cacheUtil.getOrFetch(caches.loanType, cacheKey, async () => {
+      // Build where clause with multiple filters
+      const where: any = {};
+      
+      // Filter by active status if provided
+      if (active !== undefined) {
+        where.isActive = active === 'true';
       }
+      
+      // Filter by interest type if provided
+      if (interestType) {
+        where.interestType = interestType;
+      }
+      
+      // Filter by interest rate range if provided
+      if (minInterestRate || maxInterestRate) {
+        where.interestRate = {};
+        
+        if (minInterestRate) {
+          where.interestRate.gte = parseFloat(minInterestRate as string);
+        }
+        
+        if (maxInterestRate) {
+          where.interestRate.lte = parseFloat(maxInterestRate as string);
+        }
+      }
+      
+      // Add search functionality
+      if (search) {
+        where.OR = [
+          { name: { contains: search as string, mode: 'insensitive' } },
+          { code: { contains: search as string, mode: 'insensitive' } }
+        ];
+      }
+      
+      // Calculate pagination
+      const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+      
+      // Get total count for pagination
+      const totalCount = await prisma.loanType.count({ where });
+      
+      // Get loan types with pagination and sorting
+      const loanTypes = await prisma.loanType.findMany({
+        where,
+        orderBy: {
+          [sortBy as string]: sortOrder
+        },
+        skip,
+        take: parseInt(limit as string)
+      });
+
+      // Return the result object
+      return {
+        data: loanTypes,
+        pagination: {
+          total: totalCount,
+          page: parseInt(page as string),
+          limit: parseInt(limit as string),
+          pages: Math.ceil(totalCount / parseInt(limit as string))
+        }
+      };
     });
 
-    return res.json(loanTypes);
-  } catch (error) {
-    logger.error('Get all loan types error:', error);
+    // Log successful retrieval
+    logger.info('Loan types fetched successfully', {
+      count: result.data.length,
+      filters: req.query,
+      fromCache: cacheKey in caches.loanType.keys()
+    });
+
+    return res.json(result);
+  } catch (error: any) {
+    logger.error('Get all loan types error:', {
+      error: error.message || String(error),
+      stack: error.stack || 'No stack trace',
+      query: req.query
+    });
     throw new ApiError(500, 'Failed to fetch loan types');
   }
 };
@@ -36,18 +125,30 @@ export const getAllLoanTypes = async (req: Request, res: Response) => {
 export const getLoanTypeById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
-    const loanType = await prisma.loanType.findUnique({
-      where: { id }
+    
+    // Generate cache key for this loan type
+    const cacheKey = `loanType_${id}`;
+    
+    // Try to get from cache or fetch from database
+    const loanType = await cacheUtil.getOrFetch(caches.loanType, cacheKey, async () => {
+      const loanType = await prisma.loanType.findUnique({
+        where: { id }
+      });
+      
+      if (!loanType) {
+        throw new ApiError(404, 'Loan type not found');
+      }
+      
+      return loanType;
     });
 
-    if (!loanType) {
-      throw new ApiError(404, 'Loan type not found');
-    }
-
     return res.json(loanType);
-  } catch (error) {
-    logger.error(`Get loan type by ID error: ${error}`);
+  } catch (error: any) {
+    logger.error(`Get loan type by ID error:`, {
+      error: error.message || String(error),
+      stack: error.stack || 'No stack trace',
+      loanTypeId: req.params.id
+    });
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, 'Failed to fetch loan type');
   }
@@ -121,11 +222,31 @@ export const createLoanType = async (req: Request, res: Response) => {
       null,
       loanType
     );
+    
+    // Invalidate loan types cache
+    cacheUtil.invalidateAllCache(caches.loanType);
+    
+    logger.info('Loan type created successfully', {
+      loanTypeId: loanType.id,
+      name: loanType.name,
+      code: loanType.code
+    });
 
     return res.status(201).json(loanType);
-  } catch (error) {
-    logger.error(`Create loan type error: ${error}`);
+  } catch (error: any) {
+    logger.error(`Create loan type error:`, {
+      error: error.message || String(error),
+      stack: error.stack || 'No stack trace',
+      requestBody: req.body
+    });
+    
     if (error instanceof ApiError) throw error;
+    
+    if (error.code === 'P2002' && error.meta?.target) {
+      // Prisma unique constraint violation
+      throw new ApiError(409, `Loan type with this ${error.meta.target[0]} already exists`);
+    }
+    
     throw new ApiError(500, 'Failed to create loan type');
   }
 };
@@ -203,10 +324,25 @@ export const updateLoanType = async (req: Request, res: Response) => {
       existingLoanType,
       updatedLoanType
     );
+    
+    // Invalidate specific loan type cache and all loan types cache
+    cacheUtil.invalidateCache(caches.loanType, `loanType_${id}`);
+    cacheUtil.invalidateAllCache(caches.loanType);
+    
+    logger.info('Loan type updated successfully', {
+      loanTypeId: updatedLoanType.id,
+      name: updatedLoanType.name,
+      changes: Object.keys(req.body).join(', ')
+    });
 
     return res.json(updatedLoanType);
-  } catch (error) {
-    logger.error(`Update loan type error: ${error}`);
+  } catch (error: any) {
+    logger.error(`Update loan type error:`, {
+      error: error.message || String(error),
+      stack: error.stack || 'No stack trace',
+      loanTypeId: req.params.id,
+      requestBody: req.body
+    });
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, 'Failed to update loan type');
   }
@@ -255,11 +391,97 @@ export const deleteLoanType = async (req: Request, res: Response) => {
       existingLoanType,
       null
     );
+    
+    // Invalidate specific loan type cache and all loan types cache
+    cacheUtil.invalidateCache(caches.loanType, `loanType_${id}`);
+    cacheUtil.invalidateAllCache(caches.loanType);
+    
+    logger.info('Loan type deleted successfully', {
+      loanTypeId: id,
+      name: existingLoanType.name,
+      code: existingLoanType.code
+    });
 
     return res.json({ message: 'Loan type deleted successfully' });
-  } catch (error) {
-    logger.error(`Delete loan type error: ${error}`);
+  } catch (error: any) {
+    logger.error(`Delete loan type error:`, {
+      error: error.message || String(error),
+      stack: error.stack || 'No stack trace',
+      loanTypeId: req.params.id
+    });
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, 'Failed to delete loan type');
+  }
+};
+
+/**
+ * Bulk update loan type status
+ */
+export const bulkUpdateLoanTypeStatus = async (req: Request, res: Response) => {
+  try {
+    const { ids, isActive } = req.body;
+    
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw new ApiError(400, 'No loan type IDs provided');
+    }
+    
+    if (typeof isActive !== 'boolean') {
+      throw new ApiError(400, 'isActive must be a boolean value');
+    }
+    
+    // Update multiple loan types at once
+    const result = await prisma.loanType.updateMany({
+      where: {
+        id: {
+          in: ids
+        }
+      },
+      data: {
+        isActive
+      }
+    });
+    
+    // Create audit logs for each updated loan type
+    for (const id of ids) {
+      const loanType = await prisma.loanType.findUnique({
+        where: { id }
+      });
+      
+      if (loanType) {
+        await createAuditLog(
+          req,
+          'LoanType',
+          id,
+          AuditAction.UPDATE,
+          { ...loanType, isActive: !isActive },
+          { ...loanType, isActive }
+        );
+        
+        // Invalidate individual loan type cache
+        cacheUtil.invalidateCache(caches.loanType, `loanType_${id}`);
+      }
+    }
+    
+    // Invalidate all loan types cache
+    cacheUtil.invalidateAllCache(caches.loanType);
+    
+    logger.info('Bulk update loan types completed', {
+      count: result.count,
+      ids,
+      isActive
+    });
+    
+    return res.json({
+      message: `Successfully updated ${result.count} loan types`,
+      count: result.count
+    });
+  } catch (error: any) {
+    logger.error(`Bulk update loan types error:`, {
+      error: error.message || String(error),
+      stack: error.stack || 'No stack trace',
+      requestBody: req.body
+    });
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(500, 'Failed to update loan types');
   }
 };

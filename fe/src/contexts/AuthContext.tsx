@@ -52,6 +52,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (userType === 'ADMIN' || userType === 'STAFF') {
         // Use the unified office login for both admin and staff
         response = await authService.officeLogin(credentials);
+        
+        // Ensure admin users get ADMIN userType
+        if (response.user && response.user.roles?.some(role => role.name === 'ADMIN')) {
+          response.user.userType = 'ADMIN';
+        } else if (response.user && response.user.roles?.some(role => role.name === 'STAFF')) {
+          response.user.userType = 'STAFF';
+        }
       } else {
         // Regular user login
         response = await authService.userLogin(credentials);
@@ -71,7 +78,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(response.user);
       
       // Redirect based on user type
-      if (response.user.userType === 'ADMIN' || response.user.userType === 'STAFF') {
+      if (response.user.userType === 'ADMIN') {
+        console.log('Redirecting to admin dashboard');
+        router.push('/admin/dashboard');
+      } else if (response.user.userType === 'STAFF') {
         console.log('Redirecting to office dashboard');
         router.push('/office/dashboard');
       } else {

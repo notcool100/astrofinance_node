@@ -255,7 +255,7 @@ export const updateRolePermissions = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { permissionIds } = req.body;
-
+    console.log(permissionIds," this is permissionIds");
     if (!Array.isArray(permissionIds)) {
       throw new ApiError(400, 'permissionIds must be an array');
     }
@@ -322,7 +322,7 @@ export const updateRolePermissions = async (req: Request, res: Response) => {
         }
       }
     });
-
+    
     // Create audit log
     await createAuditLog(
       req,

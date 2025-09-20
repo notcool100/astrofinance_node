@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import MainLayout from '@/components/layout/MainLayout';
 import Button from '@/components/common/Button';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
 import { getStaffById, resetStaffPassword, StaffProfile } from '@/services/staff.service';
 
 const ResetPasswordPage: React.FC = () => {
@@ -11,9 +12,9 @@ const ResetPasswordPage: React.FC = () => {
   const { id } = router.query;
   const [staff, setStaff] = useState<StaffProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [resetting, setResetting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -40,31 +41,26 @@ const ResetPasswordPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!id || typeof id !== 'string') return;
+    if (!staff) return;
     
     // Validate passwords
-    if (!newPassword) {
-      setError('New password is required');
-      return;
-    }
-    
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters long');
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters long.');
       return;
     }
     
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('Passwords do not match.');
       return;
     }
     
     try {
-      setResetting(true);
+      setSubmitting(true);
       setError(null);
-      setSuccessMessage(null);
+      setSuccess(null);
       
-      await resetStaffPassword(id, { newPassword });
-      setSuccessMessage('Password has been reset successfully');
+      await resetStaffPassword(staff.id, { newPassword });
+      setSuccess('Password has been reset successfully. The new password has been sent to the staff member.');
       
       // Clear form
       setNewPassword('');
@@ -73,129 +69,136 @@ const ResetPasswordPage: React.FC = () => {
       console.error('Error resetting password:', err);
       setError(err.response?.data?.message || 'Failed to reset password. Please try again.');
     } finally {
-      setResetting(false);
+      setSubmitting(false);
     }
   };
 
+  if (loading) {
+    return (
+      <ProtectedRoute adminOnly>
+        <MainLayout>
+          <div className="px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center">Loading staff details...</div>
+          </div>
+        </MainLayout>
+      </ProtectedRoute>
+    );
+  }
+
+  if (!staff) {
+    return (
+      <ProtectedRoute adminOnly>
+        <MainLayout>
+          <div className="px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center">Staff not found.</div>
+          </div>
+        </MainLayout>
+      </ProtectedRoute>
+    );
+  }
+
   return (
-    <MainLayout>
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link href={`/admin/staff/${id}`}>
-            <Button variant="outline" className="flex items-center">
-              <ArrowLeftIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-              Back to Staff Details
-            </Button>
-          </Link>
-        </div>
-
-        <div className="sm:flex sm:items-center mb-6">
-          <div className="sm:flex-auto">
-            <h1 className="text-2xl font-semibold text-gray-900">
-              {loading ? 'Loading...' : `Reset Password: ${staff?.firstName} ${staff?.lastName}`}
-            </h1>
-            <p className="mt-2 text-sm text-gray-700">
-              Reset the password for this staff member.
-            </p>
+    <ProtectedRoute adminOnly>
+      <MainLayout>
+        <div className="px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-6">
+            <Link href="/admin/staff">
+              <Button variant="outline" className="flex items-center">
+                <ArrowLeftIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                Back to Staff List
+              </Button>
+            </Link>
           </div>
-        </div>
 
-        {error && (
-          <div className="mb-6 rounded-md bg-red-50 p-4">
-            <div className="flex">
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Error</h3>
-                <div className="mt-2 text-sm text-red-700">
-                  <p>{error}</p>
+          <div className="sm:flex sm:items-center mb-6">
+            <div className="sm:flex-auto">
+              <h1 className="text-2xl font-semibold text-gray-900">Reset Staff Password</h1>
+              <p className="mt-2 text-sm text-gray-700">
+                Reset password for {staff.firstName} {staff.lastName} ({staff.employeeId})
+              </p>
+            </div>
+          </div>
+
+          {error && (
+            <div className="mb-6 rounded-md bg-red-50 p-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Error</h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <p>{error}</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {successMessage && (
-          <div className="mb-6 rounded-md bg-green-50 p-4">
-            <div className="flex">
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-green-800">Success</h3>
-                <div className="mt-2 text-sm text-green-700">
-                  <p>{successMessage}</p>
+          {success && (
+            <div className="mb-6 rounded-md bg-green-50 p-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-green-800">Success</h3>
+                  <div className="mt-2 text-sm text-green-700">
+                    <p>{success}</p>
+                  </div>
                 </div>
               </div>
             </div>
+          )}
+
+          <div className="max-w-md">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  id="newPassword"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                  placeholder="Enter new password"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Password must be at least 8 characters long
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                  placeholder="Confirm new password"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <Link href="/admin/staff">
+                  <Button variant="outline" type="button">
+                    Cancel
+                  </Button>
+                </Link>
+                <Button 
+                  variant="primary" 
+                  type="submit"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Resetting...' : 'Reset Password'}
+                </Button>
+              </div>
+            </form>
           </div>
-        )}
-
-        {loading ? (
-          <div className="p-6 text-center">Loading staff details...</div>
-        ) : staff ? (
-          <div className="bg-white shadow sm:rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <form onSubmit={handleSubmit}>
-                <div className="space-y-6">
-                  <div>
-                    <label htmlFor="new-password" className="block text-sm font-medium text-gray-700">
-                      New Password
-                    </label>
-                    <div className="mt-1">
-                      <input
-                        id="new-password"
-                        name="newPassword"
-                        type="password"
-                        autoComplete="new-password"
-                        required
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">
-                      Confirm Password
-                    </label>
-                    <div className="mt-1">
-                      <input
-                        id="confirm-password"
-                        name="confirmPassword"
-                        type="password"
-                        autoComplete="new-password"
-                        required
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="mr-3"
-                      onClick={() => router.back()}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      isLoading={resetting}
-                      disabled={resetting}
-                    >
-                      Reset Password
-                    </Button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-        ) : (
-          <div className="p-6 text-center">Staff not found or you don't have permission to reset this staff member's password.</div>
-        )}
-      </div>
-    </MainLayout>
+        </div>
+      </MainLayout>
+    </ProtectedRoute>
   );
 };
 

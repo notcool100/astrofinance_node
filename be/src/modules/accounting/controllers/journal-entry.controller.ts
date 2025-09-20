@@ -76,7 +76,9 @@ export const getAllJournalEntries = async (req: Request, res: Response) => {
       take: limitNumber
     });
     
-    return res.json({
+    return res.status(200).json({
+      success: true,
+      message: 'Journal entries retrieved successfully',
       data: journalEntries,
       pagination: {
         total: totalCount,
@@ -127,7 +129,11 @@ export const getJournalEntryById = async (req: Request, res: Response) => {
       throw new ApiError(404, 'Journal entry not found');
     }
 
-    return res.json(journalEntry);
+    return res.status(200).json({
+      success: true,
+      message: 'Journal entry retrieved successfully',
+      data: journalEntry
+    });
   } catch (error) {
     logger.error(`Get journal entry by ID error: ${error}`);
     if (error instanceof ApiError) throw error;
@@ -272,7 +278,11 @@ export const createJournalEntry = async (req: Request, res: Response) => {
       }
     });
 
-    return res.status(201).json(createdJournalEntry);
+    return res.status(201).json({
+      success: true,
+      message: 'Journal entry created successfully',
+      data: createdJournalEntry
+    });
   } catch (error) {
     logger.error(`Create journal entry error: ${error}`);
     if (error instanceof ApiError) throw error;
@@ -333,7 +343,11 @@ export const updateJournalEntryStatus = async (req: Request, res: Response) => {
       updatedJournalEntry
     );
 
-    return res.json(updatedJournalEntry);
+    return res.status(200).json({
+      success: true,
+      message: `Journal entry ${status === JournalEntryStatus.POSTED ? 'posted' : 'reversed'} successfully`,
+      data: updatedJournalEntry
+    });
   } catch (error) {
     logger.error(`Update journal entry status error: ${error}`);
     if (error instanceof ApiError) throw error;
@@ -382,7 +396,10 @@ export const deleteJournalEntry = async (req: Request, res: Response) => {
       null
     );
 
-    return res.json({ message: 'Journal entry deleted successfully' });
+    return res.status(200).json({
+      success: true,
+      message: 'Journal entry deleted successfully'
+    });
   } catch (error) {
     logger.error(`Delete journal entry error: ${error}`);
     if (error instanceof ApiError) throw error;

@@ -45,6 +45,9 @@ async function main() {
 	// Seed report templates
 	await seedReportTemplates();
 
+	// Seed system settings
+	await seedSystemSettings();
+
 	console.log("Database seeding completed successfully!");
 }
 
@@ -54,32 +57,60 @@ async function cleanupDatabase() {
 	console.log("Cleaning up existing data...");
 
 	// The order matters due to foreign key constraints
-	await prisma.adminUserRole.deleteMany({});
-	await prisma.rolePermission.deleteMany({});
-	await prisma.roleNavigation.deleteMany({});
-	await prisma.navigationItem.deleteMany({});
-	await prisma.navigationGroup.deleteMany({});
-	await prisma.permission.deleteMany({});
-	await prisma.role.deleteMany({});
-	await prisma.adminUser.deleteMany({});
-	await prisma.staffRole.deleteMany({});
-	await prisma.staffDocument.deleteMany({});
-	await prisma.staff.deleteMany({});
-	await prisma.loanType.deleteMany({});
-	await prisma.account_COA.deleteMany({});
-	await prisma.smsTemplate.deleteMany({});
-	await prisma.smsEvent.deleteMany({});
-	await prisma.taxRate.deleteMany({});
-	await prisma.taxType.deleteMany({});
-	await prisma.expenseCategory.deleteMany({});
-	await prisma.reportTemplate.deleteMany({});
+	try {
+		// First, check if we need to clean journal entries that reference accounts
+		console.log("Checking for journal entries...");
+		const journalEntryLinesCount = await prisma.journalEntryLine.count();
+		if (journalEntryLinesCount > 0) {
+			console.log(
+				`Found ${journalEntryLinesCount} journal entry lines. Deleting...`,
+			);
+			await prisma.journalEntryLine.deleteMany({});
+		}
+
+		const journalEntriesCount = await prisma.journalEntry.count();
+		if (journalEntriesCount > 0) {
+			console.log(`Found ${journalEntriesCount} journal entries. Deleting...`);
+			await prisma.journalEntry.deleteMany({});
+		}
+
+		// Now proceed with the rest of the cleanup
+		await prisma.adminUserRole.deleteMany({});
+		await prisma.rolePermission.deleteMany({});
+		await prisma.roleNavigation.deleteMany({});
+		await prisma.navigationItem.deleteMany({});
+		await prisma.navigationGroup.deleteMany({});
+		await prisma.permission.deleteMany({});
+		await prisma.staffRole.deleteMany({});
+		await prisma.staffDocument.deleteMany({});
+		await prisma.staff.deleteMany({});
+		await prisma.role.deleteMany({});
+		await prisma.adminUser.deleteMany({});
+		await prisma.loanType.deleteMany({});
+
+		// Check for any other dependencies on account_COA
+		console.log("Checking for other dependencies on accounts...");
+		await prisma.account_COA.deleteMany({});
+
+		await prisma.smsTemplate.deleteMany({});
+		await prisma.smsEvent.deleteMany({});
+		await prisma.taxRate.deleteMany({});
+		await prisma.taxType.deleteMany({});
+		await prisma.expenseCategory.deleteMany({});
+		await prisma.reportTemplate.deleteMany({});
+
+		console.log("Database cleanup completed successfully");
+	} catch (error) {
+		console.error("Error during database cleanup:", error);
+		throw error;
+	}
 }
 
 async function seedAdminUsers() {
 	console.log("Seeding admin users...");
 
 	// Create default admin user
-	const passwordHash = await bcrypt.hash("Admin@123", 10);
+	const passwordHash = await bcrypt.hash("admin@123", 12);
 
 	const adminUser = await prisma.adminUser.create({
 		data: {
@@ -173,6 +204,7 @@ async function seedRolesAndPermissions() {
 		"sms",
 		"tax",
 		"expenses",
+		"usertransactions",
 		"staff",
 	];
 
@@ -369,14 +401,22 @@ async function seedNavigation() {
 				groupId: userGroup.id,
 			},
 		});
+		await prisma.navigationItem.create({
+			data: {
+				label: "User Transactions",
+				icon: "account_balance",
+				url: "/users/transaction",
+				order: 3,
+				groupId: userGroup.id,
+			},
+		});
 	}
-
 	if (loanGroup) {
 		await prisma.navigationItem.create({
 			data: {
 				label: "Loan Applications",
 				icon: "description",
-				url: "/loan-applications",
+				url: "/loans/applications",
 				order: 1,
 				groupId: loanGroup.id,
 			},
@@ -396,7 +436,7 @@ async function seedNavigation() {
 			data: {
 				label: "Loan Types",
 				icon: "category",
-				url: "/loan-types",
+				url: "/loans/types",
 				order: 3,
 				groupId: loanGroup.id,
 			},
@@ -406,7 +446,7 @@ async function seedNavigation() {
 			data: {
 				label: "EMI Calculator",
 				icon: "calculate",
-				url: "/emi-calculator",
+				url: "/calculator",
 				order: 4,
 				groupId: loanGroup.id,
 			},
@@ -418,7 +458,7 @@ async function seedNavigation() {
 			data: {
 				label: "Chart of Accounts",
 				icon: "account_tree",
-				url: "/chart-of-accounts",
+				url: "accounting/chart-of-accounts",
 				order: 1,
 				groupId: accountingGroup.id,
 			},
@@ -428,7 +468,7 @@ async function seedNavigation() {
 			data: {
 				label: "Journal Entries",
 				icon: "book",
-				url: "/journal-entries",
+				url: "accounting/journal-entries",
 				order: 2,
 				groupId: accountingGroup.id,
 			},
@@ -438,7 +478,7 @@ async function seedNavigation() {
 			data: {
 				label: "Day Book",
 				icon: "today",
-				url: "/day-book",
+				url: "accounting/day-books",
 				order: 3,
 				groupId: accountingGroup.id,
 			},
@@ -448,7 +488,7 @@ async function seedNavigation() {
 			data: {
 				label: "Financial Reports",
 				icon: "assessment",
-				url: "/financial-reports",
+				url: "accounting/reports",
 				order: 4,
 				groupId: accountingGroup.id,
 			},
@@ -492,7 +532,7 @@ async function seedNavigation() {
 			data: {
 				label: "Staff",
 				icon: "people",
-				url: "/staff",
+				url: "/admin/staff",
 				order: 1,
 				groupId: adminGroup.id,
 			},
@@ -532,7 +572,7 @@ async function seedNavigation() {
 			data: {
 				label: "SMS Templates",
 				icon: "sms",
-				url: "/sms-templates",
+				url: "/admin/sms",
 				order: 5,
 				groupId: adminGroup.id,
 			},
@@ -576,12 +616,12 @@ async function seedLoanTypes() {
 		{
 			name: "Personal Loan",
 			code: "PL",
-			interestType: InterestType.FLAT,
+			interestType: InterestType.DIMINISHING, // Changed from FLAT to DIMINISHING for better customer experience
 			minAmount: 10000,
 			maxAmount: 500000,
 			minTenure: 3,
 			maxTenure: 36,
-			interestRate: 12.5,
+			interestRate: 11.5, // Reduced interest rate to be more competitive
 			processingFeePercent: 1.0,
 			lateFeeAmount: 500,
 			isActive: true,
@@ -591,10 +631,10 @@ async function seedLoanTypes() {
 			code: "BL",
 			interestType: InterestType.DIMINISHING,
 			minAmount: 50000,
-			maxAmount: 2000000,
+			maxAmount: 2500000, // Increased max amount
 			minTenure: 6,
 			maxTenure: 60,
-			interestRate: 14.0,
+			interestRate: 13.5, // Slightly reduced interest rate
 			processingFeePercent: 1.5,
 			lateFeeAmount: 1000,
 			isActive: true,
@@ -604,10 +644,10 @@ async function seedLoanTypes() {
 			code: "EL",
 			interestType: InterestType.DIMINISHING,
 			minAmount: 25000,
-			maxAmount: 1000000,
+			maxAmount: 1500000, // Increased max amount for higher education costs
 			minTenure: 12,
-			maxTenure: 84,
-			interestRate: 10.0,
+			maxTenure: 96, // Extended max tenure
+			interestRate: 9.0, // Reduced interest rate for education
 			processingFeePercent: 0.5,
 			lateFeeAmount: 300,
 			isActive: true,
@@ -617,32 +657,92 @@ async function seedLoanTypes() {
 			code: "HL",
 			interestType: InterestType.DIMINISHING,
 			minAmount: 500000,
-			maxAmount: 10000000,
+			maxAmount: 15000000, // Increased max amount for real estate
 			minTenure: 12,
-			maxTenure: 240,
-			interestRate: 8.5,
+			maxTenure: 300, // Extended to 25 years
+			interestRate: 8.5, // Competitive home loan rate
 			processingFeePercent: 0.75,
 			lateFeeAmount: 2000,
+			isActive: true,
+		},
+		{
+			name: "Gold Loan",
+			code: "GL",
+			interestType: InterestType.FLAT,
+			minAmount: 5000,
+			maxAmount: 1000000,
+			minTenure: 1,
+			maxTenure: 24,
+			interestRate: 10.0,
+			processingFeePercent: 0.5,
+			lateFeeAmount: 300,
 			isActive: true,
 		},
 		{
 			name: "Vehicle Loan",
 			code: "VL",
 			interestType: InterestType.DIMINISHING,
-			minAmount: 100000,
+			minAmount: 50000,
 			maxAmount: 3000000,
 			minTenure: 12,
 			maxTenure: 84,
-			interestRate: 9.5,
+			interestRate: 10.5,
 			processingFeePercent: 1.0,
-			lateFeeAmount: 1000,
+			lateFeeAmount: 750,
+			isActive: true,
+		},
+		{
+			name: "Micro Business Loan",
+			code: "MBL",
+			interestType: InterestType.DIMINISHING,
+			minAmount: 10000,
+			maxAmount: 200000,
+			minTenure: 3,
+			maxTenure: 24,
+			interestRate: 15.0,
+			processingFeePercent: 1.0,
+			lateFeeAmount: 250,
+			isActive: true,
+		},
+		{
+			name: "Agricultural Loan",
+			code: "AL",
+			interestType: InterestType.DIMINISHING,
+			minAmount: 20000,
+			maxAmount: 1000000,
+			minTenure: 6,
+			maxTenure: 48,
+			interestRate: 9.5,
+			processingFeePercent: 0.75,
+			lateFeeAmount: 500,
 			isActive: true,
 		},
 	];
 
+	// Create or update loan types
 	for (const loanType of loanTypes) {
-		await prisma.loanType.create({ data: loanType });
-		console.log(`Created loan type: ${loanType.name}`);
+		try {
+			const existingLoanType = await prisma.loanType.findUnique({
+				where: { code: loanType.code },
+			});
+
+			if (existingLoanType) {
+				// Update existing loan type
+				const updated = await prisma.loanType.update({
+					where: { code: loanType.code },
+					data: loanType,
+				});
+				console.log(`Updated loan type: ${updated.name} (${updated.code})`);
+			} else {
+				// Create new loan type
+				const created = await prisma.loanType.create({
+					data: loanType,
+				});
+				console.log(`Created loan type: ${created.name} (${created.code})`);
+			}
+		} catch (error) {
+			console.error(`Error processing loan type ${loanType.code}:`, error);
+		}
 	}
 }
 
@@ -922,6 +1022,35 @@ async function seedSmsTemplates() {
 			isActive: true,
 		},
 		{
+			name: "Transfer Confirmation",
+			category: "Transaction",
+			content:
+				"Dear {{name}}, Rs. {{amount}} has been transferred from your account {{accountNumber}} to {{recipientAccount}} on {{date}}. Available balance: Rs. {{balance}}.",
+			variables: {
+				name: "User Name",
+				accountNumber: "Account Number",
+				amount: "Amount",
+				recipientAccount: "Recipient Account",
+				date: "Date",
+				balance: "Balance",
+			},
+			characterCount: 180,
+			isActive: true,
+		},
+		{
+			name: "Loan Application Received",
+			category: "Loan",
+			content:
+				"Dear {{name}}, we have received your loan application {{applicationNumber}} for Rs. {{amount}}. We will review and get back to you within 2-3 business days.",
+			variables: {
+				name: "User Name",
+				applicationNumber: "Application Number",
+				amount: "Amount",
+			},
+			characterCount: 160,
+			isActive: true,
+		},
+		{
 			name: "Loan Approval",
 			category: "Loan",
 			content:
@@ -935,13 +1064,25 @@ async function seedSmsTemplates() {
 			isActive: true,
 		},
 		{
+			name: "Loan Rejection",
+			category: "Loan",
+			content:
+				"Dear {{name}}, your loan application {{applicationNumber}} has been reviewed. Unfortunately, we cannot approve it at this time. Please contact us for more details.",
+			variables: {
+				name: "User Name",
+				applicationNumber: "Application Number",
+			},
+			characterCount: 160,
+			isActive: true,
+		},
+		{
 			name: "EMI Due Reminder",
 			category: "Loan",
 			content:
-				"Dear {{name}}, your loan EMI of Rs. {{amount}} for loan {{loanNumber}} is due on {{dueDate}}. Please ensure timely payment to avoid late fees.",
+				"Dear {{name}}, your EMI of Rs. {{emiAmount}} for loan {{loanNumber}} is due on {{dueDate}}. Please ensure timely payment to avoid late fees.",
 			variables: {
 				name: "User Name",
-				amount: "Amount",
+				emiAmount: "EMI Amount",
 				loanNumber: "Loan Number",
 				dueDate: "Due Date",
 			},
@@ -952,13 +1093,51 @@ async function seedSmsTemplates() {
 			name: "EMI Payment Confirmation",
 			category: "Loan",
 			content:
-				"Dear {{name}}, we have received your EMI payment of Rs. {{amount}} for loan {{loanNumber}}. Thank you for your payment.",
+				"Dear {{name}}, we have received your EMI payment of Rs. {{emiAmount}} for loan {{loanNumber}}. Thank you for your payment.",
 			variables: {
 				name: "User Name",
-				amount: "Amount",
+				emiAmount: "EMI Amount",
 				loanNumber: "Loan Number",
 			},
 			characterCount: 130,
+			isActive: true,
+		},
+		{
+			name: "Marketing Offer",
+			category: "Marketing",
+			content:
+				"Dear {{name}}, {{offer}} is now available! Valid until {{validUntil}}. Contact us at {{contactNumber}} for more details.",
+			variables: {
+				name: "User Name",
+				offer: "Special Offer",
+				validUntil: "Valid Until",
+				contactNumber: "Contact Number",
+			},
+			characterCount: 140,
+			isActive: true,
+		},
+		{
+			name: "System Maintenance",
+			category: "System",
+			content:
+				"Dear {{name}}, our system will be under maintenance on {{date}} from {{time}}. We apologize for any inconvenience.",
+			variables: {
+				name: "User Name",
+				date: "Date",
+				time: "Time",
+			},
+			characterCount: 120,
+			isActive: true,
+		},
+		{
+			name: "Password Reset",
+			category: "System",
+			content:
+				"Dear {{name}}, your password has been reset successfully. If you didn't request this, please contact us immediately.",
+			variables: {
+				name: "User Name",
+			},
+			characterCount: 110,
 			isActive: true,
 		},
 	];
@@ -983,14 +1162,32 @@ async function seedSmsTemplates() {
 	const withdrawalTemplate = await prisma.smsTemplate.findFirst({
 		where: { name: "Withdrawal Confirmation" },
 	});
+	const transferTemplate = await prisma.smsTemplate.findFirst({
+		where: { name: "Transfer Confirmation" },
+	});
+	const loanApplicationTemplate = await prisma.smsTemplate.findFirst({
+		where: { name: "Loan Application Received" },
+	});
 	const loanApprovalTemplate = await prisma.smsTemplate.findFirst({
 		where: { name: "Loan Approval" },
+	});
+	const loanRejectionTemplate = await prisma.smsTemplate.findFirst({
+		where: { name: "Loan Rejection" },
 	});
 	const emiDueTemplate = await prisma.smsTemplate.findFirst({
 		where: { name: "EMI Due Reminder" },
 	});
 	const emiPaymentTemplate = await prisma.smsTemplate.findFirst({
 		where: { name: "EMI Payment Confirmation" },
+	});
+	const marketingTemplate = await prisma.smsTemplate.findFirst({
+		where: { name: "Marketing Offer" },
+	});
+	const maintenanceTemplate = await prisma.smsTemplate.findFirst({
+		where: { name: "System Maintenance" },
+	});
+	const passwordResetTemplate = await prisma.smsTemplate.findFirst({
+		where: { name: "Password Reset" },
 	});
 
 	const events = [
@@ -1013,9 +1210,27 @@ async function seedSmsTemplates() {
 			isActive: true,
 		},
 		{
+			eventCode: "TRANSFER",
+			description: "Triggered when a transfer is made",
+			templateId: transferTemplate?.id,
+			isActive: true,
+		},
+		{
+			eventCode: "LOAN_APPLICATION",
+			description: "Triggered when a loan application is received",
+			templateId: loanApplicationTemplate?.id,
+			isActive: true,
+		},
+		{
 			eventCode: "LOAN_APPROVAL",
 			description: "Triggered when a loan is approved",
 			templateId: loanApprovalTemplate?.id,
+			isActive: true,
+		},
+		{
+			eventCode: "LOAN_REJECTION",
+			description: "Triggered when a loan is rejected",
+			templateId: loanRejectionTemplate?.id,
 			isActive: true,
 		},
 		{
@@ -1028,6 +1243,24 @@ async function seedSmsTemplates() {
 			eventCode: "EMI_PAYMENT",
 			description: "Triggered when an EMI payment is received",
 			templateId: emiPaymentTemplate?.id,
+			isActive: true,
+		},
+		{
+			eventCode: "MARKETING",
+			description: "Triggered for marketing campaigns",
+			templateId: marketingTemplate?.id,
+			isActive: true,
+		},
+		{
+			eventCode: "SYSTEM_MAINTENANCE",
+			description: "Triggered for system maintenance notifications",
+			templateId: maintenanceTemplate?.id,
+			isActive: true,
+		},
+		{
+			eventCode: "PASSWORD_RESET",
+			description: "Triggered when password is reset",
+			templateId: passwordResetTemplate?.id,
 			isActive: true,
 		},
 	];
@@ -1633,6 +1866,407 @@ async function seedStaffUsers() {
 	}
 }
 
+async function seedSystemSettings() {
+	console.log("Seeding system settings...");
+
+	// Create setting categories
+	const categories = [
+		{
+			name: "GENERAL",
+			displayName: "General",
+			description: "General application settings",
+			icon: "cog",
+			order: 1,
+		},
+		{
+			name: "BUSINESS",
+			displayName: "Business",
+			description: "Business-related settings",
+			icon: "building",
+			order: 2,
+		},
+		{
+			name: "CONTACT",
+			displayName: "Contact",
+			description: "Contact information settings",
+			icon: "globe",
+			order: 3,
+		},
+		{
+			name: "LOAN",
+			displayName: "Loan",
+			description: "Loan-related settings",
+			icon: "currency-rupee",
+			order: 4,
+		},
+		{
+			name: "NOTIFICATION",
+			displayName: "Notifications",
+			description: "Notification settings",
+			icon: "bell",
+			order: 5,
+		},
+		{
+			name: "SECURITY",
+			displayName: "Security",
+			description: "Security settings",
+			icon: "shield-check",
+			order: 6,
+		},
+		{
+			name: "SYSTEM",
+			displayName: "System",
+			description: "System settings",
+			icon: "chart-bar",
+			order: 7,
+		},
+	];
+
+	for (const category of categories) {
+		await prisma.settingCategory.create({ data: category });
+		console.log(`Created setting category: ${category.name}`);
+	}
+
+	// Create default settings
+	const defaultSettings = [
+		// General Settings
+		{
+			key: "app.name",
+			value: "AstroFinance",
+			description: "Application name",
+			category: "GENERAL",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "app.description",
+			value: "Financial Management System",
+			description: "Application description",
+			category: "GENERAL",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "app.version",
+			value: "1.0.0",
+			description: "Application version",
+			category: "GENERAL",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "app.timezone",
+			value: "Asia/Kathmandu",
+			description: "Default timezone",
+			category: "GENERAL",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "app.language",
+			value: "en",
+			description: "Default language",
+			category: "GENERAL",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+
+		// Contact Information
+		{
+			key: "contact.email",
+			value: "info@astrofinance.com",
+			description: "Primary contact email",
+			category: "CONTACT",
+			dataType: "EMAIL",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "contact.phone",
+			value: "+977-1-1234567",
+			description: "Primary contact phone",
+			category: "CONTACT",
+			dataType: "PHONE",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "contact.address",
+			value: "Kathmandu, Nepal",
+			description: "Business address",
+			category: "CONTACT",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "contact.website",
+			value: "https://astrofinance.com",
+			description: "Business website",
+			category: "CONTACT",
+			dataType: "URL",
+			isPublic: true,
+			isEncrypted: false,
+		},
+
+		// Business Settings
+		{
+			key: "business.name",
+			value: "AstroFinance Pvt. Ltd.",
+			description: "Business name",
+			category: "BUSINESS",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "business.registration_number",
+			value: "123456789",
+			description: "Business registration number",
+			category: "BUSINESS",
+			dataType: "STRING",
+			isPublic: false,
+			isEncrypted: false,
+		},
+		{
+			key: "business.tax_id",
+			value: "TAX123456",
+			description: "Business tax ID",
+			category: "BUSINESS",
+			dataType: "STRING",
+			isPublic: false,
+			isEncrypted: false,
+		},
+		{
+			key: "business.currency",
+			value: "NPR",
+			description: "Default currency",
+			category: "BUSINESS",
+			dataType: "STRING",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "business.financial_year_start",
+			value: "2024-04-01",
+			description: "Financial year start date",
+			category: "BUSINESS",
+			dataType: "DATE",
+			isPublic: true,
+			isEncrypted: false,
+		},
+
+		// Loan Settings
+		{
+			key: "loan.max_amount",
+			value: "1000000",
+			description: "Maximum loan amount",
+			category: "LOAN",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "loan.min_amount",
+			value: "1000",
+			description: "Minimum loan amount",
+			category: "LOAN",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "loan.max_tenure",
+			value: "84",
+			description: "Maximum loan tenure in months",
+			category: "LOAN",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "loan.min_tenure",
+			value: "3",
+			description: "Minimum loan tenure in months",
+			category: "LOAN",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "loan.processing_fee_percent",
+			value: "2.5",
+			description: "Default processing fee percentage",
+			category: "LOAN",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "loan.late_fee_amount",
+			value: "500",
+			description: "Default late fee amount",
+			category: "LOAN",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+
+		// Notification Settings
+		{
+			key: "notification.email_enabled",
+			value: "true",
+			description: "Enable email notifications",
+			category: "NOTIFICATION",
+			dataType: "BOOLEAN",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "notification.sms_enabled",
+			value: "true",
+			description: "Enable SMS notifications",
+			category: "NOTIFICATION",
+			dataType: "BOOLEAN",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "notification.push_enabled",
+			value: "false",
+			description: "Enable push notifications",
+			category: "NOTIFICATION",
+			dataType: "BOOLEAN",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "notification.sms_provider",
+			value: "twilio",
+			description: "SMS provider",
+			category: "NOTIFICATION",
+			dataType: "STRING",
+			isPublic: false,
+			isEncrypted: false,
+		},
+
+		// Security Settings
+		{
+			key: "security.password_min_length",
+			value: "8",
+			description: "Minimum password length",
+			category: "SECURITY",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "security.password_require_special",
+			value: "true",
+			description: "Require special characters in password",
+			category: "SECURITY",
+			dataType: "BOOLEAN",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "security.session_timeout",
+			value: "3600",
+			description: "Session timeout in seconds",
+			category: "SECURITY",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "security.max_login_attempts",
+			value: "5",
+			description: "Maximum login attempts",
+			category: "SECURITY",
+			dataType: "NUMBER",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "security.two_factor_enabled",
+			value: "false",
+			description: "Enable two-factor authentication",
+			category: "SECURITY",
+			dataType: "BOOLEAN",
+			isPublic: true,
+			isEncrypted: false,
+		},
+
+		// System Settings
+		{
+			key: "system.maintenance_mode",
+			value: "false",
+			description: "Enable maintenance mode",
+			category: "SYSTEM",
+			dataType: "BOOLEAN",
+			isPublic: true,
+			isEncrypted: false,
+		},
+		{
+			key: "system.debug_mode",
+			value: "false",
+			description: "Enable debug mode",
+			category: "SYSTEM",
+			dataType: "BOOLEAN",
+			isPublic: false,
+			isEncrypted: false,
+		},
+		{
+			key: "system.log_level",
+			value: "info",
+			description: "Log level",
+			category: "SYSTEM",
+			dataType: "STRING",
+			isPublic: false,
+			isEncrypted: false,
+		},
+		{
+			key: "system.backup_enabled",
+			value: "true",
+			description: "Enable automatic backups",
+			category: "SYSTEM",
+			dataType: "BOOLEAN",
+			isPublic: false,
+			isEncrypted: false,
+		},
+		{
+			key: "system.backup_frequency",
+			value: "daily",
+			description: "Backup frequency",
+			category: "SYSTEM",
+			dataType: "STRING",
+			isPublic: false,
+			isEncrypted: false,
+		},
+	];
+
+	// Import SettingDataType from your Prisma client
+	const { SettingDataType } = await import("@prisma/client");
+
+	for (const setting of defaultSettings) {
+		await prisma.systemSetting.create({
+			data: {
+				...setting,
+				dataType:
+					SettingDataType[setting.dataType as keyof typeof SettingDataType],
+			},
+		});
+		console.log(`Created setting: ${setting.key}`);
+	}
+
+	console.log("System settings seeded successfully");
+}
+
 main()
 	.catch((e) => {
 		console.error("Error during seeding:", e);
@@ -1641,4 +2275,3 @@ main()
 	.finally(async () => {
 		await prisma.$disconnect();
 	});
-

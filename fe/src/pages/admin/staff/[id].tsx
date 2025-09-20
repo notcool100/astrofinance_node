@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeftIcon, PencilIcon } from '@heroicons/react/24/outline';
 import MainLayout from '@/components/layout/MainLayout';
 import Button from '@/components/common/Button';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
 import StaffDetails from '@/components/modules/staff/StaffDetails';
 import { getStaffById, StaffProfile } from '@/services/staff.service';
 
@@ -35,8 +36,9 @@ const StaffDetailPage: React.FC = () => {
   };
 
   return (
-    <MainLayout>
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
+    <ProtectedRoute adminOnly>
+      <MainLayout>
+        <div className="px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <Link href="/admin/staff">
             <Button variant="outline" className="flex items-center">
@@ -88,7 +90,8 @@ const StaffDetailPage: React.FC = () => {
           <div className="p-6 text-center">Staff not found or you don't have permission to view this staff member.</div>
         )}
       </div>
-    </MainLayout>
+      </MainLayout>
+    </ProtectedRoute>
   );
 };
 

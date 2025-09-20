@@ -149,7 +149,7 @@ const UsersPage: React.FC = () => {
     },
     {
       Header: 'Loans',
-      accessor: '_count' as keyof User,
+      accessor: 'loans_count' as any,
       Cell: ({ row }: any) => (
         <div className="text-center">
           {row.original._count?.loans || 0}
@@ -158,7 +158,7 @@ const UsersPage: React.FC = () => {
     },
     {
       Header: 'Applications',
-      accessor: '_count' as keyof User,
+      accessor: 'applications_count' as any,
       Cell: ({ row }: any) => (
         <div className="text-center">
           {row.original._count?.loanApplications || 0}
