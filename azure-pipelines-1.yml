@@ -110,6 +110,17 @@ stages:
     displayName: 'Prepare Production Environment'
     steps:
     - script: |
+        # Ensure production directories exist with proper permissions
+        sudo mkdir -p $(productionPath)
+        sudo mkdir -p $(backupPath)
+        sudo chown -R $(whoami):$(whoami) $(productionPath)
+        sudo chown -R $(whoami):$(whoami) $(backupPath)
+        sudo chmod -R 755 $(productionPath)
+        sudo chmod -R 755 $(backupPath)
+        echo "Production and backup directories prepared"
+      displayName: 'Setup Base Directories'
+
+    - script: |
         # Create backup directories with timestamp
         TIMESTAMP=$(date +%Y%m%d-%H%M%S)
         mkdir -p $(backupPath)/$TIMESTAMP
@@ -159,7 +170,7 @@ stages:
         downloadPath: '$(System.ArtifactsDirectory)'
 
     - script: |
-        # Create production directory
+        # Create frontend production directory
         mkdir -p $(productionPath)/frontend-live
         echo "Created frontend production directory"
       displayName: 'Create Frontend Directory'
@@ -185,8 +196,13 @@ stages:
         
         # Install production dependencies
         cd $(productionPath)/frontend-live
-        npm ci --only=production
-        echo "Production dependencies installed"
+        if [ -f "package-lock.json" ]; then
+          npm ci --omit=dev
+          echo "Production dependencies installed via npm ci"
+        else
+          npm install --omit=dev
+          echo "Production dependencies installed via npm install"
+        fi
       displayName: 'Install Dependencies'
 
     - script: |
@@ -272,7 +288,7 @@ stages:
         downloadPath: '$(System.ArtifactsDirectory)'
 
     - script: |
-        # Create production directory
+        # Create backend production directory
         mkdir -p $(productionPath)/backend-live
         echo "Created backend production directory"
       displayName: 'Create Backend Directory'
@@ -298,8 +314,13 @@ stages:
         
         # Install production dependencies
         cd $(productionPath)/backend-live
-        npm ci --only=production
-        echo "Production dependencies installed"
+        if [ -f "package-lock.json" ]; then
+          npm ci --omit=dev
+          echo "Production dependencies installed via npm ci"
+        else
+          npm install --omit=dev
+          echo "Production dependencies installed via npm install"
+        fi
       displayName: 'Install Dependencies'
 
     - script: |
