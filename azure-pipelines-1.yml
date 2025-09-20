@@ -15,7 +15,6 @@ variables:
   nodeVersion: '24.x'
   productionPath: '/var/www/astrofinance'
   backupPath: '/var/www/astrofinance/backups'
-  timestamp: $[format('{0:yyyyMMdd-HHmmss}', pipeline.startTime)]
 
 stages:
 - stage: BuildFrontend
@@ -111,22 +110,25 @@ stages:
     displayName: 'Prepare Production Environment'
     steps:
     - script: |
-        # Create backup directories
-        mkdir -p $(backupPath)/$(timestamp)
-        echo "Created backup directory: $(backupPath)/$(timestamp)"
+        # Create backup directories with timestamp
+        TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+        mkdir -p $(backupPath)/$TIMESTAMP
+        echo "Created backup directory: $(backupPath)/$TIMESTAMP"
+        echo "##vso[task.setvariable variable=deployTimestamp]$TIMESTAMP"
       displayName: 'Create Backup Directory'
 
     - script: |
         # Backup current production if it exists
+        TIMESTAMP="$(deployTimestamp)"
         if [ -d "$(productionPath)/frontend-live" ]; then
           echo "Backing up current frontend..."
-          cp -r $(productionPath)/frontend-live $(backupPath)/$(timestamp)/frontend-live-backup
+          cp -r $(productionPath)/frontend-live $(backupPath)/$TIMESTAMP/frontend-live-backup
           echo "Frontend backup completed"
         fi
         
         if [ -d "$(productionPath)/backend-live" ]; then
           echo "Backing up current backend..."
-          cp -r $(productionPath)/backend-live $(backupPath)/$(timestamp)/backend-live-backup
+          cp -r $(productionPath)/backend-live $(backupPath)/$TIMESTAMP/backend-live-backup
           echo "Backend backup completed"
         fi
       displayName: 'Backup Current Production'
@@ -383,7 +385,7 @@ stages:
         echo "=== FINAL DEPLOYMENT STATUS ==="
         echo "Timestamp: $(date)"
         echo "Production Path: $(productionPath)"
-        echo "Backup Path: $(backupPath)/$(timestamp)"
+        echo "Backup Path: $(backupPath)/$(deployTimestamp)"
         echo ""
         
         echo "=== PM2 STATUS ==="
@@ -445,10 +447,10 @@ stages:
     - script: |
         # Log deployment success
         echo "Production deployment completed successfully at $(date)"
-        echo "Deployment timestamp: $(timestamp)"
+        echo "Deployment timestamp: $(deployTimestamp)"
         echo "Frontend: $(productionPath)/frontend-live"
         echo "Backend: $(productionPath)/backend-live"
-        echo "Backup: $(backupPath)/$(timestamp)"
+        echo "Backup: $(backupPath)/$(deployTimestamp)"
       displayName: 'Log Deployment Success'
 
 - stage: Rollback
@@ -463,7 +465,7 @@ stages:
     steps:
     - script: |
         echo "Deployment failed, initiating rollback..."
-        echo "Rolling back to backup: $(backupPath)/$(timestamp)"
+        echo "Rolling back to backup: $(backupPath)/$(deployTimestamp)"
       displayName: 'Start Rollback Process'
 
     - script: |
@@ -475,9 +477,9 @@ stages:
 
     - script: |
         # Restore frontend from backup
-        if [ -d "$(backupPath)/$(timestamp)/frontend-live-backup" ]; then
+        if [ -d "$(backupPath)/$(deployTimestamp)/frontend-live-backup" ]; then
           rm -rf $(productionPath)/frontend-live
-          cp -r $(backupPath)/$(timestamp)/frontend-live-backup $(productionPath)/frontend-live
+          cp -r $(backupPath)/$(deployTimestamp)/frontend-live-backup $(productionPath)/frontend-live
           echo "Frontend restored from backup"
         else
           echo "No frontend backup found"
@@ -486,9 +488,9 @@ stages:
 
     - script: |
         # Restore backend from backup
-        if [ -d "$(backupPath)/$(timestamp)/backend-live-backup" ]; then
+        if [ -d "$(backupPath)/$(deployTimestamp)/backend-live-backup" ]; then
           rm -rf $(productionPath)/backend-live
-          cp -r $(backupPath)/$(timestamp)/backend-live-backup $(productionPath)/backend-live
+          cp -r $(backupPath)/$(deployTimestamp)/backend-live-backup $(productionPath)/backend-live
           echo "Backend restored from backup"
         else
           echo "No backend backup found"
