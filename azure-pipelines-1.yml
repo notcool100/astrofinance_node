@@ -156,7 +156,7 @@ stages:
         buildType: 'current'
         downloadType: 'single'
         artifactName: 'frontend'
-        downloadPath: '$(System.ArtifactsDirectory)/frontend_live'
+        downloadPath: '$(System.ArtifactsDirectory)'
 
     - script: |
         # Create production directory
@@ -166,7 +166,13 @@ stages:
 
     - script: |
         # Extract new frontend build
-        tar -xzf $(System.ArtifactsDirectory)/frontend_live/frontend_live.tar.gz -C $(productionPath)/frontend-live
+        echo "Debugging artifact extraction..."
+        echo "Artifacts directory contents:"
+        ls -la $(System.ArtifactsDirectory)/
+        echo "Frontend artifact contents:"
+        ls -la $(System.ArtifactsDirectory)/frontend/
+        
+        tar -xzf $(System.ArtifactsDirectory)/frontend/frontend_live.tar.gz -C $(productionPath)/frontend-live
         echo "Frontend extracted to $(productionPath)/frontend-live"
       displayName: 'Extract Frontend Build'
 
@@ -263,7 +269,7 @@ stages:
         buildType: 'current'
         downloadType: 'single'
         artifactName: 'backend'
-        downloadPath: '$(System.ArtifactsDirectory)/backend_live'
+        downloadPath: '$(System.ArtifactsDirectory)'
 
     - script: |
         # Create production directory
@@ -273,7 +279,13 @@ stages:
 
     - script: |
         # Extract new backend build
-        tar -xzf $(System.ArtifactsDirectory)/backend_live/backend_live.tar.gz -C $(productionPath)/backend-live
+        echo "Debugging backend artifact extraction..."
+        echo "Artifacts directory contents:"
+        ls -la $(System.ArtifactsDirectory)/
+        echo "Backend artifact contents:"
+        ls -la $(System.ArtifactsDirectory)/backend/
+        
+        tar -xzf $(System.ArtifactsDirectory)/backend/backend_live.tar.gz -C $(productionPath)/backend-live
         echo "Backend extracted to $(productionPath)/backend-live"
       displayName: 'Extract Backend Build'
 
