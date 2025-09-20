@@ -13,6 +13,9 @@ pool:
 
 variables:
   nodeVersion: '24.x'
+  productionPath: '/var/www/astrofinance'
+  backupPath: '/var/www/astrofinance/backups'
+  timestamp: $[format('{0:yyyyMMdd-HHmmss}', pipeline.startTime)]
 
 stages:
 - stage: BuildFrontend
@@ -97,15 +100,54 @@ stages:
         ArtifactName: 'backend'
         publishLocation: 'Container'
 
-- stage: DeployDev
-  displayName: 'Deploy to Development'
+- stage: PreDeploy
+  displayName: 'Pre-Deployment Setup'
   dependsOn: 
     - BuildFrontend
     - BuildBackend
   condition: and(succeeded('BuildFrontend'), succeeded('BuildBackend'), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
   jobs:
-  - job: DeployFrontendDev
-    displayName: 'Deploy Frontend to Dev'
+  - job: PreDeployJob
+    displayName: 'Prepare Production Environment'
+    steps:
+    - script: |
+        # Create backup directories
+        mkdir -p $(backupPath)/$(timestamp)
+        echo "Created backup directory: $(backupPath)/$(timestamp)"
+      displayName: 'Create Backup Directory'
+
+    - script: |
+        # Backup current production if it exists
+        if [ -d "$(productionPath)/frontend-live" ]; then
+          echo "Backing up current frontend..."
+          cp -r $(productionPath)/frontend-live $(backupPath)/$(timestamp)/frontend-live-backup
+          echo "Frontend backup completed"
+        fi
+        
+        if [ -d "$(productionPath)/backend-live" ]; then
+          echo "Backing up current backend..."
+          cp -r $(productionPath)/backend-live $(backupPath)/$(timestamp)/backend-live-backup
+          echo "Backend backup completed"
+        fi
+      displayName: 'Backup Current Production'
+
+    - script: |
+        # Check if PM2 is running and get current status
+        if command -v pm2 &> /dev/null; then
+          pm2 list
+          echo "PM2 status checked"
+        else
+          echo "PM2 not found, will install during deployment"
+        fi
+      displayName: 'Check PM2 Status'
+
+- stage: DeployProduction
+  displayName: 'Deploy to Production'
+  dependsOn: PreDeploy
+  condition: and(succeeded('PreDeploy'))
+  jobs:
+  - job: DeployFrontendProd
+    displayName: 'Deploy Frontend to Production'
     steps:
     - task: DownloadBuildArtifacts@1
       inputs:
@@ -115,18 +157,106 @@ stages:
         downloadPath: '$(System.ArtifactsDirectory)/frontend_live'
 
     - script: |
-        mkdir -p /var/www/astrofinance/frontend-live
-        tar -xzf $(System.ArtifactsDirectory)/frontend_live/frontend_live.tar.gz -C /var/www/astrofinance/frontend-live
-        echo "Frontend deployed to /var/www/astrofinance/frontend-live"
+        # Create production directory
+        mkdir -p $(productionPath)/frontend-live
+        echo "Created frontend production directory"
+      displayName: 'Create Frontend Directory'
+
+    - script: |
+        # Extract new frontend build
+        tar -xzf $(System.ArtifactsDirectory)/frontend_live/frontend_live.tar.gz -C $(productionPath)/frontend-live
+        echo "Frontend extracted to $(productionPath)/frontend-live"
       displayName: 'Extract Frontend Build'
 
     - script: |
-        npm install -g pm2
-        pm2 restart frontend-live || pm2 start npm --name "frontend-live" -- start
+        # Install PM2 if not present
+        if ! command -v pm2 &> /dev/null; then
+          npm install -g pm2
+          echo "PM2 installed"
+        fi
+        
+        # Install production dependencies
+        cd $(productionPath)/frontend-live
+        npm ci --only=production
+        echo "Production dependencies installed"
+      displayName: 'Install Dependencies'
+
+    - script: |
+        # Setup environment file for frontend
+        cd $(productionPath)/frontend-live
+        if [ ! -f ".env.local" ]; then
+          echo "Creating frontend .env.local file..."
+          cat > .env.local << EOF
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:5001
+NEXT_PUBLIC_FRONTEND_URL=http://localhost:80
+
+# App Configuration
+NEXT_PUBLIC_APP_NAME="AstroFinance"
+NEXT_PUBLIC_APP_VERSION="1.0.0"
+
+# Environment
+NODE_ENV=production
+PORT=80
+
+# Features
+NEXT_PUBLIC_ENABLE_ANALYTICS=false
+NEXT_PUBLIC_DEBUG_MODE=false
+EOF
+          echo "Frontend .env.local file created"
+        else
+          echo "Frontend .env.local file already exists"
+        fi
+      displayName: 'Setup Frontend Environment'
+
+    - script: |
+        # Restart frontend with PM2
+        cd $(productionPath)/frontend-live
+        echo "Starting frontend deployment..."
+        echo "Current directory: $(pwd)"
+        echo "Files in directory:"
+        ls -la
+        
+        pm2 delete frontend-live 2>/dev/null || true
+        pm2 start npm --name "frontend-live" -- start -- --port 80
+        pm2 save
+        echo "Frontend restarted with PM2 on port 80"
+        
+        # Show PM2 logs for debugging
+        echo "PM2 status after frontend start:"
+        pm2 list
       displayName: 'Restart Frontend with PM2'
 
-  - job: DeployBackendDev
-    displayName: 'Deploy Backend to Dev'
+    - script: |
+        # Health check for frontend
+        echo "Starting frontend health check..."
+        sleep 10
+        
+        echo "PM2 status:"
+        pm2 list
+        
+        echo "Frontend logs (last 20 lines):"
+        pm2 logs frontend-live --lines 20 || echo "No logs available"
+        
+        if pm2 list | grep -q "frontend-live.*online"; then
+          echo "✅ Frontend health check passed - Service is online"
+          
+          # Test if port 80 is responding
+          if curl -f http://localhost:80 > /dev/null 2>&1; then
+            echo "✅ Frontend port 80 is responding"
+          else
+            echo "⚠️ Frontend port 80 is not responding, but PM2 shows online"
+          fi
+        else
+          echo "❌ Frontend health check failed - Service is not online"
+          echo "PM2 error logs:"
+          pm2 logs frontend-live --err --lines 10 || echo "No error logs available"
+          exit 1
+        fi
+      displayName: 'Frontend Health Check'
+
+  - job: DeployBackendProd
+    displayName: 'Deploy Backend to Production'
     steps:
     - task: DownloadBuildArtifacts@1
       inputs:
@@ -136,13 +266,254 @@ stages:
         downloadPath: '$(System.ArtifactsDirectory)/backend_live'
 
     - script: |
-        mkdir -p /var/www/astrofinance/backend-live
-        tar -xzf $(System.ArtifactsDirectory)/backend_live/backend-live.tar.gz -C /var/www/astrofinance/backend-live
-        echo "Backend deployed to /var/www/astrofinance/backend-live"
+        # Create production directory
+        mkdir -p $(productionPath)/backend-live
+        echo "Created backend production directory"
+      displayName: 'Create Backend Directory'
+
+    - script: |
+        # Extract new backend build
+        tar -xzf $(System.ArtifactsDirectory)/backend_live/backend_live.tar.gz -C $(productionPath)/backend-live
+        echo "Backend extracted to $(productionPath)/backend-live"
       displayName: 'Extract Backend Build'
 
     - script: |
-        cd /var/www/astrofinance/backend-live
-        npm install -g pm2
-        pm2 restart backend-live || pm2 start npm --name "backend-live" -- start
+        # Install PM2 if not present
+        if ! command -v pm2 &> /dev/null; then
+          npm install -g pm2
+          echo "PM2 installed"
+        fi
+        
+        # Install production dependencies
+        cd $(productionPath)/backend-live
+        npm ci --only=production
+        echo "Production dependencies installed"
+      displayName: 'Install Dependencies'
+
+    - script: |
+        # Setup environment file for backend
+        cd $(productionPath)/backend-live
+        if [ ! -f ".env" ]; then
+          echo "Creating backend .env file..."
+          cat > .env << EOF
+# Database
+DATABASE_URL="postgresql://username:password@localhost:5432/astrofinance"
+
+# Server
+PORT=5001
+NODE_ENV=production
+
+# JWT
+JWT_SECRET="your-jwt-secret-key-here"
+JWT_EXPIRES_IN="24h"
+
+# API
+API_BASE_URL="http://localhost:5001"
+FRONTEND_URL="http://localhost:80"
+
+# Email (if needed)
+SMTP_HOST=""
+SMTP_PORT=""
+SMTP_USER=""
+SMTP_PASS=""
+
+# Other services
+REDIS_URL="redis://localhost:6379"
+EOF
+          echo "Backend .env file created"
+        else
+          echo "Backend .env file already exists"
+        fi
+      displayName: 'Setup Backend Environment'
+
+    - script: |
+        # Restart backend with PM2
+        cd $(productionPath)/backend-live
+        echo "Starting backend deployment..."
+        echo "Current directory: $(pwd)"
+        echo "Files in directory:"
+        ls -la
+        echo "Environment file contents:"
+        cat .env || echo "No .env file found"
+        
+        pm2 delete backend-live 2>/dev/null || true
+        pm2 start npm --name "backend-live" -- start
+        pm2 save
+        echo "Backend restarted with PM2 on port 5001"
+        
+        # Show PM2 logs for debugging
+        echo "PM2 status after backend start:"
+        pm2 list
       displayName: 'Restart Backend with PM2'
+
+    - script: |
+        # Health check for backend
+        echo "Starting backend health check..."
+        sleep 15
+        
+        echo "PM2 status:"
+        pm2 list
+        
+        echo "Backend logs (last 20 lines):"
+        pm2 logs backend-live --lines 20 || echo "No logs available"
+        
+        if pm2 list | grep -q "backend-live.*online"; then
+          echo "✅ Backend health check passed - Service is online"
+          
+          # Test if port 5001 is responding
+          if curl -f http://localhost:5001 > /dev/null 2>&1; then
+            echo "✅ Backend port 5001 is responding"
+          else
+            echo "⚠️ Backend port 5001 is not responding, but PM2 shows online"
+          fi
+        else
+          echo "❌ Backend health check failed - Service is not online"
+          echo "PM2 error logs:"
+          pm2 logs backend-live --err --lines 10 || echo "No error logs available"
+          exit 1
+        fi
+      displayName: 'Backend Health Check'
+
+- stage: PostDeploy
+  displayName: 'Post-Deployment Verification'
+  dependsOn: DeployProduction
+  condition: and(succeeded('DeployProduction'))
+  jobs:
+  - job: PostDeployJob
+    displayName: 'Verify Production Deployment'
+    steps:
+    - script: |
+        # Final PM2 status check with detailed debugging
+        echo "=== FINAL DEPLOYMENT STATUS ==="
+        echo "Timestamp: $(date)"
+        echo "Production Path: $(productionPath)"
+        echo "Backup Path: $(backupPath)/$(timestamp)"
+        echo ""
+        
+        echo "=== PM2 STATUS ==="
+        pm2 list
+        echo ""
+        
+        echo "=== FRONTEND DEBUG INFO ==="
+        echo "Frontend directory: $(productionPath)/frontend-live"
+        if [ -d "$(productionPath)/frontend-live" ]; then
+          echo "Frontend files:"
+          ls -la $(productionPath)/frontend-live/ | head -10
+          echo ""
+          echo "Frontend .env.local:"
+          cat $(productionPath)/frontend-live/.env.local 2>/dev/null || echo "No .env.local found"
+        else
+          echo "Frontend directory not found!"
+        fi
+        echo ""
+        
+        echo "=== BACKEND DEBUG INFO ==="
+        echo "Backend directory: $(productionPath)/backend-live"
+        if [ -d "$(productionPath)/backend-live" ]; then
+          echo "Backend files:"
+          ls -la $(productionPath)/backend-live/ | head -10
+          echo ""
+          echo "Backend .env:"
+          cat $(productionPath)/backend-live/.env 2>/dev/null || echo "No .env found"
+        else
+          echo "Backend directory not found!"
+        fi
+        echo ""
+        
+        echo "=== PORT CHECKS ==="
+        echo "Checking port 80 (frontend):"
+        netstat -tlnp | grep :80 || echo "Port 80 not listening"
+        echo ""
+        echo "Checking port 5001 (backend):"
+        netstat -tlnp | grep :5001 || echo "Port 5001 not listening"
+        echo ""
+        
+        echo "=== RECENT LOGS ==="
+        echo "Frontend logs (last 10 lines):"
+        pm2 logs frontend-live --lines 10 2>/dev/null || echo "No frontend logs"
+        echo ""
+        echo "Backend logs (last 10 lines):"
+        pm2 logs backend-live --lines 10 2>/dev/null || echo "No backend logs"
+        echo ""
+        
+        echo "Final PM2 status check completed"
+      displayName: 'Final PM2 Status Check'
+
+    - script: |
+        # Clean up old backups (keep last 5)
+        cd $(backupPath)
+        ls -t | tail -n +6 | xargs -r rm -rf
+        echo "Old backups cleaned up"
+      displayName: 'Cleanup Old Backups'
+
+    - script: |
+        # Log deployment success
+        echo "Production deployment completed successfully at $(date)"
+        echo "Deployment timestamp: $(timestamp)"
+        echo "Frontend: $(productionPath)/frontend-live"
+        echo "Backend: $(productionPath)/backend-live"
+        echo "Backup: $(backupPath)/$(timestamp)"
+      displayName: 'Log Deployment Success'
+
+- stage: Rollback
+  displayName: 'Rollback on Failure'
+  dependsOn: 
+    - DeployProduction
+    - PostDeploy
+  condition: or(failed('DeployProduction'), failed('PostDeploy'))
+  jobs:
+  - job: RollbackJob
+    displayName: 'Rollback to Previous Version'
+    steps:
+    - script: |
+        echo "Deployment failed, initiating rollback..."
+        echo "Rolling back to backup: $(backupPath)/$(timestamp)"
+      displayName: 'Start Rollback Process'
+
+    - script: |
+        # Stop current services
+        pm2 delete frontend-live 2>/dev/null || true
+        pm2 delete backend-live 2>/dev/null || true
+        echo "Current services stopped"
+      displayName: 'Stop Current Services'
+
+    - script: |
+        # Restore frontend from backup
+        if [ -d "$(backupPath)/$(timestamp)/frontend-live-backup" ]; then
+          rm -rf $(productionPath)/frontend-live
+          cp -r $(backupPath)/$(timestamp)/frontend-live-backup $(productionPath)/frontend-live
+          echo "Frontend restored from backup"
+        else
+          echo "No frontend backup found"
+        fi
+      displayName: 'Restore Frontend'
+
+    - script: |
+        # Restore backend from backup
+        if [ -d "$(backupPath)/$(timestamp)/backend-live-backup" ]; then
+          rm -rf $(productionPath)/backend-live
+          cp -r $(backupPath)/$(timestamp)/backend-live-backup $(productionPath)/backend-live
+          echo "Backend restored from backup"
+        else
+          echo "No backend backup found"
+        fi
+      displayName: 'Restore Backend'
+
+    - script: |
+        # Restart services
+        cd $(productionPath)/frontend-live
+        pm2 start npm --name "frontend-live" -- start 2>/dev/null || true
+        
+        cd $(productionPath)/backend-live
+        pm2 start npm --name "backend-live" -- start 2>/dev/null || true
+        
+        pm2 save
+        echo "Services restarted after rollback"
+      displayName: 'Restart Services After Rollback'
+
+    - script: |
+        # Verify rollback
+        sleep 10
+        pm2 list
+        echo "Rollback completed. Check service status above."
+      displayName: 'Verify Rollback'
