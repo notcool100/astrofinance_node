@@ -86,11 +86,7 @@ export const updateUserValidation = [
 		.isLength({ min: 3, max: 100 })
 		.withMessage("Full name must be between 3 and 100 characters"),
 
-	body("email")
-		.optional()
-		.isEmail()
-		.withMessage("Invalid email format")
-		.normalizeEmail(),
+	body("email").optional(),
 
 	body("contactNumber")
 		.optional()
@@ -249,4 +245,3 @@ export const getUserLoanApplicationsValidation = [
 		.isInt({ min: 1, max: 100 })
 		.withMessage("Limit must be between 1 and 100"),
 ];
-

@@ -219,7 +219,7 @@ const StaffForm: React.FC<StaffFormProps> = ({
             </label>
             <div className="mt-1">
               <input
-                type="email"
+                type="text"
                 name="email"
                 id="email"
                 value={formData.email || ''}

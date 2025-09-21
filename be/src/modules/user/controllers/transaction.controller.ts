@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { PrismaClient, TransactionType, AccountStatus } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 import {
@@ -11,6 +11,7 @@ import {
 	addUserTransactionToDayBook,
 	removeUserTransactionFromDayBook,
 } from "../../../common/utils/daybook-integration.util";
+import { createJournalEntryForUserTransaction } from "../utils/journal-entry-mapping.util";
 
 const prisma = new PrismaClient();
 
@@ -122,6 +123,30 @@ export const createTransaction = async (req: Request, res: Response) => {
 				},
 			});
 
+			// Create automatic journal entry for the transaction
+			let journalEntryId: string | null = null;
+			try {
+				journalEntryId = await createJournalEntryForUserTransaction(
+					{
+						...transaction,
+						transactionDate,
+					},
+					adminUserId,
+				);
+
+				// Update transaction with journal entry reference
+				await tx.userAccountTransaction.update({
+					where: { id: transaction.id },
+					data: { journalEntryId },
+				});
+			} catch (journalError) {
+				// Log error but don't fail the transaction
+				console.error(
+					"Error creating journal entry for transaction:",
+					journalError,
+				);
+			}
+
 			// Update account balance and last transaction date
 			const updatedAccount = await tx.userAccount.update({
 				where: { id: accountId },
@@ -131,16 +156,8 @@ export const createTransaction = async (req: Request, res: Response) => {
 				},
 			});
 
-			return { transaction, updatedAccount };
+			return { transaction, updatedAccount, journalEntryId };
 		});
-
-		// Add transaction to daybook automatically
-		try {
-			await addUserTransactionToDayBook(result.transaction, adminUserId);
-		} catch (dayBookError) {
-			// Log error but don't fail the transaction
-			console.error("Error adding transaction to daybook:", dayBookError);
-		}
 
 		return res.status(201).json({
 			success: true,
@@ -203,7 +220,7 @@ export const getTransactionsByAccount = async (req: Request, res: Response) => {
 		}
 
 		// Build filter conditions
-		const where: any = { accountId };
+		const where: Record<string, unknown> = { accountId };
 
 		if (startDate && endDate) {
 			where.transactionDate = {
@@ -390,7 +407,7 @@ export const cancelTransaction = async (req: Request, res: Response) => {
 
 		// Check if the transaction is recent (e.g., within 24 hours)
 		const transactionTime = new Date(transaction.transactionDate).getTime();
-		const currentTime = new Date().getTime();
+		const currentTime = Date.now();
 		const hoursSinceTransaction =
 			(currentTime - transactionTime) / (1000 * 60 * 60);
 
@@ -666,18 +683,24 @@ export const getAllTransactions = async (req: Request, res: Response) => {
 		const accountNumber = req.query.accountNumber as string;
 
 		// Build where clause for filtering
-		const whereClause: any = {};
+		const whereClause: Record<string, unknown> = {};
 
 		if (startDate) {
+			const existingDate = whereClause.transactionDate as
+				| Record<string, unknown>
+				| undefined;
 			whereClause.transactionDate = {
-				...whereClause.transactionDate,
+				...(existingDate || {}),
 				gte: startDate,
 			};
 		}
 
 		if (endDate) {
+			const existingDate = whereClause.transactionDate as
+				| Record<string, unknown>
+				| undefined;
 			whereClause.transactionDate = {
-				...whereClause.transactionDate,
+				...(existingDate || {}),
 				lte: endDate,
 			};
 		}
@@ -787,7 +810,7 @@ export const getAllTransactionsSummary = async (
 		);
 
 		// Build where clause for filtering
-		const whereClause: any = {
+		const whereClause: Record<string, unknown> = {
 			transactionDate: {
 				gte: startOfMonth,
 				lte: endOfMonth,

@@ -1,6 +1,7 @@
 import { DayBookTransactionType, TransactionType } from "@prisma/client";
 import prisma from "../../config/database";
 import logger from "../../config/logger";
+import { prepareForJournalEntry } from "./currency.util";
 
 /**
  * Utility to automatically integrate user transactions with daybook
@@ -143,7 +144,7 @@ export const addUserTransactionToDayBook = async (
 		// Special handling for adjustments
 		if (userTransaction.transactionType === TransactionType.ADJUSTMENT) {
 			dayBookTransactionType =
-				parseFloat(userTransaction.amount.toString()) >= 0
+				prepareForJournalEntry(userTransaction.amount, false) >= 0
 					? DayBookTransactionType.OTHER_INCOME
 					: DayBookTransactionType.OTHER_EXPENSE;
 		}
@@ -164,13 +165,13 @@ export const addUserTransactionToDayBook = async (
 			dayBookTransactionType === DayBookTransactionType.INTEREST_RECEIVED ||
 			dayBookTransactionType === DayBookTransactionType.OTHER_INCOME
 		) {
-			balanceChange = parseFloat(userTransaction.amount.toString());
+			balanceChange = prepareForJournalEntry(userTransaction.amount, false);
 		} else if (
 			dayBookTransactionType === DayBookTransactionType.CASH_PAYMENT ||
 			dayBookTransactionType === DayBookTransactionType.FEE_PAID ||
 			dayBookTransactionType === DayBookTransactionType.OTHER_EXPENSE
 		) {
-			balanceChange = -parseFloat(userTransaction.amount.toString());
+			balanceChange = -prepareForJournalEntry(userTransaction.amount, false);
 		}
 		// INTERNAL_TRANSFER doesn't change overall cash balance
 

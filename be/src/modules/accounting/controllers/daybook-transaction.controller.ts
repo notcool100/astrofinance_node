@@ -10,6 +10,7 @@ import logger from "../../../config/logger";
 import { createAuditLog } from "../../../common/utils/audit.util";
 import { ApiError } from "../../../common/middleware/error.middleware";
 import { generateJournalEntryNumber } from "../utils/accounting.utils";
+import { prepareForJournalEntry } from "../../../common/utils/currency.util";
 
 /**
  * Daybook transaction types to account mappings
@@ -141,6 +142,7 @@ export const createJournalEntryForTransaction = async (
 	debitAccountId: string,
 	creditAccountId: string,
 	adminUserId: string,
+	journalAmount: number,
 ): Promise<string> => {
 	const entryNumber = await generateJournalEntryNumber();
 
@@ -158,14 +160,14 @@ export const createJournalEntryForTransaction = async (
 				create: [
 					{
 						accountId: debitAccountId,
-						debitAmount: transaction.amount,
+						debitAmount: journalAmount,
 						creditAmount: 0,
 						description: `${transaction.transactionType} - Debit`,
 					},
 					{
 						accountId: creditAccountId,
 						debitAmount: 0,
-						creditAmount: transaction.amount,
+						creditAmount: journalAmount,
 						description: `${transaction.transactionType} - Credit`,
 					},
 				],
@@ -261,6 +263,9 @@ export const addTransactionToDayBook = async (req: Request, res: Response) => {
 			throw new ApiError(400, "One or more specified accounts are inactive");
 		}
 
+		// Convert amount for journal entry (amount is already in rupees)
+		const journalAmount = prepareForJournalEntry(amount, false);
+
 		// Create transaction and journal entry in a database transaction
 		const result = await prisma.$transaction(async (tx) => {
 			// Create daybook transaction
@@ -284,6 +289,7 @@ export const addTransactionToDayBook = async (req: Request, res: Response) => {
 				finalDebitAccountId,
 				finalCreditAccountId,
 				adminUserId,
+				journalAmount,
 			);
 
 			// Update transaction with journal entry reference
@@ -295,16 +301,16 @@ export const addTransactionToDayBook = async (req: Request, res: Response) => {
 			// Update daybook closing balance
 			let balanceChange = 0;
 			if (
-				transactionType === DayBookTransactionType.CASH_RECEIPT ||
-				transactionType === DayBookTransactionType.BANK_WITHDRAWAL ||
-				transactionType === DayBookTransactionType.LOAN_DISBURSEMENT ||
-				transactionType === DayBookTransactionType.INTEREST_RECEIVED ||
-				transactionType === DayBookTransactionType.FEE_RECEIVED ||
-				transactionType === DayBookTransactionType.OTHER_INCOME
+				transaction.transactionType === DayBookTransactionType.CASH_RECEIPT ||
+				transaction.transactionType === DayBookTransactionType.BANK_WITHDRAWAL ||
+				transaction.transactionType === DayBookTransactionType.LOAN_DISBURSEMENT ||
+				transaction.transactionType === DayBookTransactionType.INTEREST_RECEIVED ||
+				transaction.transactionType === DayBookTransactionType.FEE_RECEIVED ||
+				transaction.transactionType === DayBookTransactionType.OTHER_INCOME
 			) {
-				balanceChange = parseFloat(amount);
+				balanceChange = journalAmount;
 			} else {
-				balanceChange = -parseFloat(amount);
+				balanceChange = -journalAmount;
 			}
 
 			const updatedDayBook = await tx.dayBook.update({
@@ -509,9 +515,9 @@ export const deleteDayBookTransaction = async (req: Request, res: Response) => {
 				transaction.transactionType === DayBookTransactionType.FEE_RECEIVED ||
 				transaction.transactionType === DayBookTransactionType.OTHER_INCOME
 			) {
-				balanceChange = -parseFloat(transaction.amount.toString());
+				balanceChange = -prepareForJournalEntry(transaction.amount, false);
 			} else {
-				balanceChange = parseFloat(transaction.amount.toString());
+				balanceChange = prepareForJournalEntry(transaction.amount, false);
 			}
 
 			await tx.dayBook.update({
