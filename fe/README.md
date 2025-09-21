@@ -141,7 +141,7 @@ The frontend implements the following modules:
 Create a `.env.local` file in the root directory with the following variables:
 
 ```
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
+NEXT_PUBLIC_API_URL=http://localhost:5001/api
 NEXT_PUBLIC_APP_NAME=AstroFinance
 ```
 

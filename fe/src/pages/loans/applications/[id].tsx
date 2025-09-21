@@ -193,7 +193,7 @@ const LoanApplicationDetailPage = () => {
 		// If the URL is relative, prepend the backend base URL (without /api)
 		const fullUrl = documentUrl.startsWith("http")
 			? documentUrl
-			: `${process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:5000"}${documentUrl}`;
+			: `${process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:5001"}${documentUrl}`;
 		window.open(fullUrl, "_blank");
 	};
 

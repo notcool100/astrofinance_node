@@ -132,7 +132,7 @@ The frontend uses Tailwind CSS for styling with a custom theme. The theme includ
 Create a `.env.local` file with the following variables:
 
 ```
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_API_URL=http://localhost:5001/api
 NEXT_PUBLIC_APP_NAME=AstroFinance
 ```
 
