@@ -44,12 +44,12 @@ DATABASE_URL="postgresql://username:password@host:5432/database_name?schema=publ
 
 **Required variables in frontend-dev.env**:
 ```env
-NEXT_PUBLIC_API_URL=http://82.180.144.91:4000/api
+NEXT_PUBLIC_API_URL=http://82.180.144.91:4010/api
 NEXT_PUBLIC_APP_NAME=AstroFinance
 ```
 
 > [!IMPORTANT]
-> Make sure `NEXT_PUBLIC_API_URL` points to your server IP with port 4000, which is where nginx will serve the backend API.
+> Make sure `NEXT_PUBLIC_API_URL` points to your server IP with port 4010, which is where nginx will serve the backend API.
 
 ## Step 2: Grant Pipeline Access to Secure Files
 
@@ -146,18 +146,21 @@ sudo nginx -t
 # Check if site is enabled
 ls -la /etc/nginx/sites-enabled/ | grep astrofinance
 
-# Test nginx is listening on port 4000
-sudo netstat -tlnp | grep 4000
+# Test nginx is listening on port 4000 (frontend) and 4010 (backend)
+sudo netstat -tlnp | grep -E '4000|4010'
 ```
 
 ### 3. Test API Through Nginx
 
 ```bash
-# Test health endpoint
-curl http://localhost:4000/health
+# Test frontend
+curl http://localhost:4000/
 
-# Test API endpoint (adjust based on your API)
-curl http://localhost:4000/api/health
+# Test backend health endpoint
+curl http://localhost:4010/health
+
+# Test backend API endpoint (adjust based on your API)
+curl http://localhost:4010/api/health
 ```
 
 ## Troubleshooting
@@ -177,12 +180,20 @@ curl http://localhost:4000/api/health
 2. Review nginx error logs: `sudo tail -f /var/log/nginx/error.log`
 3. Verify nginx configuration file: `sudo cat /etc/nginx/sites-available/astrofinance-backend-dev`
 
-### Backend API not accessible on port 4000
+### Backend API not accessible on port 4010
+
+**Solution**:
+1. Verify nginx is running: `sudo systemctl status nginx`
+2. Check if port 4010 is listening: `sudo netstat -tlnp | grep 4010`
+3. Verify backend is running on port 5500: `sudo netstat -tlnp | grep 5500`
+4. Check firewall rules: `sudo ufw status`
+
+### Frontend not accessible on port 4000
 
 **Solution**:
 1. Verify nginx is running: `sudo systemctl status nginx`
 2. Check if port 4000 is listening: `sudo netstat -tlnp | grep 4000`
-3. Verify backend is running on port 5500: `sudo netstat -tlnp | grep 5500`
+3. Verify frontend is running on port 3000: `sudo netstat -tlnp | grep 3000`
 4. Check firewall rules: `sudo ufw status`
 
 ## Production Environment Setup
@@ -194,7 +205,9 @@ To set up the production environment, repeat these steps with production-specifi
 3. Grant pipeline permissions to both files
 4. Create production directories: `/var/www/astrofinance/backend-live` and `/var/www/astrofinance/frontend-live`
 
-The nginx configuration for production will use port 4001 (see `devops/infrastructure/nginx-backend-live.conf`).
+The nginx configuration for production will use:
+- Port 4001 for frontend (see `devops/infrastructure/nginx-frontend-live.conf`)
+- Port 4011 for backend API (see `devops/infrastructure/nginx-backend-live.conf`)
 
 ## Security Best Practices
 

@@ -156,6 +156,27 @@ stages:
          
          echo "Frontend deployed to /var/www/astrofinance/frontend-dev"
       displayName: 'Extract Frontend Build'
+    
+    - script: |
+        echo "Deploying nginx configuration for frontend on port 4000"
+        
+        # Copy nginx configuration from repository to nginx sites-available
+        sudo cp $(Build.SourcesDirectory)/devops/infrastructure/nginx-frontend-dev.conf /etc/nginx/sites-available/astrofinance-frontend-dev
+        
+        # Create symlink to sites-enabled if it doesn't exist
+        if [ ! -L "/etc/nginx/sites-enabled/astrofinance-frontend-dev" ]; then
+          sudo ln -s /etc/nginx/sites-available/astrofinance-frontend-dev /etc/nginx/sites-enabled/astrofinance-frontend-dev
+          echo "Created symlink for frontend nginx configuration"
+        fi
+        
+        # Test nginx configuration
+        sudo nginx -t
+        
+        # Reload nginx to apply changes
+        sudo systemctl reload nginx
+        
+        echo "Frontend nginx configuration deployed and reloaded successfully"
+      displayName: 'Deploy Frontend Nginx Configuration (Port 4000)'
 
 
 
@@ -206,7 +227,7 @@ stages:
 
     
     - script: |
-        echo "Deploying nginx configuration for backend on port 4000"
+        echo "Deploying nginx configuration for backend on port 4010"
         
         # Copy nginx configuration from repository to nginx sites-available
         sudo cp $(Build.SourcesDirectory)/devops/infrastructure/nginx-backend-dev.conf /etc/nginx/sites-available/astrofinance-backend-dev
@@ -224,4 +245,4 @@ stages:
         sudo systemctl reload nginx
         
         echo "Nginx configuration deployed and reloaded successfully"
-      displayName: 'Deploy and Reload Nginx Configuration'
+      displayName: 'Deploy Backend Nginx Configuration (Port 4010)'
