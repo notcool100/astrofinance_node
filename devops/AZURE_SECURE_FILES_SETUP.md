@@ -44,12 +44,12 @@ DATABASE_URL="postgresql://username:password@host:5432/database_name?schema=publ
 
 **Required variables in frontend-dev.env**:
 ```env
-NEXT_PUBLIC_API_URL=http://82.180.144.91:4010/api
+NEXT_PUBLIC_API_URL=http://82.180.144.91:6010/api
 NEXT_PUBLIC_APP_NAME=AstroFinance
 ```
 
 > [!IMPORTANT]
-> Make sure `NEXT_PUBLIC_API_URL` points to your server IP with port 4010, which is where nginx will serve the backend API.
+> Make sure `NEXT_PUBLIC_API_URL` points to your server IP with port 6010, which is where nginx will serve the backend API.
 
 ## Step 2: Grant Pipeline Access to Secure Files
 
@@ -146,21 +146,21 @@ sudo nginx -t
 # Check if site is enabled
 ls -la /etc/nginx/sites-enabled/ | grep astrofinance
 
-# Test nginx is listening on port 4000 (frontend) and 4010 (backend)
-sudo netstat -tlnp | grep -E '4000|4010'
+# Test nginx is listening on port 6000 (frontend) and 6010 (backend)
+sudo netstat -tlnp | grep -E '6000|6010'
 ```
 
 ### 3. Test API Through Nginx
 
 ```bash
 # Test frontend
-curl http://localhost:4000/
+curl http://localhost:6000/
 
 # Test backend health endpoint
-curl http://localhost:4010/health
+curl http://localhost:6010/health
 
 # Test backend API endpoint (adjust based on your API)
-curl http://localhost:4010/api/health
+curl http://localhost:6010/api/health
 ```
 
 ## Troubleshooting
@@ -180,19 +180,19 @@ curl http://localhost:4010/api/health
 2. Review nginx error logs: `sudo tail -f /var/log/nginx/error.log`
 3. Verify nginx configuration file: `sudo cat /etc/nginx/sites-available/astrofinance-backend-dev`
 
-### Backend API not accessible on port 4010
+### Backend API not accessible on port 6010
 
 **Solution**:
 1. Verify nginx is running: `sudo systemctl status nginx`
-2. Check if port 4010 is listening: `sudo netstat -tlnp | grep 4010`
+2. Check if port 6010 is listening: `sudo netstat -tlnp | grep 6010`
 3. Verify backend is running on port 5500: `sudo netstat -tlnp | grep 5500`
 4. Check firewall rules: `sudo ufw status`
 
-### Frontend not accessible on port 4000
+### Frontend not accessible on port 6000
 
 **Solution**:
 1. Verify nginx is running: `sudo systemctl status nginx`
-2. Check if port 4000 is listening: `sudo netstat -tlnp | grep 4000`
+2. Check if port 6000 is listening: `sudo netstat -tlnp | grep 6000`
 3. Verify frontend is running on port 3000: `sudo netstat -tlnp | grep 3000`
 4. Check firewall rules: `sudo ufw status`
 
@@ -206,8 +206,8 @@ To set up the production environment, repeat these steps with production-specifi
 4. Create production directories: `/var/www/astrofinance/backend-live` and `/var/www/astrofinance/frontend-live`
 
 The nginx configuration for production will use:
-- Port 4001 for frontend (see `devops/infrastructure/nginx-frontend-live.conf`)
-- Port 4011 for backend API (see `devops/infrastructure/nginx-backend-live.conf`)
+- Port 6100 for frontend (see `devops/infrastructure/nginx-frontend-live.conf`)
+- Port 6110 for backend API (see `devops/infrastructure/nginx-backend-live.conf`)
 
 ## Security Best Practices
 
