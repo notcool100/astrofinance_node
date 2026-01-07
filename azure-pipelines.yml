@@ -31,7 +31,7 @@ stages:
         
         # Ensure environment files are properly set up
         echo "Setting up environment files for build"
-        cp .env.production .env.local
+        cp .env.production .env
       displayName: 'Install Frontend Dependencies'
     
     - script: |
