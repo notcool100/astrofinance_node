@@ -150,21 +150,7 @@ ls -la /etc/nginx/sites-enabled/ | grep astrofinance
 sudo netstat -tlnp | grep 4000
 ```
 
-### 3. Check PM2 Processes
-
-```bash
-# Switch to deployment user
-su - astroagent
-
-# Check PM2 processes
-pm2 list
-
-# You should see:
-# - frontend-dev (running)
-# - backend-dev (running)
-```
-
-### 4. Test API Through Nginx
+### 3. Test API Through Nginx
 
 ```bash
 # Test health endpoint
@@ -196,7 +182,7 @@ curl http://localhost:4000/api/health
 **Solution**:
 1. Verify nginx is running: `sudo systemctl status nginx`
 2. Check if port 4000 is listening: `sudo netstat -tlnp | grep 4000`
-3. Verify backend is running on port 5000: `sudo netstat -tlnp | grep 5000`
+3. Verify backend is running on port 5500: `sudo netstat -tlnp | grep 5500`
 4. Check firewall rules: `sudo ufw status`
 
 ## Production Environment Setup
@@ -223,4 +209,3 @@ The nginx configuration for production will use port 4001 (see `devops/infrastru
 
 - [Azure DevOps Secure Files Documentation](https://docs.microsoft.com/en-us/azure/devops/pipelines/library/secure-files)
 - [Nginx Reverse Proxy Configuration](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/)
-- [PM2 Process Manager Documentation](https://pm2.keymetrics.io/docs/usage/quick-start/)

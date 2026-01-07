@@ -157,22 +157,7 @@ stages:
          echo "Frontend deployed to /var/www/astrofinance/frontend-dev"
       displayName: 'Extract Frontend Build'
 
-    - script: |
-        # Check if we're running as the astroagent user
-        if [ "$(whoami)" = "astroagent" ]; then
-          # Running as astroagent, no need for sudo
-          export PATH=$PATH:/home/astroagent/.nvm/versions/node/v24.4.1/bin
-          export PM2_HOME=/home/astroagent/.pm2
-          cd /var/www/astrofinance/frontend-dev
-          pm2 restart frontend-dev || pm2 start npm --name "frontend-dev" --cwd /var/www/astrofinance/frontend-dev -- start
-          pm2 save
-        else
-          # We need to use a different approach since sudo is not available
-          echo "Current user is not astroagent and sudo is not available. Please configure the pipeline to run as the astroagent user."
-          echo "Alternatively, add the pipeline user to the sudoers file with the appropriate permissions."
-          exit 1
-        fi
-      displayName: 'Restart Frontend with PM2'
+
 
   - job: DeployBackendDev
     displayName: 'Deploy Backend to Dev'
@@ -218,22 +203,7 @@ stages:
         echo "Backend deployed to /var/www/astrofinance/backend-dev"
       displayName: 'Extract Backend Build and Deploy .env'
 
-    - script: |
-        # Check if we're running as the astroagent user
-        if [ "$(whoami)" = "astroagent" ]; then
-          # Running as astroagent, no need for sudo
-          export PATH=$PATH:/home/astroagent/.nvm/versions/node/v24.4.1/bin
-          export PM2_HOME=/home/astroagent/.pm2
-          cd /var/www/astrofinance/backend-dev
-          pm2 restart backend-dev || pm2 start npm --name "backend-dev" --cwd /var/www/astrofinance/backend-dev -- start
-          pm2 save
-        else
-          # We need to use a different approach since sudo is not available
-          echo "Current user is not astroagent and sudo is not available. Please configure the pipeline to run as the astroagent user."
-          echo "Alternatively, add the pipeline user to the sudoers file with the appropriate permissions."
-          exit 1
-        fi
-      displayName: 'Restart Backend with PM2'
+
     
     - script: |
         echo "Deploying nginx configuration for backend on port 4000"
