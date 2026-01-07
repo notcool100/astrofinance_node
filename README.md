@@ -39,9 +39,9 @@ This project involves developing a comprehensive Financial Management System for
 
 ### DevOps
 - **CI/CD**: Azure DevOps Pipelines
-- **Deployment**: Ubuntu VPS (Contabo)
-- **Web Server**: Nginx (reverse proxy)
-- **Monitoring**: Nginx logs
+- **Infrastructure**: Azure Cloud Services
+- **Containerization**: Docker (optional)
+- **Monitoring**: Application Insights
 
 ## Project Structure
 ```
@@ -159,21 +159,6 @@ Please refer to the setup documentation for each component:
 - [Backend Setup](./docs/setup/backend-setup.md)
 - [Database Setup](./docs/setup/database-setup.md)
 - [DevOps Setup](./docs/setup/devops-setup.md)
-
-### Deployment
-
-The application is deployed to an Ubuntu VPS using Azure DevOps pipelines. For deployment setup:
-
-1. **Azure DevOps Configuration**: Follow the [Azure Secure Files Setup Guide](./devops/AZURE_SECURE_FILES_SETUP.md) to configure environment variables
-2. **Server Setup**: The backend API is served through Nginx on port 4000 (dev) and 4001 (production)
-3. **Pipeline**: The pipeline automatically builds and deploys both frontend and backend on push to `develop` branch
-
-**Key Deployment Details**:
-- **Dev Frontend**: Deployed to `/var/www/astrofinance/frontend-dev`, port 6000 (nginx)
-- **Dev Backend**: Deployed to `/var/www/astrofinance/backend-dev`, port 6010 (nginx)
-- **Backend API Internal Port**: 5500, proxied through Nginx on port 6010
-- **Frontend Internal Port**: 3000, proxied through Nginx on port 6000
-- **Environment Files**: Managed securely via Azure DevOps Library
 
 ### Quick Start
 
