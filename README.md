@@ -41,8 +41,7 @@ This project involves developing a comprehensive Financial Management System for
 - **CI/CD**: Azure DevOps Pipelines
 - **Deployment**: Ubuntu VPS (Contabo)
 - **Web Server**: Nginx (reverse proxy)
-- **Process Manager**: PM2
-- **Monitoring**: Nginx logs, PM2 monitoring
+- **Monitoring**: Nginx logs
 
 ## Project Structure
 ```
@@ -172,9 +171,8 @@ The application is deployed to an Ubuntu VPS using Azure DevOps pipelines. For d
 **Key Deployment Details**:
 - **Dev Frontend**: Deployed to `/var/www/astrofinance/frontend-dev`
 - **Dev Backend**: Deployed to `/var/www/astrofinance/backend-dev`
-- **Backend API Port**: 5000 (internal), proxied through Nginx on port 4000
+- **Backend API Port**: 5500 (internal), proxied through Nginx on port 4000
 - **Environment Files**: Managed securely via Azure DevOps Library
-- **Process Management**: PM2 for Node.js process management
 
 ### Quick Start
 
