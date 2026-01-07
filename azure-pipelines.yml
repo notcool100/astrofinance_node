@@ -117,6 +117,12 @@ stages:
         downloadType: 'single'
         artifactName: 'frontend'
         downloadPath: '$(System.ArtifactsDirectory)'
+    
+    - task: DownloadSecureFile@1
+      name: frontendEnvDev
+      displayName: 'Download Frontend .env File'
+      inputs:
+        secureFile: 'frontend-dev.env'
 
     - script: |
          echo "Listing downloaded files:"
@@ -139,6 +145,11 @@ stages:
          
          # Copy files from temp directory to target directory
          rsync -av --exclude='.next/cache' $TEMP_DIR/ /var/www/astrofinance/frontend-dev/
+         
+         # Copy .env file from secure files
+         echo "Copying .env file to frontend directory"
+         cp $(frontendEnvDev.secureFilePath) /var/www/astrofinance/frontend-dev/.env.local
+         chmod 600 /var/www/astrofinance/frontend-dev/.env.local
          
          # Clean up temporary directory
          rm -rf $TEMP_DIR
@@ -172,6 +183,12 @@ stages:
         downloadType: 'single'
         artifactName: 'backend'
         downloadPath: '$(System.ArtifactsDirectory)'
+    
+    - task: DownloadSecureFile@1
+      name: backendEnvDev
+      displayName: 'Download Backend .env File'
+      inputs:
+        secureFile: 'backend-dev.env'
 
     - script: |
         echo "Listing downloaded files:"
@@ -190,11 +207,16 @@ stages:
         # Copy files from temp directory to target directory
         rsync -av $TEMP_DIR/ /var/www/astrofinance/backend-dev/
         
+        # Copy .env file from secure files
+        echo "Copying .env file to backend directory"
+        cp $(backendEnvDev.secureFilePath) /var/www/astrofinance/backend-dev/.env
+        chmod 600 /var/www/astrofinance/backend-dev/.env
+        
         # Clean up temporary directory
         rm -rf $TEMP_DIR
         
         echo "Backend deployed to /var/www/astrofinance/backend-dev"
-      displayName: 'Extract Backend Build'
+      displayName: 'Extract Backend Build and Deploy .env'
 
     - script: |
         # Check if we're running as the astroagent user
@@ -212,3 +234,24 @@ stages:
           exit 1
         fi
       displayName: 'Restart Backend with PM2'
+    
+    - script: |
+        echo "Deploying nginx configuration for backend on port 4000"
+        
+        # Copy nginx configuration from repository to nginx sites-available
+        sudo cp $(Build.SourcesDirectory)/devops/infrastructure/nginx-backend-dev.conf /etc/nginx/sites-available/astrofinance-backend-dev
+        
+        # Create symlink to sites-enabled if it doesn't exist
+        if [ ! -L "/etc/nginx/sites-enabled/astrofinance-backend-dev" ]; then
+          sudo ln -s /etc/nginx/sites-available/astrofinance-backend-dev /etc/nginx/sites-enabled/astrofinance-backend-dev
+          echo "Created symlink for nginx configuration"
+        fi
+        
+        # Test nginx configuration
+        sudo nginx -t
+        
+        # Reload nginx to apply changes
+        sudo systemctl reload nginx
+        
+        echo "Nginx configuration deployed and reloaded successfully"
+      displayName: 'Deploy and Reload Nginx Configuration'
