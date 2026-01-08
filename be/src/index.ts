@@ -43,15 +43,15 @@ logger.info(`Server starting in ${process.env.NODE_ENV} mode`);
 const corsOptions =
 	process.env.NODE_ENV === "production"
 		? {
-				origin: "http://82.180.144.91:4000",
-				methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-				credentials: true,
-			}
+			origin: ["http://82.180.144.91:4000", "http://82.180.144.91:3000"],
+			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+			credentials: true,
+		}
 		: {
-				origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
-				methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-				credentials: true,
-			};
+			origin: ["http://localhost:3000", "http://127.0.0.1:3000", "http://82.180.144.91:3000", "http://82.180.144.91:4000"],
+			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+			credentials: true,
+		};
 
 app.use(cors(corsOptions));
 app.use(express.json());
