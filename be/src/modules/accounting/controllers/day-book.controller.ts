@@ -177,7 +177,7 @@ export const getDayBookById = async (req: Request, res: Response) => {
  */
 export const createDayBook = async (req: Request, res: Response) => {
 	try {
-		const { transactionDate, openingBalance = 0 } = req.body;
+		const { transactionDate, openingBalance } = req.body;
 
 		// Check if a day book already exists for this date
 		const existingDayBook = await prisma.dayBook.findFirst({
@@ -193,6 +193,37 @@ export const createDayBook = async (req: Request, res: Response) => {
 			);
 		}
 
+		// Get the previous day's closing balance if openingBalance not provided
+		let calculatedOpeningBalance = 0;
+
+		logger.info(`Creating daybook: openingBalance received = "${openingBalance}" (type: ${typeof openingBalance})`);
+
+		if (openingBalance !== undefined && openingBalance !== null && openingBalance !== "") {
+			calculatedOpeningBalance = parseFloat(openingBalance);
+			logger.info(`Using provided opening balance: ${calculatedOpeningBalance}`);
+		} else {
+			// Find the most recent closed daybook before this date
+			logger.info(`Looking for previous closed daybook before ${transactionDate}`);
+			const previousDayBook = await prisma.dayBook.findFirst({
+				where: {
+					transactionDate: {
+						lt: new Date(transactionDate),
+					},
+					isClosed: true,
+				},
+				orderBy: {
+					transactionDate: "desc",
+				},
+			});
+
+			if (previousDayBook) {
+				calculatedOpeningBalance = Number(previousDayBook.closingBalance) || 0;
+				logger.info(`Auto-carrying opening balance ${calculatedOpeningBalance} from previous daybook ${previousDayBook.bookNumber}`);
+			} else {
+				logger.info(`No previous closed daybook found, using 0`);
+			}
+		}
+
 		// Generate unique book number
 		const bookNumber = await generateDayBookNumber();
 
@@ -201,9 +232,9 @@ export const createDayBook = async (req: Request, res: Response) => {
 			data: {
 				bookNumber,
 				transactionDate: new Date(transactionDate),
-				openingBalance: parseFloat(openingBalance),
-				closingBalance: parseFloat(openingBalance),
-				systemCashBalance: parseFloat(openingBalance),
+				openingBalance: calculatedOpeningBalance,
+				closingBalance: calculatedOpeningBalance,
+				systemCashBalance: calculatedOpeningBalance,
 				isReconciled: false,
 				isClosed: false,
 			},
@@ -237,7 +268,7 @@ export const createDayBook = async (req: Request, res: Response) => {
 export const reconcileDayBook = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params;
-		const { physicalCashBalance, discrepancyNotes } = req.body;
+		const { physicalCashBalance, discrepancyNotes, denominations } = req.body;
 
 		// Check if day book exists
 		const existingDayBook = await prisma.dayBook.findUnique({
@@ -267,6 +298,7 @@ export const reconcileDayBook = async (req: Request, res: Response) => {
 				physicalCashBalance: physicalCashValue,
 				discrepancyAmount,
 				discrepancyNotes,
+				denominations,
 				isReconciled: true,
 			},
 		});

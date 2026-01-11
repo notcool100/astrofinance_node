@@ -63,12 +63,17 @@ const CreateDayBookPage: React.FC = () => {
 
 		setLoading(true);
 		try {
-			await dayBookService.createDayBook({
+			// Only send openingBalance if user explicitly entered one
+			// Otherwise, backend will auto-carry from previous closed daybook
+			const createData: { transactionDate: string; openingBalance?: number } = {
 				transactionDate: formData.transactionDate,
-				openingBalance: formData.openingBalance
-					? parseFloat(formData.openingBalance)
-					: 0,
-			});
+			};
+
+			if (formData.openingBalance && formData.openingBalance.trim() !== "") {
+				createData.openingBalance = parseFloat(formData.openingBalance);
+			}
+
+			await dayBookService.createDayBook(createData);
 
 			toast.success("Day book created successfully");
 			router.push("/accounting/day-books");
@@ -125,11 +130,10 @@ const CreateDayBookPage: React.FC = () => {
 											id="transactionDate"
 											value={formData.transactionDate}
 											onChange={handleChange}
-											className={`mt-1 block w-full border ${
-												errors.transactionDate
+											className={`mt-1 block w-full border ${errors.transactionDate
 													? "border-red-300"
 													: "border-gray-300"
-											} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+												} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
 										/>
 										{errors.transactionDate && (
 											<p className="mt-1 text-sm text-red-600">
@@ -157,11 +161,10 @@ const CreateDayBookPage: React.FC = () => {
 												value={formData.openingBalance}
 												onChange={handleChange}
 												placeholder="0.00"
-												className={`block w-full pl-8 pr-12 border ${
-													errors.openingBalance
+												className={`block w-full pl-8 pr-12 border ${errors.openingBalance
 														? "border-red-300"
 														: "border-gray-300"
-												} rounded-md py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+													} rounded-md py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
 											/>
 											<div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
 												<span className="text-gray-500 sm:text-sm">USD</span>

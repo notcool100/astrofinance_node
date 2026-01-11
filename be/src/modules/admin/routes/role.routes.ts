@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { 
   getAllRoles, 
   getRoleById, 
@@ -16,7 +16,7 @@ import {
   updateRolePermissionsValidation 
 } from '../validations/role.validation';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // All routes require authentication
 router.use(authenticateAdmin);

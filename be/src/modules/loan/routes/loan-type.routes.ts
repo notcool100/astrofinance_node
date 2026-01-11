@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { 
   getAllLoanTypes, 
   getLoanTypeById, 
@@ -18,7 +18,7 @@ import {
   bulkUpdateStatusValidation
 } from '../validations/loan-type.validation';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Apply rate limiting to all routes
 router.use(apiLimiter);

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { 
   login, 
   register, 
@@ -15,7 +15,7 @@ import {
   changePasswordValidation 
 } from '../validations/auth.validation';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Public routes
 router.post('/login', validate(loginValidation), login);

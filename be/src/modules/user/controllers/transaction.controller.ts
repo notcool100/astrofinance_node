@@ -159,6 +159,20 @@ export const createTransaction = async (req: Request, res: Response) => {
 			return { transaction, updatedAccount, journalEntryId };
 		});
 
+		// Add transaction to daybook
+		try {
+			await addUserTransactionToDayBook(
+				{
+					...result.transaction,
+					amount: Number(result.transaction.amount),
+				},
+				adminUserId,
+			);
+		} catch (dayBookError) {
+			// Log error but don't fail the transaction
+			console.error("Error adding transaction to daybook:", dayBookError);
+		}
+
 		return res.status(201).json({
 			success: true,
 			message: "Transaction created successfully",

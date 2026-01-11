@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import loanTypeRoutes from './loan-type.routes';
 import loanApplicationRoutes from './loan-application.routes';
 import loanRoutes from './loan.routes';
@@ -7,7 +7,7 @@ import calculatorPresetRoutes from './calculator-preset.routes';
 import calculatorHistoryRoutes from './calculator-history.routes';
 import loanDocumentRoutes from './loan-document.routes';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Loan type routes
 router.use('/types', loanTypeRoutes);

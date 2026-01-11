@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { 
   getAllReportTemplates, 
   getReportTemplateById, 
@@ -16,7 +16,7 @@ import {
   runReportValidation 
 } from '../validations/report.validation';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // All routes require authentication
 router.use(authenticateAdmin);

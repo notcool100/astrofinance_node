@@ -1,4 +1,4 @@
-import { Router, Request as ExpressRequest, Response, NextFunction } from 'express';
+import { Router, type Router as ExpressRouter, Request as ExpressRequest, Response, NextFunction } from 'express';
 
 // Extend the Express Request interface to include adminUser
 interface Request extends ExpressRequest {
@@ -8,23 +8,23 @@ interface Request extends ExpressRequest {
     [key: string]: any;
   };
 }
-import { 
-  getAllStaff, 
-  getStaffById, 
-  createStaff, 
-  updateStaff, 
+import {
+  getAllStaff,
+  getStaffById,
+  createStaff,
+  updateStaff,
   resetStaffPassword,
   deleteStaff
 } from '../controllers/staff.controller';
 import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
-import { 
-  createStaffValidation, 
-  updateStaffValidation, 
-  resetPasswordValidation 
+import {
+  createStaffValidation,
+  updateStaffValidation,
+  resetPasswordValidation
 } from '../validations/staff.validation';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // All routes require authentication
 router.use(authenticateAdmin);
@@ -33,22 +33,22 @@ router.use(authenticateAdmin);
 const isSuperAdmin = (req: Request, res: Response, next: NextFunction) => {
   // Check roles from the token first (if available)
   const tokenRoles = req.user?.roles || [];
-  
+
   // Then check roles from the adminUser object (from database)
   const dbRoles = req.adminUser?.roles || [];
   const dbRoleNames = dbRoles.map((role: any) => role.role?.name || role.name);
-  
+
   // Check if either source has the Super Admin role
-  const isSuperAdmin = 
-    (Array.isArray(tokenRoles) && tokenRoles.includes('Super Admin')) || 
+  const isSuperAdmin =
+    (Array.isArray(tokenRoles) && tokenRoles.includes('Super Admin')) ||
     dbRoleNames.includes('Super Admin');
-  
+
   if (!isSuperAdmin) {
-    return res.status(403).json({ 
-      message: 'Access denied. Only Super Admin can manage staff.' 
+    return res.status(403).json({
+      message: 'Access denied. Only Super Admin can manage staff.'
     });
   }
-  
+
   next();
 };
 
@@ -63,25 +63,25 @@ router.get('/:id', hasPermission('staff.view'), getStaffById);
 
 // Create new staff member
 router.post(
-  '/', 
-  hasPermission('staff.create'), 
-  validate(createStaffValidation), 
+  '/',
+  hasPermission('staff.create'),
+  validate(createStaffValidation),
   createStaff
 );
 
 // Update staff member
 router.put(
-  '/:id', 
-  hasPermission('staff.edit'), 
-  validate(updateStaffValidation), 
+  '/:id',
+  hasPermission('staff.edit'),
+  validate(updateStaffValidation),
   updateStaff
 );
 
 // Reset staff password
 router.post(
-  '/:id/reset-password', 
-  hasPermission('staff.edit'), 
-  validate(resetPasswordValidation), 
+  '/:id/reset-password',
+  hasPermission('staff.edit'),
+  validate(resetPasswordValidation),
   resetStaffPassword
 );
 

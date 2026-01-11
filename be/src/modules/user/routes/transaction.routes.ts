@@ -1,9 +1,9 @@
-import express from 'express';
+import express, { type Router as ExpressRouter } from 'express';
 import { authenticate, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validateRequest } from '../../../common/middleware/joi-validation.middleware';
-import { 
-  createTransactionSchema, 
-  getTransactionsByAccountSchema, 
+import {
+  createTransactionSchema,
+  getTransactionsByAccountSchema,
   getTransactionByIdSchema,
   cancelTransactionSchema
 } from '../validations/transaction.validation';
@@ -17,7 +17,7 @@ import {
   getAllTransactionsSummary
 } from '../controllers/transaction.controller';
 
-const router = express.Router();
+const router: ExpressRouter = express.Router();
 
 /**
  * @route POST /api/user/accounts/:accountId/transactions

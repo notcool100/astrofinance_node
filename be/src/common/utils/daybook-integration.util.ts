@@ -58,6 +58,23 @@ export const getOrCreateDayBook = async (
 		});
 
 		if (!dayBook) {
+			// Find previous daybook to get opening balance
+			const previousDayBook = await prisma.dayBook.findFirst({
+				where: {
+					transactionDate: {
+						lt: startOfDay,
+					},
+				},
+				orderBy: {
+					transactionDate: "desc",
+				},
+			});
+
+			const openingBalance = previousDayBook
+				? previousDayBook.closingBalance
+				: 0;
+			const systemCashBalance = openingBalance; // Initialize system balance with opening balance
+
 			// Generate book number
 			const today = new Date(transactionDate);
 			const year = today.getFullYear().toString();
@@ -82,16 +99,16 @@ export const getOrCreateDayBook = async (
 				data: {
 					bookNumber,
 					transactionDate: startOfDay,
-					openingBalance: 0,
-					closingBalance: 0,
-					systemCashBalance: 0,
+					openingBalance: openingBalance,
+					closingBalance: openingBalance, // Initial closing balance is same as opening
+					systemCashBalance: systemCashBalance,
 					isReconciled: false,
 					isClosed: false,
 				},
 			});
 
 			logger.info(
-				`Created new daybook for date ${transactionDate.toISOString()}`,
+				`Created new daybook for date ${transactionDate.toISOString()} with opening balance ${openingBalance}`,
 			);
 		}
 
@@ -138,7 +155,7 @@ export const addUserTransactionToDayBook = async (
 		// Map user transaction type to daybook transaction type
 		let dayBookTransactionType =
 			USER_TO_DAYBOOK_TRANSACTION_MAPPING[
-				userTransaction.transactionType as TransactionType
+			userTransaction.transactionType as TransactionType
 			];
 
 		// Special handling for adjustments

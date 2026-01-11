@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import userRoutes from './user.routes';
 import authRoutes from './auth.routes';
 import accountsRoutes from './accounts.routes';
 import transactionRoutes from './transaction.routes';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // User routes
 router.use('/users', userRoutes);

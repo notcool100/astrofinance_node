@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Router as ExpressRouter } from "express";
 import {
 	getAllUsers,
 	getUserById,
@@ -25,7 +25,7 @@ import {
 } from "../validations/user.validation.fixed";
 import { getUserAccountsValidation } from "../validations/account.validation";
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Enable authentication for admin operations
 router.use(authenticateAdmin);

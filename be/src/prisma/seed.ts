@@ -493,6 +493,26 @@ async function seedNavigation() {
 				groupId: accountingGroup.id,
 			},
 		});
+
+		await prisma.navigationItem.create({
+			data: {
+				label: "Share Management",
+				icon: "pie_chart",
+				url: "/admin/shares",
+				order: 5,
+				groupId: accountingGroup.id,
+			},
+		});
+
+		await prisma.navigationItem.create({
+			data: {
+				label: "Loan Loss Provisioning",
+				icon: "warning",
+				url: "/accounting/llp",
+				order: 6,
+				groupId: accountingGroup.id,
+			},
+		});
 	}
 
 	if (reportsGroup) {
@@ -918,6 +938,23 @@ async function seedChartOfAccounts() {
 			await prisma.account_COA.create({ data: account });
 			console.log(`Created liability sub-account: ${account.name}`);
 		}
+
+		// Create sub-accounts under Deposits
+		const depositsAccount = await prisma.account_COA.findFirst({
+			where: { accountCode: "2100" },
+		});
+		if (depositsAccount) {
+			await prisma.account_COA.create({
+				data: {
+					accountCode: "2101",
+					name: "Customer Deposits",
+					accountType: AccountType_COA.LIABILITY,
+					parentId: depositsAccount.id,
+					description: "Customer savings and deposit accounts"
+				},
+			});
+			console.log("Created Customer Deposits account (2101)");
+		}
 	}
 
 	if (income) {
@@ -945,6 +982,23 @@ async function seedChartOfAccounts() {
 		for (const account of incomeSubAccounts) {
 			await prisma.account_COA.create({ data: account });
 			console.log(`Created income sub-account: ${account.name}`);
+		}
+
+		// Create sub-accounts under Interest Income
+		const interestIncomeAccount = await prisma.account_COA.findFirst({
+			where: { accountCode: "4100" },
+		});
+		if (interestIncomeAccount) {
+			await prisma.account_COA.create({
+				data: {
+					accountCode: "4101",
+					name: "Interest Income - Loans",
+					accountType: AccountType_COA.INCOME,
+					parentId: interestIncomeAccount.id,
+					description: "Interest earned from loans"
+				},
+			});
+			console.log("Created Interest Income - Loans account (4101)");
 		}
 	}
 
@@ -974,6 +1028,37 @@ async function seedChartOfAccounts() {
 			await prisma.account_COA.create({ data: account });
 			console.log(`Created expense sub-account: ${account.name}`);
 		}
+
+		// Create sub-account for Interest Expense
+		const personnelExpensesAccount = await prisma.account_COA.findFirst({
+			where: { accountCode: "5100" },
+		});
+		if (personnelExpensesAccount) {
+			await prisma.account_COA.create({
+				data: {
+					accountCode: "5101",
+					name: "Interest Expense",
+					accountType: AccountType_COA.EXPENSE,
+					parentId: expenses.id,
+					description: "Interest paid on customer deposits"
+				},
+			});
+			console.log("Created Interest Expense account (5101)");
+		}
+	}
+
+	// Add Share Capital account under Equity
+	if (equity) {
+		await prisma.account_COA.create({
+			data: {
+				accountCode: "3101",
+				name: "Share Capital",
+				accountType: AccountType_COA.EQUITY,
+				parentId: equity.id,
+				description: "Member share capital"
+			},
+		});
+		console.log("Created Share Capital account (3101)");
 	}
 }
 
@@ -1923,10 +2008,16 @@ async function seedSystemSettings() {
 	];
 
 	for (const category of categories) {
-		await prisma.settingCategory.create({ data: category });
-		console.log(`Created setting category: ${category.name}`);
-	}
+		// Check if category already exists
+		const existingCategory = await prisma.settingCategory.findUnique({
+			where: { name: category.name }
+		});
 
+		if (!existingCategory) {
+			await prisma.settingCategory.create({ data: category });
+			console.log(`Created setting category: ${category.name}`);
+		}
+	}
 	// Create default settings
 	const defaultSettings = [
 		// General Settings
@@ -2254,14 +2345,21 @@ async function seedSystemSettings() {
 	const { SettingDataType } = await import("@prisma/client");
 
 	for (const setting of defaultSettings) {
-		await prisma.systemSetting.create({
-			data: {
-				...setting,
-				dataType:
-					SettingDataType[setting.dataType as keyof typeof SettingDataType],
-			},
+		// Check if setting already exists
+		const existingSetting = await prisma.systemSetting.findUnique({
+			where: { key: setting.key }
 		});
-		console.log(`Created setting: ${setting.key}`);
+
+		if (!existingSetting) {
+			await prisma.systemSetting.create({
+				data: {
+					...setting,
+					dataType:
+						SettingDataType[setting.dataType as keyof typeof SettingDataType],
+				},
+			});
+			console.log(`Created setting: ${setting.key}`);
+		}
 	}
 
 	console.log("System settings seeded successfully");

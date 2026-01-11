@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { 
   getUserAccounts, 
   getAccountById, 
@@ -16,7 +16,7 @@ import {
   getAccountByIdValidation
 } from '../validations/account.validation';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Temporarily disable authentication for testing
 // router.use(authenticateAdmin);

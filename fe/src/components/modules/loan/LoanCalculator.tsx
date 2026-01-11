@@ -29,6 +29,10 @@ interface CalculatorFormData {
 }
 
 interface EMICalculationResult {
+  principal: number;
+  interestRate: number;
+  tenure: number;
+  interestType: string;
   emi: number;
   totalInterest: number;
   totalAmount: number;
@@ -37,14 +41,33 @@ interface EMICalculationResult {
 interface InstallmentSchedule {
   installmentNumber: number;
   dueDate: string;
-  principal: number;
-  interest: number;
-  amount: number;
-  balance: number;
+  principalAmount: number;
+  interestAmount: number;
+  totalAmount: number;
+  remainingPrincipal: number;
+}
+
+interface ScheduleResponse {
+  summary: EMICalculationResult;
+  schedule: InstallmentSchedule[];
+}
+
+interface CompareResult {
+  flat: {
+    emi: number;
+    totalInterest: number;
+    totalAmount: number;
+  };
+  diminishing: {
+    emi: number;
+    totalInterest: number;
+    totalAmount: number;
+  };
+  savings: number;
 }
 
 const calculatorSchema = yup.object().shape({
-  loanTypeId: yup.string().required('Loan type is required'),
+  loanTypeId: yup.string(),
   amount: yup
     .number()
     .required('Loan amount is required')
@@ -65,148 +88,57 @@ const calculatorSchema = yup.object().shape({
   startDate: yup.string().required('Start date is required'),
 });
 
-// Service to fetch loan types
+// Service to fetch loan types from API
 const fetchLoanTypes = async (): Promise<LoanType[]> => {
-  // This would be replaced with an actual API call
-  // return apiService.get<LoanType[]>('/loan/types');
-  
-  // Mock data for now
-  return [
-    {
-      id: '1',
-      name: 'Personal Loan',
-      code: 'PL',
-      interestType: 'FLAT',
-      minAmount: 1000,
-      maxAmount: 50000,
-      minTenure: 3,
-      maxTenure: 36,
-      interestRate: 12,
-    },
-    {
-      id: '2',
-      name: 'Business Loan',
-      code: 'BL',
-      interestType: 'DIMINISHING',
-      minAmount: 5000,
-      maxAmount: 200000,
-      minTenure: 6,
-      maxTenure: 60,
-      interestRate: 15,
-    },
-    {
-      id: '3',
-      name: 'Education Loan',
-      code: 'EL',
-      interestType: 'DIMINISHING',
-      minAmount: 10000,
-      maxAmount: 100000,
-      minTenure: 12,
-      maxTenure: 84,
-      interestRate: 10,
-    },
-  ];
+  try {
+    const response = await apiService.get<{ data: LoanType[] }>('/loan/types');
+    return response.data || [];
+  } catch (error) {
+    console.error('Error fetching loan types:', error);
+    return [];
+  }
 };
 
-// Service to calculate EMI
+// Service to calculate EMI using backend API
 const calculateEMI = async (data: CalculatorFormData): Promise<EMICalculationResult> => {
-  // This would be replaced with an actual API call
-  // return apiService.post<EMICalculationResult>('/loan/calculator/emi', data);
-  
-  // Mock calculation for now
-  const { amount, tenure, interestRate, interestType } = data;
-  let emi = 0;
-  let totalInterest = 0;
-  
-  if (interestType === 'FLAT') {
-    // Flat interest calculation
-    const monthlyInterestRate = interestRate / 100 / 12;
-    totalInterest = amount * (interestRate / 100) * (tenure / 12);
-    emi = (amount + totalInterest) / tenure;
-  } else {
-    // Diminishing interest calculation
-    const monthlyInterestRate = interestRate / 100 / 12;
-    emi = (amount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, tenure)) / 
-          (Math.pow(1 + monthlyInterestRate, tenure) - 1);
-    totalInterest = emi * tenure - amount;
-  }
-  
-  return {
-    emi,
-    totalInterest,
-    totalAmount: amount + totalInterest,
-  };
+  const response = await apiService.post<EMICalculationResult>('/loan/calculator/emi', {
+    principal: data.amount,
+    interestRate: data.interestRate,
+    tenure: data.tenure,
+    interestType: data.interestType,
+  });
+  return response;
 };
 
-// Service to generate amortization schedule
-const generateSchedule = async (data: CalculatorFormData): Promise<InstallmentSchedule[]> => {
-  // This would be replaced with an actual API call
-  // return apiService.post<InstallmentSchedule[]>('/loan/calculator/schedule', data);
-  
-  // Mock schedule generation for now
-  const { amount, tenure, interestRate, interestType, startDate } = data;
-  const schedule: InstallmentSchedule[] = [];
-  
-  const startDateObj = new Date(startDate);
-  let remainingPrincipal = amount;
-  
-  if (interestType === 'FLAT') {
-    // Flat interest calculation
-    const monthlyInterestRate = interestRate / 100 / 12;
-    const totalInterest = amount * (interestRate / 100) * (tenure / 12);
-    const emi = (amount + totalInterest) / tenure;
-    const principalPerMonth = amount / tenure;
-    const interestPerMonth = totalInterest / tenure;
-    
-    for (let i = 1; i <= tenure; i++) {
-      const dueDate = new Date(startDateObj);
-      dueDate.setMonth(startDateObj.getMonth() + i);
-      
-      remainingPrincipal -= principalPerMonth;
-      
-      schedule.push({
-        installmentNumber: i,
-        dueDate: dueDate.toISOString().split('T')[0],
-        principal: principalPerMonth,
-        interest: interestPerMonth,
-        amount: emi,
-        balance: remainingPrincipal,
-      });
-    }
-  } else {
-    // Diminishing interest calculation
-    const monthlyInterestRate = interestRate / 100 / 12;
-    const emi = (amount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, tenure)) / 
-                (Math.pow(1 + monthlyInterestRate, tenure) - 1);
-    
-    for (let i = 1; i <= tenure; i++) {
-      const dueDate = new Date(startDateObj);
-      dueDate.setMonth(startDateObj.getMonth() + i);
-      
-      const interestForMonth = remainingPrincipal * monthlyInterestRate;
-      const principalForMonth = emi - interestForMonth;
-      
-      remainingPrincipal -= principalForMonth;
-      
-      schedule.push({
-        installmentNumber: i,
-        dueDate: dueDate.toISOString().split('T')[0],
-        principal: principalForMonth,
-        interest: interestForMonth,
-        amount: emi,
-        balance: remainingPrincipal > 0 ? remainingPrincipal : 0,
-      });
-    }
-  }
-  
-  return schedule;
+// Service to generate amortization schedule using backend API
+const generateSchedule = async (data: CalculatorFormData): Promise<ScheduleResponse> => {
+  const response = await apiService.post<ScheduleResponse>('/loan/calculator/schedule', {
+    principal: data.amount,
+    interestRate: data.interestRate,
+    tenure: data.tenure,
+    interestType: data.interestType,
+    disbursementDate: data.startDate,
+  });
+  return response;
+};
+
+// Service to compare interest methods
+const compareInterestMethods = async (data: CalculatorFormData): Promise<CompareResult> => {
+  const response = await apiService.post<CompareResult>('/loan/calculator/compare', {
+    principal: data.amount,
+    interestRate: data.interestRate,
+    tenure: data.tenure,
+  });
+  return response;
 };
 
 const LoanCalculator: React.FC = () => {
   const [calculationResult, setCalculationResult] = useState<EMICalculationResult | null>(null);
   const [schedule, setSchedule] = useState<InstallmentSchedule[] | null>(null);
+  const [compareResult, setCompareResult] = useState<CompareResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [selectedLoanType, setSelectedLoanType] = useState<LoanType | null>(null);
+  const [activeTab, setActiveTab] = useState<'calculator' | 'compare'>('calculator');
 
   // Fetch loan types
   const { data: loanTypes, isLoading: isLoadingLoanTypes } = useQuery(
@@ -227,15 +159,18 @@ const LoanCalculator: React.FC = () => {
     resolver: yupResolver(calculatorSchema),
     defaultValues: {
       loanTypeId: '',
-      amount: 10000,
+      amount: 100000,
       tenure: 12,
       interestRate: 12,
-      interestType: 'FLAT',
+      interestType: 'DIMINISHING',
       startDate: new Date().toISOString().split('T')[0],
     },
   });
 
   const watchLoanTypeId = watch('loanTypeId');
+  const watchAmount = watch('amount');
+  const watchTenure = watch('tenure');
+  const watchInterestRate = watch('interestRate');
 
   // Update form values when loan type changes
   useEffect(() => {
@@ -245,7 +180,7 @@ const LoanCalculator: React.FC = () => {
         setSelectedLoanType(loanType);
         setValue('interestRate', loanType.interestRate);
         setValue('interestType', loanType.interestType);
-        
+
         // Ensure amount is within range
         const currentAmount = watch('amount');
         if (currentAmount < loanType.minAmount) {
@@ -253,7 +188,7 @@ const LoanCalculator: React.FC = () => {
         } else if (currentAmount > loanType.maxAmount) {
           setValue('amount', loanType.maxAmount);
         }
-        
+
         // Ensure tenure is within range
         const currentTenure = watch('tenure');
         if (currentTenure < loanType.minTenure) {
@@ -270,9 +205,9 @@ const LoanCalculator: React.FC = () => {
     try {
       const result = await calculateEMI(data);
       setCalculationResult(result);
-      
+
       const scheduleResult = await generateSchedule(data);
-      setSchedule(scheduleResult);
+      setSchedule(scheduleResult.schedule);
     } catch (error) {
       console.error('Calculation failed:', error);
     } finally {
@@ -280,14 +215,67 @@ const LoanCalculator: React.FC = () => {
     }
   };
 
+  const onCompare = async () => {
+    const data = {
+      loanTypeId: '',
+      amount: watchAmount,
+      tenure: watchTenure,
+      interestRate: watchInterestRate,
+      interestType: 'FLAT' as const,
+      startDate: new Date().toISOString().split('T')[0],
+    };
+
+    setIsCalculating(true);
+    try {
+      const result = await compareInterestMethods(data);
+      setCompareResult(result);
+    } catch (error) {
+      console.error('Comparison failed:', error);
+    } finally {
+      setIsCalculating(false);
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-NP', {
+      style: 'currency',
+      currency: 'NPR',
+      minimumFractionDigits: 2,
+    }).format(amount).replace('NPR', 'Rs');
+  };
+
   return (
     <div className="space-y-6">
-      <Card title="Loan Calculator">
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('calculator')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'calculator'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+          >
+            EMI Calculator
+          </button>
+          <button
+            onClick={() => setActiveTab('compare')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'compare'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+          >
+            Compare Interest Types
+          </button>
+        </nav>
+      </div>
+
+      <Card title={activeTab === 'calculator' ? 'EMI Calculator' : 'Compare Interest Methods'}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <label htmlFor="loanTypeId" className="form-label">
-                Loan Type
+                Loan Type (Optional)
               </label>
               <select
                 id="loanTypeId"
@@ -295,21 +283,18 @@ const LoanCalculator: React.FC = () => {
                 {...register('loanTypeId')}
                 disabled={isLoadingLoanTypes}
               >
-                <option value="">Select Loan Type</option>
+                <option value="">Custom Calculation</option>
                 {loanTypes?.map(loanType => (
                   <option key={loanType.id} value={loanType.id}>
-                    {loanType.name}
+                    {loanType.name} ({loanType.interestRate}%)
                   </option>
                 ))}
               </select>
-              {errors.loanTypeId && (
-                <p className="form-error">{errors.loanTypeId.message}</p>
-              )}
             </div>
 
             <div>
               <label htmlFor="amount" className="form-label">
-                Loan Amount
+                Loan Amount (Rs)
               </label>
               <input
                 id="amount"
@@ -317,14 +302,14 @@ const LoanCalculator: React.FC = () => {
                 className="form-input"
                 {...register('amount')}
                 min={selectedLoanType?.minAmount || 1000}
-                max={selectedLoanType?.maxAmount || 50000}
+                max={selectedLoanType?.maxAmount || 10000000}
               />
               {errors.amount && (
                 <p className="form-error">{errors.amount.message}</p>
               )}
               {selectedLoanType && (
                 <p className="mt-1 text-xs text-gray-500">
-                  Min: ${selectedLoanType.minAmount.toLocaleString()} | Max: ${selectedLoanType.maxAmount.toLocaleString()}
+                  Range: Rs {selectedLoanType.minAmount.toLocaleString()} - Rs {selectedLoanType.maxAmount.toLocaleString()}
                 </p>
               )}
             </div>
@@ -338,15 +323,15 @@ const LoanCalculator: React.FC = () => {
                 type="number"
                 className="form-input"
                 {...register('tenure')}
-                min={selectedLoanType?.minTenure || 3}
-                max={selectedLoanType?.maxTenure || 36}
+                min={selectedLoanType?.minTenure || 1}
+                max={selectedLoanType?.maxTenure || 360}
               />
               {errors.tenure && (
                 <p className="form-error">{errors.tenure.message}</p>
               )}
               {selectedLoanType && (
                 <p className="mt-1 text-xs text-gray-500">
-                  Min: {selectedLoanType.minTenure} months | Max: {selectedLoanType.maxTenure} months
+                  Range: {selectedLoanType.minTenure} - {selectedLoanType.maxTenure} months
                 </p>
               )}
             </div>
@@ -361,7 +346,6 @@ const LoanCalculator: React.FC = () => {
                 step="0.01"
                 className="form-input"
                 {...register('interestRate')}
-                readOnly={!!selectedLoanType}
               />
               {errors.interestRate && (
                 <p className="form-error">{errors.interestRate.message}</p>
@@ -376,10 +360,9 @@ const LoanCalculator: React.FC = () => {
                 id="interestType"
                 className="form-input"
                 {...register('interestType')}
-                disabled={!!selectedLoanType}
               >
-                <option value="FLAT">Flat</option>
-                <option value="DIMINISHING">Diminishing</option>
+                <option value="FLAT">Flat Rate</option>
+                <option value="DIMINISHING">Diminishing Balance</option>
               </select>
               {errors.interestType && (
                 <p className="form-error">{errors.interestType.message}</p>
@@ -388,7 +371,7 @@ const LoanCalculator: React.FC = () => {
 
             <div>
               <label htmlFor="startDate" className="form-label">
-                Start Date
+                Disbursement Date
               </label>
               <input
                 id="startDate"
@@ -402,96 +385,188 @@ const LoanCalculator: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-4">
+            {activeTab === 'compare' && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onCompare}
+                isLoading={isCalculating}
+              >
+                Compare Methods
+              </Button>
+            )}
             <Button
               type="submit"
               variant="primary"
               isLoading={isCalculating}
-              disabled={isLoadingLoanTypes}
             >
-              Calculate
+              Calculate EMI
             </Button>
           </div>
         </form>
       </Card>
 
-      {calculationResult && (
+      {/* Calculation Results */}
+      {calculationResult && activeTab === 'calculator' && (
         <Card title="Calculation Results">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-            <div className="bg-gray-50 p-4 rounded-lg text-center">
-              <h3 className="text-lg font-medium text-gray-900">Monthly EMI</h3>
-              <p className="mt-2 text-3xl font-bold text-primary-600">
-                ${calculationResult.emi.toFixed(2)}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl text-center shadow-sm">
+              <h3 className="text-sm font-medium text-blue-800 uppercase tracking-wide">Monthly EMI</h3>
+              <p className="mt-3 text-3xl font-bold text-blue-900">
+                {formatCurrency(calculationResult.emi)}
               </p>
             </div>
-            
-            <div className="bg-gray-50 p-4 rounded-lg text-center">
-              <h3 className="text-lg font-medium text-gray-900">Total Interest</h3>
-              <p className="mt-2 text-3xl font-bold text-primary-600">
-                ${calculationResult.totalInterest.toFixed(2)}
+
+            <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl text-center shadow-sm">
+              <h3 className="text-sm font-medium text-green-800 uppercase tracking-wide">Principal</h3>
+              <p className="mt-3 text-3xl font-bold text-green-900">
+                {formatCurrency(calculationResult.principal)}
               </p>
             </div>
-            
-            <div className="bg-gray-50 p-4 rounded-lg text-center">
-              <h3 className="text-lg font-medium text-gray-900">Total Amount</h3>
-              <p className="mt-2 text-3xl font-bold text-primary-600">
-                ${calculationResult.totalAmount.toFixed(2)}
+
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-6 rounded-xl text-center shadow-sm">
+              <h3 className="text-sm font-medium text-amber-800 uppercase tracking-wide">Total Interest</h3>
+              <p className="mt-3 text-3xl font-bold text-amber-900">
+                {formatCurrency(calculationResult.totalInterest)}
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl text-center shadow-sm">
+              <h3 className="text-sm font-medium text-purple-800 uppercase tracking-wide">Total Payable</h3>
+              <p className="mt-3 text-3xl font-bold text-purple-900">
+                {formatCurrency(calculationResult.totalAmount)}
               </p>
             </div>
           </div>
         </Card>
       )}
 
-      {schedule && (
+      {/* Compare Results */}
+      {compareResult && activeTab === 'compare' && (
+        <Card title="Comparison Results">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl shadow-sm">
+              <h3 className="text-lg font-semibold text-blue-900 mb-4">Flat Rate</h3>
+              <div className="space-y-2">
+                <p className="flex justify-between">
+                  <span className="text-blue-700">Monthly EMI:</span>
+                  <span className="font-semibold">{formatCurrency(compareResult.flat.emi)}</span>
+                </p>
+                <p className="flex justify-between">
+                  <span className="text-blue-700">Total Interest:</span>
+                  <span className="font-semibold">{formatCurrency(compareResult.flat.totalInterest)}</span>
+                </p>
+                <p className="flex justify-between">
+                  <span className="text-blue-700">Total Amount:</span>
+                  <span className="font-semibold">{formatCurrency(compareResult.flat.totalAmount)}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl shadow-sm">
+              <h3 className="text-lg font-semibold text-green-900 mb-4">Diminishing Balance</h3>
+              <div className="space-y-2">
+                <p className="flex justify-between">
+                  <span className="text-green-700">Monthly EMI:</span>
+                  <span className="font-semibold">{formatCurrency(compareResult.diminishing.emi)}</span>
+                </p>
+                <p className="flex justify-between">
+                  <span className="text-green-700">Total Interest:</span>
+                  <span className="font-semibold">{formatCurrency(compareResult.diminishing.totalInterest)}</span>
+                </p>
+                <p className="flex justify-between">
+                  <span className="text-green-700">Total Amount:</span>
+                  <span className="font-semibold">{formatCurrency(compareResult.diminishing.totalAmount)}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-6 rounded-xl shadow-sm flex flex-col justify-center">
+              <h3 className="text-lg font-semibold text-amber-900 mb-2 text-center">Your Savings</h3>
+              <p className="text-4xl font-bold text-amber-900 text-center">
+                {formatCurrency(compareResult.savings)}
+              </p>
+              <p className="text-sm text-amber-700 text-center mt-2">
+                with Diminishing Balance
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Amortization Schedule */}
+      {schedule && schedule.length > 0 && activeTab === 'calculator' && (
         <Card title="Amortization Schedule">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-300">
-              <thead>
+              <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                  <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">
                     #
                   </th>
                   <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                     Due Date
                   </th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">
                     Principal
                   </th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">
                     Interest
                   </th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">
                     EMI
                   </th>
-                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">
                     Balance
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
                 {schedule.map((installment) => (
-                  <tr key={installment.installmentNumber}>
-                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                  <tr key={installment.installmentNumber} className="hover:bg-gray-50">
+                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
                       {installment.installmentNumber}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {new Date(installment.dueDate).toLocaleDateString()}
+                      {new Date(installment.dueDate).toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      ${installment.principal.toFixed(2)}
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900 text-right">
+                      {formatCurrency(installment.principalAmount)}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      ${installment.interest.toFixed(2)}
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-right">
+                      {formatCurrency(installment.interestAmount)}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      ${installment.amount.toFixed(2)}
+                    <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900 text-right">
+                      {formatCurrency(installment.totalAmount)}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      ${installment.balance.toFixed(2)}
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-right">
+                      {formatCurrency(installment.remainingPrincipal)}
                     </td>
                   </tr>
                 ))}
               </tbody>
+              <tfoot className="bg-gray-50">
+                <tr>
+                  <td colSpan={2} className="py-3.5 pl-4 pr-3 text-sm font-semibold text-gray-900">
+                    Total
+                  </td>
+                  <td className="px-3 py-3.5 text-sm font-semibold text-gray-900 text-right">
+                    {formatCurrency(schedule.reduce((sum, i) => sum + i.principalAmount, 0))}
+                  </td>
+                  <td className="px-3 py-3.5 text-sm font-semibold text-gray-900 text-right">
+                    {formatCurrency(schedule.reduce((sum, i) => sum + i.interestAmount, 0))}
+                  </td>
+                  <td className="px-3 py-3.5 text-sm font-semibold text-gray-900 text-right">
+                    {formatCurrency(schedule.reduce((sum, i) => sum + i.totalAmount, 0))}
+                  </td>
+                  <td className="px-3 py-3.5 text-sm text-gray-500 text-right">-</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </Card>

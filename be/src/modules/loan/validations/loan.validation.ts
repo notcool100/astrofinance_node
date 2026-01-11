@@ -116,8 +116,8 @@ export const processEarlySettlementValidation = [
  */
 export const getLoansValidation = [
 	query("status")
-		.optional()
-		.isIn(["ACTIVE", "CLOSED", "DEFAULTED"])
+		.optional({ values: "falsy" })
+		.isIn(["ACTIVE", "CLOSED", "DEFAULTED", ""])
 		.withMessage("Invalid status"),
 
 	query("userId")
