@@ -18,6 +18,8 @@ const UserForm: React.FC<UserFormProps> = ({
 	isEditMode,
 	fieldErrors = {},
 }) => {
+	const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
+
 	const [formData, setFormData] = useState<CreateUserData | UpdateUserData>({
 		fullName: user?.fullName || "",
 		dateOfBirth: user?.dateOfBirth || "",
@@ -53,11 +55,22 @@ const UserForm: React.FC<UserFormProps> = ({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
+
+		// Validate email
+		if (formData.email) {
+			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+			if (!emailRegex.test(formData.email)) {
+				setLocalErrors({ ...localErrors, email: "Please enter a valid email address" });
+				return;
+			}
+		}
+
+		setLocalErrors({});
 		onSubmit(formData);
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="bg-white shadow sm:rounded-lg">
+		<form onSubmit={handleSubmit} className="bg-white shadow sm:rounded-lg" >
 			<div className="px-4 py-5 sm:p-6">
 				<div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
 					{/* Full Name */}
@@ -76,11 +89,10 @@ const UserForm: React.FC<UserFormProps> = ({
 								value={formData.fullName || ""}
 								onChange={handleChange}
 								required
-								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${
-									fieldErrors.fullName
-										? "border-red-300 focus:border-red-500"
-										: "border-gray-300 focus:border-primary-500"
-								}`}
+								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${fieldErrors.fullName
+									? "border-red-300 focus:border-red-500"
+									: "border-gray-300 focus:border-primary-500"
+									}`}
 							/>
 							{fieldErrors.fullName && (
 								<p className="mt-1 text-sm text-red-600">
@@ -144,18 +156,27 @@ const UserForm: React.FC<UserFormProps> = ({
 						</label>
 						<div className="mt-1">
 							<input
-								type="tel"
+								type="text"
 								name="contactNumber"
 								id="contactNumber"
 								value={formData.contactNumber || ""}
-								onChange={handleChange}
-								placeholder="e.g., +1234567890 or 1234567890"
+								onChange={(e) => {
+									const value = e.target.value;
+									// Only allow numbers
+									if (/^\d*$/.test(value)) {
+										// Limit to 10 characters
+										if (value.length <= 10) {
+											setFormData((prev) => ({ ...prev, contactNumber: value }));
+										}
+									}
+								}}
+								placeholder="e.g. 9800000000"
 								required
-								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${
-									fieldErrors.contactNumber
-										? "border-red-300 focus:border-red-500"
-										: "border-gray-300 focus:border-primary-500"
-								}`}
+								maxLength={10}
+								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${fieldErrors.contactNumber
+									? "border-red-300 focus:border-red-500"
+									: "border-gray-300 focus:border-primary-500"
+									}`}
 							/>
 							{fieldErrors.contactNumber && (
 								<p className="mt-1 text-sm text-red-600">
@@ -180,14 +201,15 @@ const UserForm: React.FC<UserFormProps> = ({
 								id="email"
 								value={formData.email || ""}
 								onChange={handleChange}
-								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${
-									fieldErrors.email
+								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${fieldErrors.email || localErrors.email
 										? "border-red-300 focus:border-red-500"
 										: "border-gray-300 focus:border-primary-500"
-								}`}
+									}`}
 							/>
-							{fieldErrors.email && (
-								<p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+							{(fieldErrors.email || localErrors.email) && (
+								<p className="mt-1 text-sm text-red-600">
+									{fieldErrors.email || localErrors.email}
+								</p>
 							)}
 						</div>
 					</div>
@@ -253,11 +275,10 @@ const UserForm: React.FC<UserFormProps> = ({
 								value={formData.identificationNumber || ""}
 								onChange={handleChange}
 								required
-								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${
-									fieldErrors.identificationNumber
-										? "border-red-300 focus:border-red-500"
-										: "border-gray-300 focus:border-primary-500"
-								}`}
+								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${fieldErrors.identificationNumber
+									? "border-red-300 focus:border-red-500"
+									: "border-gray-300 focus:border-primary-500"
+									}`}
 							/>
 							{fieldErrors.identificationNumber && (
 								<p className="mt-1 text-sm text-red-600">
@@ -298,7 +319,7 @@ const UserForm: React.FC<UserFormProps> = ({
 					{isEditMode ? "Update User" : "Create User"}
 				</Button>
 			</div>
-		</form>
+		</form >
 	);
 };
 
