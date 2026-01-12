@@ -175,16 +175,7 @@ const UsersPage: React.FC = () => {
 							<PencilIcon className="h-4 w-4" />
 						</Button>
 					</Link>
-					<Link href={`/users/${row.original.id}/reset-password`}>
-						<Button
-							variant="outline"
-							size="sm"
-							className="text-yellow-600 hover:text-yellow-800"
-							title="Reset Password"
-						>
-							<KeyIcon className="h-4 w-4" />
-						</Button>
-					</Link>
+
 					<Button
 						variant="outline"
 						size="sm"

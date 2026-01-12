@@ -58,6 +58,18 @@ router.get(
 );
 
 /**
+ * @route GET /api/user/transactions/summary
+ * @desc Get summary for all transactions or filtered by accountId
+ * @access Private (Admin, Staff)
+ */
+router.get(
+  '/transactions/summary',
+  authenticate,
+  hasPermission('usertransactions.view'),
+  getAllTransactionsSummary
+);
+
+/**
  * @route GET /api/user/transactions/:id
  * @desc Get a specific transaction by ID
  * @access Private (Admin, Staff)
@@ -81,18 +93,6 @@ router.post(
   hasPermission('usertransactions.cancel'), // Only admins can cancel transactions
   validateRequest(cancelTransactionSchema, 'body', ['id']),
   cancelTransaction
-);
-
-/**
- * @route GET /api/user/transactions/summary
- * @desc Get summary for all transactions or filtered by accountId
- * @access Private (Admin, Staff)
- */
-router.get(
-  '/transactions/summary',
-  authenticate,
-  hasPermission('usertransactions.view'),
-  getAllTransactionsSummary
 );
 
 /**

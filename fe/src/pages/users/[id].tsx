@@ -110,8 +110,8 @@ const UserDetailPage: React.FC = () => {
         <Badge
           color={
             value === 'ACTIVE' ? 'green' :
-            value === 'CLOSED' ? 'gray' :
-            value === 'DEFAULTED' ? 'red' : 'yellow'
+              value === 'CLOSED' ? 'gray' :
+                value === 'DEFAULTED' ? 'red' : 'yellow'
           }
           text={value}
         />
@@ -159,8 +159,8 @@ const UserDetailPage: React.FC = () => {
         <Badge
           color={
             value === 'PENDING' ? 'yellow' :
-            value === 'APPROVED' ? 'green' :
-            value === 'REJECTED' ? 'red' : 'blue'
+              value === 'APPROVED' ? 'green' :
+                value === 'REJECTED' ? 'red' : 'blue'
           }
           text={value}
         />
@@ -236,12 +236,6 @@ const UserDetailPage: React.FC = () => {
                         Edit
                       </Button>
                     </Link>
-                    <Link href={`/users/${user.id}/reset-password`}>
-                      <Button variant="outline" className="flex items-center">
-                        <KeyIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                        Reset Password
-                      </Button>
-                    </Link>
                   </div>
                 </div>
 
@@ -288,11 +282,11 @@ const UserDetailPage: React.FC = () => {
                           <Badge
                             color={
                               user.userType === 'SB' ? 'blue' :
-                              user.userType === 'BB' ? 'green' : 'purple'
+                                user.userType === 'BB' ? 'green' : 'purple'
                             }
                             text={
                               user.userType === 'SB' ? 'Savings Bank' :
-                              user.userType === 'BB' ? 'Business Banking' : 'Mobile Banking'
+                                user.userType === 'BB' ? 'Business Banking' : 'Mobile Banking'
                             }
                           />
                         </dd>
