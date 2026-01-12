@@ -86,6 +86,16 @@ async function cleanupDatabase() {
 		await prisma.staff.deleteMany({});
 		await prisma.role.deleteMany({});
 		await prisma.adminUser.deleteMany({});
+		// Clean up loan-related data first due to foreign key constraints
+		await prisma.loanPayment.deleteMany({});
+		await prisma.loanInstallment.deleteMany({});
+		await prisma.loanProvision.deleteMany({});
+		await prisma.loan.deleteMany({});
+		await prisma.loanDocument.deleteMany({});
+		await prisma.loanApplication.deleteMany({});
+		await prisma.loanCalculatorHistory.deleteMany({});
+		await prisma.loanCalculatorPreset.deleteMany({});
+
 		await prisma.loanType.deleteMany({});
 
 		// Check for any other dependencies on account_COA
