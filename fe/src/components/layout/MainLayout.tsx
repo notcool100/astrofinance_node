@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import DynamicNavigation from './DynamicNavigation';
 
+
 interface UserNavigationItem {
   name: string;
   href: string;
