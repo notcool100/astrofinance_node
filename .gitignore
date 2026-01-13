@@ -9,6 +9,14 @@ fe/node_modules/
 be/node_modules/
 be/dist/
 
+# Packages
+packages/*/node_modules/
+packages/*/dist/
+packages/*/lib/
+packages/*/*.tsbuildinfo
+packages/*/coverage/
+
+
 # Environment variables
 **/.env
 **/.env.local

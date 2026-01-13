@@ -19,8 +19,10 @@ import Table from "@/components/common/Table";
 import MainLayout from "@/components/layout/MainLayout";
 import { deleteUser, getAllUsers, type User } from "@/services/user.service";
 import { formatDate } from "@/utils/dateUtils";
+import { useTranslation } from 'next-i18next';
 
 const UsersPage: React.FC = () => {
+	const { t } = useTranslation('common');
 	const [users, setUsers] = useState<User[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -97,14 +99,14 @@ const UsersPage: React.FC = () => {
 
 	const columns: Column<User>[] = [
 		{
-			Header: "Name",
+			Header: t('table.name'),
 			accessor: "fullName",
 			Cell: ({ row }: any) => (
 				<div className="font-medium text-gray-900">{row.original.fullName}</div>
 			),
 		},
 		{
-			Header: "Contact",
+			Header: t('table.contact'),
 			accessor: "contactNumber",
 			Cell: ({ row }: any) => (
 				<div>
@@ -116,24 +118,24 @@ const UsersPage: React.FC = () => {
 			),
 		},
 		{
-			Header: "Status",
+			Header: t('table.status'),
 			accessor: "isActive",
 			Cell: ({ row }: any) => (
 				<Badge
 					color={row.original.isActive ? "green" : "red"}
-					text={row.original.isActive ? "Active" : "Inactive"}
+					text={row.original.isActive ? t('status.active') : t('status.inactive')}
 				/>
 			),
 		},
 		{
-			Header: "Loans",
+			Header: t('table.loans'),
 			accessor: "loans_count" as any,
 			Cell: ({ row }: any) => (
 				<div className="text-center">{row.original._count?.loans || 0}</div>
 			),
 		},
 		{
-			Header: "Applications",
+			Header: t('table.applications'),
 			accessor: "applications_count" as any,
 			Cell: ({ row }: any) => (
 				<div className="text-center">
@@ -142,7 +144,7 @@ const UsersPage: React.FC = () => {
 			),
 		},
 		{
-			Header: "Created",
+			Header: t('table.created'),
 			accessor: "createdAt",
 			Cell: ({ row }: any) => (
 				<div className="text-sm text-gray-500">
@@ -151,7 +153,7 @@ const UsersPage: React.FC = () => {
 			),
 		},
 		{
-			Header: "Actions",
+			Header: t('table.actions'),
 			accessor: "id" as keyof User,
 			Cell: ({ row }: any) => (
 				<div className="flex space-x-2">
@@ -196,17 +198,16 @@ const UsersPage: React.FC = () => {
 				<div className="px-4 sm:px-6 lg:px-8 py-8">
 					<div className="sm:flex sm:items-center mb-6">
 						<div className="sm:flex-auto">
-							<h1 className="text-2xl font-semibold text-gray-900">Users</h1>
+							<h1 className="text-2xl font-semibold text-gray-900">{t('pages.users')}</h1>
 							<p className="mt-2 text-sm text-gray-700">
-								A list of all users in the system including their details and
-								status.
+								{t('messages.user_list_description')}
 							</p>
 						</div>
 						<div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
 							<Link href="/users/create">
 								<Button variant="primary" className="flex items-center">
 									<PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-									Add User
+									{t('actions.add_user')}
 								</Button>
 							</Link>
 						</div>
@@ -244,11 +245,11 @@ const UsersPage: React.FC = () => {
 											value={searchTerm}
 											onChange={(e) => setSearchTerm(e.target.value)}
 											className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-											placeholder="Search users..."
+											placeholder={t('table.search_users')}
 										/>
 									</div>
 									<Button type="submit" variant="secondary" className="ml-2">
-										Search
+										{t('search')}
 									</Button>
 								</form>
 							</div>
@@ -260,18 +261,18 @@ const UsersPage: React.FC = () => {
 									onChange={handleStatusFilterChange}
 									className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
 								>
-									<option value="">All Status</option>
-									<option value="active">Active</option>
-									<option value="inactive">Inactive</option>
+									<option value="">{t('status.all_status')}</option>
+									<option value="active">{t('status.active')}</option>
+									<option value="inactive">{t('status.inactive')}</option>
 								</select>
 							</div>
 						</div>
 
 						<div className="overflow-x-auto">
 							{loading ? (
-								<div className="p-6 text-center">Loading users data...</div>
+								<div className="p-6 text-center">{t('loading_data')}</div>
 							) : users.length === 0 ? (
-								<div className="p-6 text-center">No users found.</div>
+								<div className="p-6 text-center">{t('table.no_users_found')}</div>
 							) : (
 								<Table
 									columns={columns}
@@ -295,7 +296,7 @@ const UsersPage: React.FC = () => {
 				<Modal
 					isOpen={showDeleteModal}
 					onClose={() => setShowDeleteModal(false)}
-					title="Delete User"
+					title={t('modal.delete_title', { item: t('pages.users').slice(0, -1) })}
 				>
 					<div className="mt-2">
 						<p className="text-sm text-gray-500">
@@ -309,14 +310,14 @@ const UsersPage: React.FC = () => {
 							onClick={confirmDeleteUser}
 							className="w-full sm:w-auto sm:ml-3"
 						>
-							Delete
+							{t('delete')}
 						</Button>
 						<Button
 							variant="outline"
 							onClick={() => setShowDeleteModal(false)}
 							className="mt-3 w-full sm:mt-0 sm:w-auto"
 						>
-							Cancel
+							{t('cancel')}
 						</Button>
 					</div>
 				</Modal>
@@ -325,5 +326,17 @@ const UsersPage: React.FC = () => {
 	);
 };
 
-export default UsersPage;
 
+
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+	return {
+		props: {
+			...(await import('next-i18next/serverSideTranslations').then(m =>
+				m.serverSideTranslations(locale, ['common', 'user', 'auth'])
+			)),
+		},
+	};
+}
+
+export default UsersPage;

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { User, CreateUserData, UpdateUserData } from "@/services/user.service";
 import Button from "@/components/common/Button";
-import DatePicker from "@/components/common/DatePicker";
+import DualDatePicker from "@/components/common/DualDatePicker";
+import { useTranslation } from 'next-i18next';
 
 interface UserFormProps {
 	user?: User;
@@ -18,11 +19,13 @@ const UserForm: React.FC<UserFormProps> = ({
 	isEditMode,
 	fieldErrors = {},
 }) => {
+	const { t } = useTranslation(['user', 'common']);
 	const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
 
 	const [formData, setFormData] = useState<CreateUserData | UpdateUserData>({
 		fullName: user?.fullName || "",
 		dateOfBirth: user?.dateOfBirth || "",
+		dateOfBirth_bs: (user as any)?.dateOfBirth_bs || "",
 		gender: user?.gender || "",
 		contactNumber: user?.contactNumber || "",
 		email: user?.email || "",
@@ -46,10 +49,19 @@ const UserForm: React.FC<UserFormProps> = ({
 		setFormData((prev) => ({ ...prev, [name]: checked }));
 	};
 
-	const handleDateChange = (name: string, date: Date | null) => {
-		if (date) {
-			// Format date as ISO string for backend compatibility
-			setFormData((prev) => ({ ...prev, [name]: date.toISOString() }));
+	const handleDualDateChange = (adDate: Date | null, bsDate: string | null) => {
+		if (adDate) {
+			setFormData((prev) => ({
+				...prev,
+				dateOfBirth: adDate.toISOString(),
+				dateOfBirth_bs: bsDate || undefined
+			}));
+		} else {
+			setFormData((prev) => ({
+				...prev,
+				dateOfBirth: "",
+				dateOfBirth_bs: undefined
+			}));
 		}
 	};
 
@@ -60,7 +72,7 @@ const UserForm: React.FC<UserFormProps> = ({
 		if (formData.email) {
 			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 			if (!emailRegex.test(formData.email)) {
-				setLocalErrors({ ...localErrors, email: "Please enter a valid email address" });
+				setLocalErrors({ ...localErrors, email: t('common:validation.email') });
 				return;
 			}
 		}
@@ -79,7 +91,7 @@ const UserForm: React.FC<UserFormProps> = ({
 							htmlFor="fullName"
 							className="block text-sm font-medium text-gray-700"
 						>
-							Full Name
+							{t('user:fields.full_name')}
 						</label>
 						<div className="mt-1">
 							<input
@@ -108,15 +120,18 @@ const UserForm: React.FC<UserFormProps> = ({
 							htmlFor="dateOfBirth"
 							className="block text-sm font-medium text-gray-700"
 						>
-							Date of Birth
+							{t('user:fields.date_of_birth')}
 						</label>
 						<div className="mt-1">
-							<DatePicker
+							<DualDatePicker
 								id="dateOfBirth"
-								selected={
+								selectedAd={
 									formData.dateOfBirth ? new Date(formData.dateOfBirth) : null
 								}
-								onChange={(date) => handleDateChange("dateOfBirth", date)}
+								selectedBs={(formData as any).dateOfBirth_bs}
+								onChange={handleDualDateChange}
+								defaultCalendar="bs"
+								showBothDates={true}
 								className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
 							/>
 						</div>
@@ -128,7 +143,7 @@ const UserForm: React.FC<UserFormProps> = ({
 							htmlFor="gender"
 							className="block text-sm font-medium text-gray-700"
 						>
-							Gender
+							{t('user:fields.gender')}
 						</label>
 						<div className="mt-1">
 							<select
@@ -138,10 +153,10 @@ const UserForm: React.FC<UserFormProps> = ({
 								onChange={handleChange}
 								className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
 							>
-								<option value="">Select Gender</option>
-								<option value="MALE">Male</option>
-								<option value="FEMALE">Female</option>
-								<option value="OTHER">Other</option>
+								<option value="">{t('user:gender_options.select')}</option>
+								<option value="MALE">{t('user:gender_options.male')}</option>
+								<option value="FEMALE">{t('user:gender_options.female')}</option>
+								<option value="OTHER">{t('user:gender_options.other')}</option>
 							</select>
 						</div>
 					</div>
@@ -152,7 +167,7 @@ const UserForm: React.FC<UserFormProps> = ({
 							htmlFor="contactNumber"
 							className="block text-sm font-medium text-gray-700"
 						>
-							Contact Number
+							{t('user:fields.contact_number')}
 						</label>
 						<div className="mt-1">
 							<input
@@ -170,7 +185,7 @@ const UserForm: React.FC<UserFormProps> = ({
 										}
 									}
 								}}
-								placeholder="e.g. 9800000000"
+								placeholder={t('user:placeholders.contact_number')}
 								required
 								maxLength={10}
 								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${fieldErrors.contactNumber
@@ -192,7 +207,7 @@ const UserForm: React.FC<UserFormProps> = ({
 							htmlFor="email"
 							className="block text-sm font-medium text-gray-700"
 						>
-							Email (Optional)
+							{t('user:fields.email')} ({t('common:optional')})
 						</label>
 						<div className="mt-1">
 							<input
@@ -202,8 +217,8 @@ const UserForm: React.FC<UserFormProps> = ({
 								value={formData.email || ""}
 								onChange={handleChange}
 								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${fieldErrors.email || localErrors.email
-										? "border-red-300 focus:border-red-500"
-										: "border-gray-300 focus:border-primary-500"
+									? "border-red-300 focus:border-red-500"
+									: "border-gray-300 focus:border-primary-500"
 									}`}
 							/>
 							{(fieldErrors.email || localErrors.email) && (
@@ -220,7 +235,7 @@ const UserForm: React.FC<UserFormProps> = ({
 							htmlFor="address"
 							className="block text-sm font-medium text-gray-700"
 						>
-							Address (Optional)
+							{t('user:fields.address')} ({t('common:optional')})
 						</label>
 						<div className="mt-1">
 							<textarea
@@ -240,7 +255,7 @@ const UserForm: React.FC<UserFormProps> = ({
 							htmlFor="identificationType"
 							className="block text-sm font-medium text-gray-700"
 						>
-							Identification Type
+							{t('user:fields.identification_type')}
 						</label>
 						<div className="mt-1">
 							<select
@@ -251,10 +266,10 @@ const UserForm: React.FC<UserFormProps> = ({
 								required
 								className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
 							>
-								<option value="NATIONAL_ID">National ID</option>
-								<option value="PASSPORT">Passport</option>
-								<option value="DRIVING_LICENSE">Driving License</option>
-								<option value="OTHER">Other</option>
+								<option value="NATIONAL_ID">{t('user:id_type_options.national_id')}</option>
+								<option value="PASSPORT">{t('user:id_type_options.passport')}</option>
+								<option value="DRIVING_LICENSE">{t('user:id_type_options.driving_license')}</option>
+								<option value="OTHER">{t('user:id_type_options.other')}</option>
 							</select>
 						</div>
 					</div>
@@ -265,7 +280,7 @@ const UserForm: React.FC<UserFormProps> = ({
 							htmlFor="identificationNumber"
 							className="block text-sm font-medium text-gray-700"
 						>
-							Identification Number
+							{t('user:fields.identification_number')}
 						</label>
 						<div className="mt-1">
 							<input
@@ -303,7 +318,7 @@ const UserForm: React.FC<UserFormProps> = ({
 								htmlFor="isActive"
 								className="ml-2 block text-sm text-gray-700"
 							>
-								Active
+								{t('user:fields.is_active')}
 							</label>
 						</div>
 					</div>
@@ -316,7 +331,7 @@ const UserForm: React.FC<UserFormProps> = ({
 					isLoading={isSubmitting}
 					disabled={isSubmitting}
 				>
-					{isEditMode ? "Update User" : "Create User"}
+					{isEditMode ? t('user:update_user') : t('user:create_user')}
 				</Button>
 			</div>
 		</form >

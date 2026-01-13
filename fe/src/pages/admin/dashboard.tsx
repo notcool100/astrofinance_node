@@ -233,17 +233,16 @@ const AdminDashboard = () => {
                       <div className="relative flex space-x-3">
                         <div>
                           <span
-                            className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${
-                              activity.type === 'LOAN_APPLICATION'
+                            className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${activity.type === 'LOAN_APPLICATION'
                                 ? 'bg-blue-500'
                                 : activity.type === 'LOAN_APPROVAL'
-                                ? 'bg-green-500'
-                                : activity.type === 'PAYMENT'
-                                ? 'bg-purple-500'
-                                : activity.type === 'USER_REGISTRATION'
-                                ? 'bg-yellow-500'
-                                : 'bg-gray-500'
-                            }`}
+                                  ? 'bg-green-500'
+                                  : activity.type === 'PAYMENT'
+                                    ? 'bg-purple-500'
+                                    : activity.type === 'USER_REGISTRATION'
+                                      ? 'bg-yellow-500'
+                                      : 'bg-gray-500'
+                              }`}
                           >
                             {activity.type === 'LOAN_APPLICATION' ? (
                               <BanknotesIcon className="h-5 w-5 text-white" aria-hidden="true" />
@@ -302,7 +301,7 @@ const AdminDashboard = () => {
               <UsersIcon className="mx-auto h-8 w-8 text-primary-600" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">Add New User</h3>
             </a>
-            
+
             <a
               href="/admin/loans/applications/pending"
               className="inline-block rounded-md bg-white px-4 py-6 text-center shadow-md hover:shadow-lg transition-shadow duration-200"
@@ -310,7 +309,7 @@ const AdminDashboard = () => {
               <ClockIcon className="mx-auto h-8 w-8 text-primary-600" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">Review Applications</h3>
             </a>
-            
+
             <a
               href="/admin/loans/disburse"
               className="inline-block rounded-md bg-white px-4 py-6 text-center shadow-md hover:shadow-lg transition-shadow duration-200"
@@ -318,7 +317,7 @@ const AdminDashboard = () => {
               <BanknotesIcon className="mx-auto h-8 w-8 text-primary-600" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">Disburse Loans</h3>
             </a>
-            
+
             <a
               href="/admin/reports/generate"
               className="inline-block rounded-md bg-white px-4 py-6 text-center shadow-md hover:shadow-lg transition-shadow duration-200"
@@ -332,5 +331,15 @@ const AdminDashboard = () => {
     </MainLayout>
   );
 };
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+  return {
+    props: {
+      ...(await import('next-i18next/serverSideTranslations').then(m =>
+        m.serverSideTranslations(locale, ['common', 'user'])
+      )),
+    },
+  };
+}
 
 export default AdminDashboard;

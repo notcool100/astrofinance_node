@@ -5,6 +5,7 @@ import { createAuditLog } from "../../../common/utils/audit.util";
 import { AuditAction } from "@prisma/client";
 import { ApiError } from "../../../common/middleware/error.middleware";
 import * as bcrypt from "bcrypt";
+import { prepareDateForDb, enrichWithBsDates } from "../../../utils/date-converter.util";
 
 /**
  * Get all users
@@ -128,9 +129,17 @@ export const createUser = async (req: Request, res: Response) => {
 			identificationNumber,
 			identificationType,
 			dateOfBirth,
+			dateOfBirth_bs,
 			gender,
 			isActive = true,
 		} = req.body;
+
+		// Process date of birth (accept either AD or BS)
+		const dobDates = prepareDateForDb(
+			dateOfBirth || dateOfBirth_bs,
+			"dateOfBirth",
+			!!dateOfBirth_bs && !dateOfBirth
+		);
 
 		// Check if user with same email or contact number already exists
 		const whereConditions: any[] = [{ contactNumber }];
@@ -164,9 +173,9 @@ export const createUser = async (req: Request, res: Response) => {
 				address,
 				idNumber: identificationNumber,
 				idType: identificationType,
-				dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : new Date(),
+				dateOfBirth: dobDates.adDate || new Date(),
+				dateOfBirth_bs: dobDates.bsDate,
 				gender,
-				// occupation, employerName, and monthlyIncome are not in the schema
 				isActive,
 				userType: "SB", // Default to SB (Savings Bank) user type
 			},
@@ -201,10 +210,20 @@ export const updateUser = async (req: Request, res: Response) => {
 			identificationNumber,
 			identificationType,
 			dateOfBirth,
+			dateOfBirth_bs,
 			gender,
-
 			isActive,
 		} = req.body;
+
+		// Process date of birth if provided
+		let dobDates = null;
+		if (dateOfBirth || dateOfBirth_bs) {
+			dobDates = prepareDateForDb(
+				dateOfBirth || dateOfBirth_bs,
+				"dateOfBirth",
+				!!dateOfBirth_bs && !dateOfBirth
+			);
+		}
 
 		// Check if user exists
 		const existingUser = await prisma.user.findUnique({
@@ -249,9 +268,9 @@ export const updateUser = async (req: Request, res: Response) => {
 				address: address || undefined,
 				idNumber: identificationNumber || undefined,
 				idType: identificationType || undefined,
-				dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : new Date(),
+				dateOfBirth: dobDates?.adDate || undefined,
+				dateOfBirth_bs: dobDates?.bsDate || undefined,
 				gender: gender || undefined,
-				// occupation, employerName, and monthlyIncome are not in the schema
 				isActive: isActive !== undefined ? isActive : undefined,
 			},
 		});

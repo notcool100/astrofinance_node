@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import Button from "@/components/common/Button";
-import DatePicker from "@/components/common/DatePicker";
+import DualDatePicker from "@/components/common/DualDatePicker";
 import {
 	createAccount,
 	updateAccount,
@@ -36,11 +36,14 @@ const AccountForm: React.FC<AccountFormProps> = ({
 	const [openingDate, setOpeningDate] = useState<Date>(
 		account?.openingDate ? new Date(account.openingDate) : new Date(),
 	);
+	const [openingDateBs, setOpeningDateBs] = useState<string | null>(
+		(account as any)?.openingDate_bs || null,
+	);
 	const [status, setStatus] = useState<
 		"ACTIVE" | "INACTIVE" | "CLOSED" | "FROZEN"
 	>(
 		(account?.status as "ACTIVE" | "INACTIVE" | "CLOSED" | "FROZEN") ||
-			"ACTIVE",
+		"ACTIVE",
 	);
 
 	// BB Account details
@@ -64,6 +67,9 @@ const AccountForm: React.FC<AccountFormProps> = ({
 			? new Date(account.bbAccountDetails.maturityDate)
 			: null,
 	);
+	const [bbMaturityDateBs, setBbMaturityDateBs] = useState<string | null>(
+		(account?.bbAccountDetails as any)?.maturityDate_bs || null,
+	);
 
 	// MB Account details
 	const [monthlyDepositAmount, setMonthlyDepositAmount] = useState(
@@ -79,6 +85,9 @@ const AccountForm: React.FC<AccountFormProps> = ({
 		account?.mbAccountDetails?.maturityDate
 			? new Date(account.mbAccountDetails.maturityDate)
 			: null,
+	);
+	const [mbMaturityDateBs, setMbMaturityDateBs] = useState<string | null>(
+		(account?.mbAccountDetails as any)?.maturityDate_bs || null,
 	);
 
 	// Validation states
@@ -325,10 +334,15 @@ const AccountForm: React.FC<AccountFormProps> = ({
 								>
 									Opening Date
 								</label>
-								<DatePicker
-									selected={openingDate}
-									onChange={(date) => date && setOpeningDate(date)}
+								<DualDatePicker
+									selectedAd={openingDate}
+									selectedBs={openingDateBs}
+									onChange={(ad, bs) => {
+										if (ad) setOpeningDate(ad);
+										setOpeningDateBs(bs);
+									}}
 									disabled={isEdit}
+									defaultCalendar="bs"
 									className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
 								/>
 							</div>
@@ -376,10 +390,10 @@ const AccountForm: React.FC<AccountFormProps> = ({
 										onChange={(e) =>
 											setStatus(
 												e.target.value as
-													| "ACTIVE"
-													| "INACTIVE"
-													| "CLOSED"
-													| "FROZEN",
+												| "ACTIVE"
+												| "INACTIVE"
+												| "CLOSED"
+												| "FROZEN",
 											)
 										}
 										className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
@@ -511,11 +525,16 @@ const AccountForm: React.FC<AccountFormProps> = ({
 										>
 											Maturity Date (Optional)
 										</label>
-										<DatePicker
-											selected={bbMaturityDate}
-											onChange={(date) => setBbMaturityDate(date)}
-											className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+										<DualDatePicker
+											selectedAd={bbMaturityDate}
+											selectedBs={bbMaturityDateBs}
+											onChange={(ad, bs) => {
+												setBbMaturityDate(ad);
+												setBbMaturityDateBs(bs);
+											}}
+											defaultCalendar="bs"
 											minDate={new Date()}
+											className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
 										/>
 									</div>
 								</div>
@@ -611,12 +630,17 @@ const AccountForm: React.FC<AccountFormProps> = ({
 										>
 											Maturity Date
 										</label>
-										<DatePicker
-											selected={mbMaturityDate}
-											onChange={(date) => setMbMaturityDate(date)}
-											className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+										<DualDatePicker
+											selectedAd={mbMaturityDate}
+											selectedBs={mbMaturityDateBs}
+											onChange={(ad, bs) => {
+												setMbMaturityDate(ad);
+												setMbMaturityDateBs(bs);
+											}}
+											defaultCalendar="bs"
 											minDate={new Date()}
 											disabled
+											className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
 										/>
 										<p className="mt-1 text-xs text-gray-500">
 											Calculated based on term months

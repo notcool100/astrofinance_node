@@ -6,12 +6,14 @@ import {
   UserCircleIcon,
   BellIcon,
 } from '@heroicons/react/24/outline';
+import Modal from '@/components/common/Modal';
+import Button from '@/components/common/Button';
+import LanguageSwitcher from '@/components/common/LanguageSwitcher';
+import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import DynamicNavigation from './DynamicNavigation';
-import Modal from '@/components/common/Modal';
-import Button from '@/components/common/Button';
 
 interface UserNavigationItem {
   name: string;
@@ -33,6 +35,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title = 'Dashboard' }
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
   const router = useRouter();
   const { user, logout, isAdmin, isStaff, isOfficeUser } = useAuth();
+  const { t } = useTranslation('common');
 
   // Determine profile and settings URLs based on user type
   let profileUrl = '/profile';
@@ -54,9 +57,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title = 'Dashboard' }
   };
 
   const userNavigationMenu: UserNavigationItem[] = [
-    { name: 'Your Profile', href: profileUrl },
-    { name: 'Settings', href: settingsUrl },
-    { name: 'Sign out', href: '#', onClick: handleSignOutClick },
+    { name: t('navigation.profile'), href: profileUrl },
+    { name: t('navigation.settings'), href: settingsUrl },
+    { name: t('navigation.logout'), href: '#', onClick: handleSignOutClick },
   ];
 
   return (
@@ -172,6 +175,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title = 'Dashboard' }
 
               {/* Separator */}
               <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" aria-hidden="true" />
+
+              {/* Language Switcher */}
+              <LanguageSwitcher />
 
               {/* Profile dropdown */}
               <Menu as="div" className="relative">

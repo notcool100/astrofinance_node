@@ -194,4 +194,16 @@ const IssueSharesPage = () => {
     );
 };
 
+
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+  return {
+    props: {
+      ...(await import('next-i18next/serverSideTranslations').then(m => 
+        m.serverSideTranslations(locale, ['common', 'user', 'auth'])
+      )),
+    },
+  };
+}
+
 export default IssueSharesPage;

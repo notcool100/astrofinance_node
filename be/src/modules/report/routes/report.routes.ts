@@ -1,19 +1,21 @@
 import { Router, type Router as ExpressRouter } from 'express';
-import { 
-  getAllReportTemplates, 
-  getReportTemplateById, 
-  createReportTemplate, 
-  updateReportTemplate, 
-  deleteReportTemplate, 
-  runReport 
+import {
+  getAllReportTemplates,
+  getReportTemplateById,
+  createReportTemplate,
+  updateReportTemplate,
+  deleteReportTemplate,
+  runReport,
+  generateLoanPortfolioReport,
+  generateCollectionReport
 } from '../controllers/report.controller';
 import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
-import { 
-  createReportTemplateValidation, 
-  updateReportTemplateValidation, 
-  getReportTemplatesValidation, 
-  runReportValidation 
+import {
+  createReportTemplateValidation,
+  updateReportTemplateValidation,
+  getReportTemplatesValidation,
+  runReportValidation
 } from '../validations/report.validation';
 
 const router: ExpressRouter = Router();
@@ -23,48 +25,61 @@ router.use(authenticateAdmin);
 
 // Get all report templates
 router.get(
-  '/templates', 
-  hasPermission('reports.view'), 
-  validate(getReportTemplatesValidation), 
+  '/templates',
+  hasPermission('reports.view'),
+  validate(getReportTemplatesValidation),
   getAllReportTemplates
 );
 
 // Get report template by ID
 router.get(
-  '/templates/:id', 
-  hasPermission('reports.view'), 
+  '/templates/:id',
+  hasPermission('reports.view'),
   getReportTemplateById
 );
 
 // Create new report template
 router.post(
-  '/templates', 
-  hasPermission('reports.create'), 
-  validate(createReportTemplateValidation), 
+  '/templates',
+  hasPermission('reports.create'),
+  validate(createReportTemplateValidation),
   createReportTemplate
 );
 
 // Update report template
 router.put(
-  '/templates/:id', 
-  hasPermission('reports.edit'), 
-  validate(updateReportTemplateValidation), 
+  '/templates/:id',
+  hasPermission('reports.edit'),
+  validate(updateReportTemplateValidation),
   updateReportTemplate
 );
 
 // Delete report template
 router.delete(
-  '/templates/:id', 
-  hasPermission('reports.delete'), 
+  '/templates/:id',
+  hasPermission('reports.delete'),
   deleteReportTemplate
 );
 
 // Run report
 router.post(
-  '/run/:id', 
-  hasPermission('reports.view'), 
-  validate(runReportValidation), 
+  '/run/:id',
+  hasPermission('reports.view'),
+  validate(runReportValidation),
   runReport
+);
+
+// NRB Excel Reports
+router.get(
+  '/excel/loan-portfolio',
+  hasPermission('reports.view'),
+  generateLoanPortfolioReport
+);
+
+router.get(
+  '/excel/collections',
+  hasPermission('reports.view'),
+  generateCollectionReport
 );
 
 export default router;

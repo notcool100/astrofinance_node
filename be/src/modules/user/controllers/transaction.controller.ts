@@ -12,6 +12,7 @@ import {
 	removeUserTransactionFromDayBook,
 } from "../../../common/utils/daybook-integration.util";
 import { createJournalEntryForUserTransaction } from "../utils/journal-entry-mapping.util";
+import { prepareDateForDb } from "../../../utils/date-converter.util";
 
 const prisma = new PrismaClient();
 
@@ -43,7 +44,16 @@ export const createTransaction = async (req: Request, res: Response) => {
 			referenceNumber,
 			transactionMethod,
 			transactionDate = new Date(),
+			transactionDate_bs,
 		} = value;
+
+		// Process transaction date (accept either AD or BS)
+		const dateDates = prepareDateForDb(
+			transactionDate || transactionDate_bs,
+			"transactionDate",
+			!!transactionDate_bs && !transactionDate
+		);
+		const finalTransactionDate = dateDates.adDate || new Date();
 
 		// Get the admin user ID from the authenticated user
 		const adminUserId = req.user?.id;
@@ -116,7 +126,8 @@ export const createTransaction = async (req: Request, res: Response) => {
 					amount,
 					description: description || `${transactionType} transaction`,
 					referenceNumber,
-					transactionDate,
+					transactionDate: finalTransactionDate,
+					transactionDate_bs: dateDates.bsDate,
 					runningBalance: newBalance,
 					performedById: adminUserId,
 					transactionMethod: transactionMethod || "CASH",
@@ -152,7 +163,8 @@ export const createTransaction = async (req: Request, res: Response) => {
 				where: { id: accountId },
 				data: {
 					balance: newBalance,
-					lastTransactionDate: transactionDate,
+					lastTransactionDate: finalTransactionDate,
+					lastTransactionDate_bs: dateDates.bsDate,
 				},
 			});
 

@@ -5,22 +5,49 @@ import MainLayout from '@/components/layout/MainLayout';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import Select from '@/components/common/Select';
-import DatePicker from '@/components/common/DatePicker';
+import DualDatePicker from '@/components/common/DualDatePicker';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
+import { formatDualDate } from '@/utils/dateUtils';
 import {
   DocumentArrowDownIcon,
   ChartBarIcon,
   TableCellsIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
+import apiService from '@/services/api';
+
+const NRB_REPORTS = [
+  {
+    id: 'nrb-loan-portfolio',
+    name: 'NRB Loan Portfolio Report (NPL)',
+    description: 'Standard NRB format for loan classification (Pass, Watchlist, Substandard, Doubtful, Bad)',
+    availableFormats: ['EXCEL'],
+    isSystem: true,
+  },
+  {
+    id: 'nrb-collection',
+    name: 'NRB Collection Report',
+    description: 'Standard NRB format for daily/monthly collections',
+    availableFormats: ['EXCEL'],
+    isSystem: true,
+  },
+];
+
+interface ReportType {
+  id: string;
+  name: string;
+  description: string;
+  availableFormats: string[];
+  isSystem?: boolean;
+}
 
 // Mock data service
-const fetchReportTypes = async () => {
+const fetchReportTypes = async (): Promise<ReportType[]> => {
   // This would be replaced with an actual API call
   // return apiService.get('/staff/reports/types');
-  
+
   // Mock data for now
-  return [
+  const dynamicReports: ReportType[] = [
     {
       id: '1',
       name: 'Loan Disbursement Report',
@@ -52,13 +79,14 @@ const fetchReportTypes = async () => {
       availableFormats: ['PDF', 'EXCEL', 'CSV'],
     },
   ];
+  return [...NRB_REPORTS, ...dynamicReports];
 };
 
 // Mock data service for recent reports
 const fetchRecentReports = async () => {
   // This would be replaced with an actual API call
   // return apiService.get('/staff/reports/recent');
-  
+
   // Mock data for now
   return [
     {
@@ -104,55 +132,78 @@ const StaffReports = () => {
   const router = useRouter();
   const [selectedReportType, setSelectedReportType] = useState('');
   const [startDate, setStartDate] = useState<Date | null>(null);
+  const [startDateBs, setStartDateBs] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [endDateBs, setEndDateBs] = useState<string | null>(null);
   const [selectedFormat, setSelectedFormat] = useState('PDF');
   const [isGenerating, setIsGenerating] = useState(false);
-  
+
   // Fetch report types
   const { data: reportTypes, isLoading: isLoadingReportTypes } = useQuery(
     'reportTypes',
     fetchReportTypes
   );
-  
+
   // Fetch recent reports
   const { data: recentReports, isLoading: isLoadingRecentReports } = useQuery(
     'recentReports',
     fetchRecentReports
   );
-  
+
   // Get selected report type details
   const selectedReport = reportTypes?.find(report => report.id === selectedReportType);
-  
+
   // Handle report generation
   const handleGenerateReport = async () => {
     if (!selectedReportType || !startDate || !endDate) {
       alert('Please select a report type, start date, and end date');
       return;
     }
-    
+
     setIsGenerating(true);
-    
+
     try {
-      // This would be replaced with an actual API call
-      // const response = await apiService.post('/staff/reports/generate', {
-      //   reportTypeId: selectedReportType,
-      //   startDate: startDate.toISOString(),
-      //   endDate: endDate.toISOString(),
-      //   format: selectedFormat,
-      // });
-      
-      // For now, just simulate a successful report generation
-      setTimeout(() => {
+      const report = reportTypes?.find((r: ReportType) => r.id === selectedReportType);
+
+      if (report?.isSystem) {
+        let endpoint = '';
+        let fileName = 'report.xlsx';
+
+        if (selectedReportType === 'nrb-loan-portfolio') {
+          endpoint = '/report/excel/loan-portfolio';
+          fileName = 'Loan_Portfolio_Report.xlsx';
+        } else if (selectedReportType === 'nrb-collection') {
+          endpoint = '/report/excel/collections';
+          fileName = 'Collection_Report.xlsx';
+        }
+
+        await apiService.download(endpoint, {
+          startDate: startDate?.toISOString(),
+          endDate: endDate?.toISOString()
+        }, fileName);
+
+        alert('Report generated and downloaded successfully!');
+      } else {
+        // This would be replaced with an actual API call for dynamic reports
+        const response = await apiService.post('/staff/reports/generate', {
+          reportTypeId: selectedReportType,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          format: selectedFormat,
+        });
+
+        // For now, just simulate a successful report generation
+        // await new Promise(resolve => setTimeout(resolve, 2000));
         alert('Report generated successfully!');
-        setIsGenerating(false);
-      }, 2000);
+      }
+      setIsGenerating(false);
     } catch (error) {
       console.error('Error generating report:', error);
       alert('Failed to generate report. Please try again.');
       setIsGenerating(false);
     }
   };
-  
+
   // Format date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -162,9 +213,9 @@ const StaffReports = () => {
       day: 'numeric',
     });
   };
-  
+
   const isLoading = isLoadingReportTypes || isLoadingRecentReports;
-  
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -185,7 +236,7 @@ const StaffReports = () => {
                 Select report parameters to generate a new report.
               </p>
             </div>
-            
+
             <div className="p-4">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
@@ -207,35 +258,45 @@ const StaffReports = () => {
                     className="mt-1"
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
                     Start Date
                   </label>
-                  <DatePicker
+                  <DualDatePicker
                     id="startDate"
-                    selected={startDate}
-                    onChange={setStartDate}
+                    selectedAd={startDate}
+                    selectedBs={startDateBs}
+                    onChange={(ad, bs) => {
+                      setStartDate(ad);
+                      setStartDateBs(bs);
+                    }}
                     maxDate={endDate || undefined}
                     placeholderText="Select start date"
+                    defaultCalendar="bs"
                     className="mt-1 w-full"
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">
                     End Date
                   </label>
-                  <DatePicker
+                  <DualDatePicker
                     id="endDate"
-                    selected={endDate}
-                    onChange={setEndDate}
+                    selectedAd={endDate}
+                    selectedBs={endDateBs}
+                    onChange={(ad, bs) => {
+                      setEndDate(ad);
+                      setEndDateBs(bs);
+                    }}
                     minDate={startDate || undefined}
                     placeholderText="Select end date"
+                    defaultCalendar="bs"
                     className="mt-1 w-full"
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="format" className="block text-sm font-medium text-gray-700">
                     Format
@@ -260,13 +321,13 @@ const StaffReports = () => {
                   />
                 </div>
               </div>
-              
+
               {selectedReport && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-md">
                   <p className="text-sm text-gray-700">{selectedReport.description}</p>
                 </div>
               )}
-              
+
               <div className="mt-6 flex justify-end">
                 <Button
                   variant="primary"
@@ -281,7 +342,7 @@ const StaffReports = () => {
               </div>
             </div>
           </Card>
-          
+
           {/* Recent Reports Card */}
           <Card>
             <div className="p-4 border-b border-gray-200">
@@ -301,7 +362,7 @@ const StaffReports = () => {
                 </Button>
               </div>
             </div>
-            
+
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -375,7 +436,7 @@ const StaffReports = () => {
                       </td>
                     </tr>
                   ))}
-                  
+
                   {recentReports?.length === 0 && (
                     <tr>
                       <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
@@ -387,7 +448,7 @@ const StaffReports = () => {
               </table>
             </div>
           </Card>
-          
+
           {/* Report Templates Card */}
           <Card>
             <div className="p-4 border-b border-gray-200">
@@ -396,7 +457,7 @@ const StaffReports = () => {
                 Quick access to commonly used report templates.
               </p>
             </div>
-            
+
             <div className="p-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
                 <div className="flex items-start">
@@ -424,7 +485,7 @@ const StaffReports = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
@@ -452,7 +513,7 @@ const StaffReports = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
@@ -485,5 +546,17 @@ const StaffReports = () => {
     </ProtectedRoute>
   );
 };
+
+
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+  return {
+    props: {
+      ...(await import('next-i18next/serverSideTranslations').then(m =>
+        m.serverSideTranslations(locale, ['common', 'user', 'auth'])
+      )),
+    },
+  };
+}
 
 export default StaffReports;

@@ -82,7 +82,7 @@ const EditUserPage: React.FC = () => {
 			} else {
 				setError(
 					err.response?.data?.message ||
-						"Failed to update user. Please try again.",
+					"Failed to update user. Please try again.",
 				);
 				setFieldErrors({});
 			}
@@ -160,5 +160,16 @@ const EditUserPage: React.FC = () => {
 		</ProtectedRoute>
 	);
 };
+
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+	return {
+		props: {
+			...(await import('next-i18next/serverSideTranslations').then(m =>
+				m.serverSideTranslations(locale, ['common', 'user'])
+			)),
+		},
+	};
+}
 
 export default EditUserPage;
