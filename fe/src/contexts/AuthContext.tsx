@@ -48,24 +48,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     try {
       let response: AuthResponse;
-      
+
       if (userType === 'ADMIN' || userType === 'STAFF') {
         // Use the unified office login for both admin and staff
         response = await authService.officeLogin(credentials);
-        
+
         // Ensure admin users get ADMIN userType
         if (response.user && response.user.roles?.some(role => role.name === 'ADMIN')) {
           response.user.userType = 'ADMIN';
         } else if (response.user && response.user.roles?.some(role => role.name === 'STAFF')) {
           response.user.userType = 'STAFF';
         }
+
+        // Validate that the user type matches the expected login page
+        if (response.user.userType !== userType) {
+          throw new Error(`Access denied. This login page is for ${userType.toLowerCase()} users only.`);
+        }
       } else {
         // Regular user login
         response = await authService.userLogin(credentials);
       }
-      
+
       console.log('Login response:', response);
-      
+
       // Check if navigation data is present
       if (response.user && !response.user.navigation) {
         console.warn('No navigation data in login response, will fetch separately');
@@ -73,10 +78,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else if (response.user && response.user.navigation) {
         console.log('Navigation in login response:', response.user.navigation.length, 'items');
       }
-      
+
       authService.setAuth(response);
       setUser(response.user);
-      
+
       // Redirect based on user type
       if (response.user.userType === 'ADMIN') {
         console.log('Redirecting to admin dashboard');
@@ -116,7 +121,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           console.error('Logout API call failed:', error);
         }
       }
-      
+
       // Clear auth regardless of API success
       authService.clearAuth();
       setUser(null);
@@ -147,14 +152,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isStaff = user?.userType === 'STAFF' || authService.isStaff();
   const isOfficeUser = isAdmin || isStaff;
   const userType = user?.userType || authService.getUserType();
-  
+
   // Log authentication state for debugging
   useEffect(() => {
     if (user) {
-      console.log('Auth state:', { 
-        isAuthenticated, 
-        isAdmin, 
-        isStaff, 
+      console.log('Auth state:', {
+        isAuthenticated,
+        isAdmin,
+        isStaff,
         isOfficeUser,
         userType,
         userRoles: user.roles?.map(r => r.name).join(', ')

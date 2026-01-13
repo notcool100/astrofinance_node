@@ -10,11 +10,13 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import DynamicNavigation from './DynamicNavigation';
+import Modal from '@/components/common/Modal';
+import Button from '@/components/common/Button';
 
 interface UserNavigationItem {
   name: string;
   href: string;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
 interface MainLayoutProps {
@@ -28,22 +30,33 @@ function classNames(...classes: string[]) {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children, title = 'Dashboard' }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
   const router = useRouter();
   const { user, logout, isAdmin, isStaff, isOfficeUser } = useAuth();
 
   // Determine profile and settings URLs based on user type
   let profileUrl = '/profile';
   let settingsUrl = '/settings';
-  
+
   if (isOfficeUser) {
     profileUrl = '/office/profile';
     settingsUrl = '/office/settings';
   }
 
+  const handleSignOutClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsSignOutModalOpen(true);
+  };
+
+  const confirmSignOut = () => {
+    setIsSignOutModalOpen(false);
+    logout();
+  };
+
   const userNavigationMenu: UserNavigationItem[] = [
     { name: 'Your Profile', href: profileUrl },
     { name: 'Settings', href: settingsUrl },
-    { name: 'Sign out', href: '#', onClick: logout },
+    { name: 'Sign out', href: '#', onClick: handleSignOutClick },
   ];
 
   return (
@@ -93,7 +106,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title = 'Dashboard' }
                     </button>
                   </div>
                 </Transition.Child>
-                
+
                 <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-primary-700 px-6 pb-4">
                   <div className="flex h-16 shrink-0 items-center">
                     <Link href={isOfficeUser ? '/office/dashboard' : '/dashboard'} className="flex items-center">
@@ -208,6 +221,34 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title = 'Dashboard' }
           {children}
         </main>
       </div>
+
+      <Modal
+        isOpen={isSignOutModalOpen}
+        onClose={() => setIsSignOutModalOpen(false)}
+        title="Confirm Sign Out"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">
+            Are you sure you want to sign out? You will need to log in again to access your account.
+          </p>
+          <div className="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+            <Button
+              variant="danger"
+              onClick={confirmSignOut}
+              className="w-full sm:col-start-2"
+            >
+              Sign out
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setIsSignOutModalOpen(false)}
+              className="mt-3 w-full sm:col-start-1 sm:mt-0"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
