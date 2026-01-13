@@ -1,4 +1,4 @@
-import prisma from "../../config/database";
+import prisma from "../../../config/database";
 import * as ExcelJS from "exceljs";
 import { Response } from "express";
 
