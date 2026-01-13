@@ -26,6 +26,13 @@ stages:
       displayName: 'Install Node.js'
     
     - script: |
+        echo "Building shared packages..."
+        cd packages/nepali-date-converter
+        pnpm install
+        pnpm run build
+      displayName: 'Build Shared Packages'
+
+    - script: |
         cd fe
         npm install -g pnpm
         pnpm install
@@ -73,6 +80,13 @@ stages:
         versionSpec: '$(nodeVersion)'
       displayName: 'Install Node.js'
     
+    - script: |
+        echo "Building shared packages..."
+        cd packages/nepali-date-converter
+        pnpm install
+        pnpm run build
+      displayName: 'Build Shared Packages'
+
     - script: |
         cd be
         npm install -g pnpm
