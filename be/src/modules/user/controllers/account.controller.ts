@@ -133,17 +133,45 @@ export const createAccount = async (req: Request, res: Response) => {
 			throw new ApiError(404, `User with ID ${userId} not found`);
 		}
 
+		// Validate account type exists
+		const accountTypeConfig = await prisma.accountTypeConfig.findUnique({
+			where: { id: accountType },
+		});
+
+		if (!accountTypeConfig) {
+			throw new ApiError(400, "Invalid account type selected");
+		}
+
 		// Generate account number
-		const accountNumber = await generateAccountNumber(accountType);
+		const accountNumber = await generateAccountNumber(accountTypeConfig.code);
+
+		// Ensure unique account number
+		let finalAccountNumber = accountNumber;
+		let isUnique = false;
+		let counter = 0;
+
+		while (!isUnique) {
+			const existingAccount = await prisma.userAccount.findUnique({
+				where: { accountNumber: finalAccountNumber },
+			});
+
+			if (!existingAccount) {
+				isUnique = true;
+			} else {
+				counter++;
+				finalAccountNumber = `${accountNumber}${counter}`;
+			}
+		}
 
 		// Create account with transaction to ensure all related data is created atomically
 		const account = await prisma.$transaction(async (prisma) => {
 			// Create the main account
 			const newAccount = await prisma.userAccount.create({
 				data: {
-					accountNumber,
+					accountNumber: finalAccountNumber,
 					userId,
-					accountType,
+					accountType: accountTypeConfig.code, // Legacy string field
+					accountTypeConfigId: accountTypeConfig.id, // Relation field
 					interestRate: parseFloat(interestRate),
 					balance: parseFloat(balance),
 					openingDate: new Date(openingDate),

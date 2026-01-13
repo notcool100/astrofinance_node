@@ -119,9 +119,6 @@ function classNames(...classes: string[]) {
 
 // Helper function to determine if a navigation item is active
 function isActive(itemPath: string, currentPath: string): boolean {
-	console.log(
-		`Checking if ${itemPath} is active for current path ${currentPath}`,
-	);
 
 	// Ensure paths start with a slash for consistent comparison
 	let normalizedItemPath = itemPath;
@@ -143,9 +140,6 @@ function isActive(itemPath: string, currentPath: string): boolean {
 
 	// Exact match
 	if (normalizedItemPath === normalizedCurrentPath) {
-		console.log(
-			`✅ Exact match: ${normalizedItemPath} === ${normalizedCurrentPath}`,
-		);
 		return true;
 	}
 
@@ -156,15 +150,11 @@ function isActive(itemPath: string, currentPath: string): boolean {
 		problematicPaths.includes(normalizedItemPath) ||
 		problematicPaths.includes(normalizedCurrentPath)
 	) {
-		console.log(
-			`❌ Problematic path requires exact match: ${normalizedItemPath} vs ${normalizedCurrentPath}`,
-		);
 		return false;
 	}
 
 	// Skip special paths
 	if (normalizedItemPath === "#" || normalizedItemPath === "/") {
-		console.log(`❌ Special path: ${normalizedItemPath}`);
 		return false;
 	}
 
@@ -187,14 +177,8 @@ function isActive(itemPath: string, currentPath: string): boolean {
 
 			// Make sure we're not matching partial segments (e.g., /user shouldn't match /users/123)
 			if (itemLastSegment === currentParentSegment) {
-				console.log(
-					`✅ Detail page match: ${normalizedItemPath} is parent of ${normalizedCurrentPath}`,
-				);
 				return true;
 			} else {
-				console.log(
-					`❌ Detail page segment mismatch: ${itemLastSegment} !== ${currentParentSegment}`,
-				);
 				return false;
 			}
 		}
@@ -215,9 +199,6 @@ function isActive(itemPath: string, currentPath: string): boolean {
 		if (itemFirstSegment !== currentFirstSegment) {
 			// Allow exact matches only - don't match partial segments
 			if (itemFirstSegment !== currentFirstSegment) {
-				console.log(
-					`❌ First segment mismatch: ${itemFirstSegment} !== ${currentFirstSegment}`,
-				);
 				return false;
 			}
 		}
@@ -230,25 +211,16 @@ function isActive(itemPath: string, currentPath: string): boolean {
 
 	// If the segments don't match exactly, it's not active
 	if (itemPathSegments.length !== currentPathSegments.length) {
-		console.log(
-			`❌ Path segment count mismatch: ${itemPathSegments.length} !== ${currentPathSegments.length}`,
-		);
 		return false;
 	}
 
 	// Check each segment
 	for (let i = 0; i < itemPathSegments.length; i++) {
 		if (itemPathSegments[i] !== currentPathSegments[i]) {
-			console.log(
-				`❌ Path segment mismatch at position ${i}: ${itemPathSegments[i]} !== ${currentPathSegments[i]}`,
-			);
 			return false;
 		}
 	}
 
-	console.log(
-		`❌ No match: ${normalizedItemPath} !== ${normalizedCurrentPath}`,
-	);
 	return false;
 }
 
@@ -265,13 +237,13 @@ const DynamicNavigation: React.FC = () => {
 				const navFromAuth = user?.navigation || [];
 
 				if (navFromAuth && navFromAuth.length > 0) {
-					console.log("Using navigation from auth context:", navFromAuth);
+					// console.log("Using navigation from auth context:", navFromAuth);
 					setApiNavGroups(navFromAuth as unknown as ApiNavigationGroup[]);
 				} else {
 					// If not available, fetch directly from API
-					console.log("Fetching navigation from API...");
+					// console.log("Fetching navigation from API...");
 					const navFromApi = await navigationService.getUserNavigation();
-					console.log("Navigation fetched from API:", navFromApi);
+					// console.log("Navigation fetched from API:", navFromApi);
 					setApiNavGroups(navFromApi as unknown as ApiNavigationGroup[]);
 				}
 			} catch (error) {
@@ -284,7 +256,7 @@ const DynamicNavigation: React.FC = () => {
 
 	// Convert API navigation groups to our format
 	const navigationGroups = useMemo(() => {
-		console.log("Processing navigation groups:", apiNavGroups);
+		// console.log("Processing navigation groups:", apiNavGroups);
 
 		// Process each navigation group
 		return apiNavGroups.map((group) => {
@@ -306,15 +278,15 @@ const DynamicNavigation: React.FC = () => {
 				) {
 					href = "/admin" + href;
 				}
-				console.log(`Original href: ${href} (normalized)`);
+				// console.log(`Original href: ${href} (normalized)`);
 
 				// Get icon component from map or use default
 				const iconName = item.icon?.toLowerCase() || "";
 				const IconComponent = iconMap[iconName] || DefaultIcon;
 
-				console.log(
-					`Processing nav item: ${item.label}, icon: ${iconName}, url: ${href}`,
-				);
+				// console.log(
+				// 	`Processing nav item: ${item.label}, icon: ${iconName}, url: ${href}`,
+				// );
 
 				return {
 					id: item.id,
@@ -338,7 +310,7 @@ const DynamicNavigation: React.FC = () => {
 						) {
 							childHref = "/admin" + childHref;
 						}
-						console.log(`Original child href: ${childHref} (normalized)`);
+						// console.log(`Original child href: ${childHref} (normalized)`);
 
 						const childIconName = child.icon?.toLowerCase() || "";
 						const ChildIconComponent = iconMap[childIconName] || DefaultIcon;
@@ -374,7 +346,7 @@ const DynamicNavigation: React.FC = () => {
 							{group.items.map((item) => (
 								<li key={(item as any).id || item.name}>
 									{!(item as any).children ||
-									(item as any).children.length === 0 ? (
+										(item as any).children.length === 0 ? (
 										<Link
 											href={item.href}
 											className={classNames(

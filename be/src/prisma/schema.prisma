@@ -198,7 +198,9 @@ model UserAccount {
   createdById               String?
   createdAt                 DateTime                 @default(now())
   updatedAt                 DateTime                 @updatedAt
-  accountType               AccountType?
+  accountType               String?
+  accountTypeConfigId       String?
+  accountTypeConfig         AccountTypeConfig?       @relation(fields: [accountTypeConfigId], references: [id])
   bbAccountDetails          BbAccountDetails?
   mbAccountDetails          MbAccountDetails?
   tdsCalculations           TdsCalculation[]
@@ -1630,4 +1632,19 @@ model FiscalYear {
   updatedAt   DateTime @updatedAt
 
   @@map("fiscal_years")
+}
+
+model AccountTypeConfig {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userAccounts UserAccount[]
+
+  @@index([code])
+  @@index([isActive])
+  @@map("account_type_configs")
 }

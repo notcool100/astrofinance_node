@@ -309,10 +309,18 @@ const loanService = {
 		tenure: number;
 		interestRate: number;
 		interestType: "FLAT" | "DIMINISHING";
-	}) => apiService.post<EMICalculationResult>("/loan/calculator/emi", data),
+	}) => apiService.post<EMICalculationResult>("/loan/calculator/emi", {
+		principal: data.amount,
+		tenure: data.tenure,
+		interestRate: data.interestRate,
+		interestType: data.interestType
+	}),
 
 	generateSchedule: (data: CalculatorFormData) =>
-		apiService.post<LoanSchedule[]>("/loan/calculator/schedule", data),
+		apiService.post<LoanSchedule[]>("/loan/calculator/schedule", {
+			...data,
+			principal: data.amount
+		}),
 
 	compareInterestMethods: (data: {
 		amount: number;

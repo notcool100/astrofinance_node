@@ -145,11 +145,11 @@ interface ExtendedLoanApplicationFormData {
 
 	// Step 3: Additional Information
 	residenceType:
-		| "OWNED"
-		| "RENTED"
-		| "FAMILY_OWNED"
-		| "COMPANY_PROVIDED"
-		| "OTHER";
+	| "OWNED"
+	| "RENTED"
+	| "FAMILY_OWNED"
+	| "COMPANY_PROVIDED"
+	| "OTHER";
 	yearsAtCurrentAddress: number;
 	maritalStatus: "SINGLE" | "MARRIED" | "DIVORCED" | "WIDOWED";
 	dependents: number;
@@ -289,8 +289,8 @@ const LoanDetailsStep: React.FC<{
 				setIsCalculatingEmi(true);
 				try {
 					const result = await loanService.calculateEMI({
-						amount: watchAmount,
-						tenure: watchTenure,
+						amount: Number(watchAmount),
+						tenure: Number(watchTenure),
 						interestRate: selectedLoanType.interestRate,
 						interestType: selectedLoanType.interestType,
 					});
@@ -1076,14 +1076,12 @@ const LoanApplicationForm: React.FC<{
 					<div className="relative flex justify-between">
 						<div className="flex items-center">
 							<span
-								className={`h-10 w-10 rounded-full flex items-center justify-center ${
-									currentStep >= 1 ? "bg-primary-600" : "bg-gray-200"
-								}`}
+								className={`h-10 w-10 rounded-full flex items-center justify-center ${currentStep >= 1 ? "bg-primary-600" : "bg-gray-200"
+									}`}
 							>
 								<span
-									className={`text-sm font-medium ${
-										currentStep >= 1 ? "text-white" : "text-gray-500"
-									}`}
+									className={`text-sm font-medium ${currentStep >= 1 ? "text-white" : "text-gray-500"
+										}`}
 								>
 									1
 								</span>
@@ -1094,14 +1092,12 @@ const LoanApplicationForm: React.FC<{
 						</div>
 						<div className="flex items-center">
 							<span
-								className={`h-10 w-10 rounded-full flex items-center justify-center ${
-									currentStep >= 2 ? "bg-primary-600" : "bg-gray-200"
-								}`}
+								className={`h-10 w-10 rounded-full flex items-center justify-center ${currentStep >= 2 ? "bg-primary-600" : "bg-gray-200"
+									}`}
 							>
 								<span
-									className={`text-sm font-medium ${
-										currentStep >= 2 ? "text-white" : "text-gray-500"
-									}`}
+									className={`text-sm font-medium ${currentStep >= 2 ? "text-white" : "text-gray-500"
+										}`}
 								>
 									2
 								</span>
@@ -1112,14 +1108,12 @@ const LoanApplicationForm: React.FC<{
 						</div>
 						<div className="flex items-center">
 							<span
-								className={`h-10 w-10 rounded-full flex items-center justify-center ${
-									currentStep >= 3 ? "bg-primary-600" : "bg-gray-200"
-								}`}
+								className={`h-10 w-10 rounded-full flex items-center justify-center ${currentStep >= 3 ? "bg-primary-600" : "bg-gray-200"
+									}`}
 							>
 								<span
-									className={`text-sm font-medium ${
-										currentStep >= 3 ? "text-white" : "text-gray-500"
-									}`}
+									className={`text-sm font-medium ${currentStep >= 3 ? "text-white" : "text-gray-500"
+										}`}
 								>
 									3
 								</span>
@@ -1130,14 +1124,12 @@ const LoanApplicationForm: React.FC<{
 						</div>
 						<div className="flex items-center">
 							<span
-								className={`h-10 w-10 rounded-full flex items-center justify-center ${
-									currentStep >= 4 ? "bg-primary-600" : "bg-gray-200"
-								}`}
+								className={`h-10 w-10 rounded-full flex items-center justify-center ${currentStep >= 4 ? "bg-primary-600" : "bg-gray-200"
+									}`}
 							>
 								<span
-									className={`text-sm font-medium ${
-										currentStep >= 4 ? "text-white" : "text-gray-500"
-									}`}
+									className={`text-sm font-medium ${currentStep >= 4 ? "text-white" : "text-gray-500"
+										}`}
 								>
 									4
 								</span>

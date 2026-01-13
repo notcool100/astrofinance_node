@@ -13,11 +13,8 @@ export const createAccountValidation = [
 	body("accountType")
 		.notEmpty()
 		.withMessage("Account type is required")
-		.isIn(["SB", "BB", "FD", "SH", "LS"])
-		.withMessage(
-			"Account type must be one of: SB (Sadharan Bachat), BB (Branch Bises Bachat), FD (Fixed Deposit), SH (Share), LS (Loan Share)",
-		),
-
+		.isUUID()
+		.withMessage("Account type must be a valid UUID"),
 	body("interestRate")
 		.notEmpty()
 		.withMessage("Interest rate is required")
@@ -225,10 +222,8 @@ export const getUserAccountsValidation = [
 
 	query("accountType")
 		.optional()
-		.isIn(["SB", "BB", "FD", "SH", "LS"])
-		.withMessage(
-			"Account type must be one of: SB (Sadharan Bachat), BB (Branch Bises Bachat), FD (Fixed Deposit), SH (Share), LS (Loan Share)",
-		),
+		.isString()
+		.withMessage("Account type must be a string"),
 
 	query("status")
 		.optional()

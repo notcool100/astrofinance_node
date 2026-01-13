@@ -48,6 +48,9 @@ async function main() {
 	// Seed system settings
 	await seedSystemSettings();
 
+	// Seed account types
+	await seedAccountTypes();
+
 	console.log("Database seeding completed successfully!");
 }
 
@@ -600,6 +603,16 @@ async function seedNavigation() {
 
 		await prisma.navigationItem.create({
 			data: {
+				label: "Fiscal Years",
+				icon: "calendar_today",
+				url: "/admin/fiscal-years",
+				order: 5,
+				groupId: adminGroup.id,
+			},
+		});
+
+		await prisma.navigationItem.create({
+			data: {
 				label: "SMS Templates",
 				icon: "sms",
 				url: "/admin/sms",
@@ -614,6 +627,16 @@ async function seedNavigation() {
 				icon: "receipt",
 				url: "/tax-settings",
 				order: 6,
+				groupId: adminGroup.id,
+			},
+		});
+
+		await prisma.navigationItem.create({
+			data: {
+				label: "Account Types",
+				icon: "category",
+				url: "/admin/settings/account-types",
+				order: 7,
 				groupId: adminGroup.id,
 			},
 		});
@@ -2373,6 +2396,66 @@ async function seedSystemSettings() {
 	}
 
 	console.log("System settings seeded successfully");
+}
+
+async function seedAccountTypes() {
+	console.log("Seeding account types...");
+
+	const accountTypes = [
+		{
+			code: "SB",
+			name: "Sadharan Bachat",
+			description: "Regular savings account",
+			isActive: true,
+		},
+		{
+			code: "BB",
+			name: "Branch Bises Bachat",
+			description: "Special savings account with guardian",
+			isActive: true,
+		},
+		{
+			code: "FD",
+			name: "Fixed Deposit",
+			description: "Fixed deposit account with monthly deposits",
+			isActive: true,
+		},
+		{
+			code: "SH",
+			name: "Share",
+			description: "Share account",
+			isActive: true,
+		},
+		{
+			code: "LS",
+			name: "Loan Share",
+			description: "Loan share account",
+			isActive: true,
+		},
+	];
+
+	for (const accountType of accountTypes) {
+		try {
+			const existing = await prisma.accountTypeConfig.findUnique({
+				where: { code: accountType.code },
+			});
+
+			if (existing) {
+				const updated = await prisma.accountTypeConfig.update({
+					where: { code: accountType.code },
+					data: accountType,
+				});
+				console.log(`Updated account type: ${updated.name} (${updated.code})`);
+			} else {
+				const created = await prisma.accountTypeConfig.create({
+					data: accountType,
+				});
+				console.log(`Created account type: ${created.name} (${created.code})`);
+			}
+		} catch (error) {
+			console.error(`Error processing account type ${accountType.code}:`, error);
+		}
+	}
 }
 
 main()
