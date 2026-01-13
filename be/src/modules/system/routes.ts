@@ -4,7 +4,7 @@ import { validateRequest } from '../../common/middleware/yup-validation.middlewa
 import * as fiscalYearController from './fiscal-year/controllers/fiscal-year.controller';
 import { createFiscalYearSchema, updateFiscalYearSchema } from './fiscal-year/validators/fiscal-year.validator';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Fiscal Year Routes
 // Assuming permissions: 'system.view', 'system.manage' - user might need to create these permissions if they don't exist
