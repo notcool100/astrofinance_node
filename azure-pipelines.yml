@@ -27,7 +27,8 @@ stages:
     
     - script: |
         cd fe
-        npm install --legacy-peer-deps
+        npm install -g pnpm
+        pnpm install
         
         # Ensure environment files are properly set up
         echo "Setting up environment files for build"
@@ -37,13 +38,13 @@ stages:
     - script: |
         cd fe
         echo "Running TypeScript check with skipLibCheck flag"
-        npm run type-check || true
+        pnpm type-check || true
       displayName: 'Run TypeScript Check (Non-blocking)'
     
     - script: |
         cd fe
         echo "Building frontend application with TypeScript errors ignored"
-        NODE_OPTIONS=--max_old_space_size=4096 npm run build
+        NODE_OPTIONS=--max_old_space_size=4096 pnpm run build
       displayName: 'Build Frontend Application'
     
     - task: ArchiveFiles@2
@@ -74,17 +75,18 @@ stages:
     
     - script: |
         cd be
-        npm install
+        npm install -g pnpm
+        pnpm install
       displayName: 'Install Backend Dependencies'
 
     - script: |
         cd be
-        npm run prisma:generate
+        pnpm prisma:generate
       displayName: 'Generate Prisma Client'
     
     - script: |
         cd be
-        npm run build
+        pnpm run build
       displayName: 'Build Backend Application'
     
     - task: ArchiveFiles@2
