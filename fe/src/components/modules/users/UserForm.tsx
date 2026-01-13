@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { User, CreateUserData, UpdateUserData } from "@/services/user.service";
 import Button from "@/components/common/Button";
 import DatePicker from "@/components/common/DatePicker";
+import { toast } from "react-toastify";
 
 interface UserFormProps {
 	user?: User;
@@ -53,6 +54,12 @@ const UserForm: React.FC<UserFormProps> = ({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
+
+		if (!formData.dateOfBirth) {
+			toast.error("Date of Birth is required");
+			return;
+		}
+
 		onSubmit(formData);
 	};
 
@@ -76,11 +83,10 @@ const UserForm: React.FC<UserFormProps> = ({
 								value={formData.fullName || ""}
 								onChange={handleChange}
 								required
-								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${
-									fieldErrors.fullName
-										? "border-red-300 focus:border-red-500"
-										: "border-gray-300 focus:border-primary-500"
-								}`}
+								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${fieldErrors.fullName
+									? "border-red-300 focus:border-red-500"
+									: "border-gray-300 focus:border-primary-500"
+									}`}
 							/>
 							{fieldErrors.fullName && (
 								<p className="mt-1 text-sm text-red-600">
@@ -105,8 +111,16 @@ const UserForm: React.FC<UserFormProps> = ({
 									formData.dateOfBirth ? new Date(formData.dateOfBirth) : null
 								}
 								onChange={(date) => handleDateChange("dateOfBirth", date)}
-								className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${fieldErrors.dateOfBirth
+									? "border-red-300 focus:border-red-500"
+									: "border-gray-300 focus:border-primary-500"
+									}`}
 							/>
+							{fieldErrors.dateOfBirth && (
+								<p className="mt-1 text-sm text-red-600">
+									{fieldErrors.dateOfBirth}
+								</p>
+							)}
 						</div>
 					</div>
 
@@ -151,11 +165,10 @@ const UserForm: React.FC<UserFormProps> = ({
 								onChange={handleChange}
 								placeholder="e.g., +1234567890 or 1234567890"
 								required
-								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${
-									fieldErrors.contactNumber
-										? "border-red-300 focus:border-red-500"
-										: "border-gray-300 focus:border-primary-500"
-								}`}
+								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${fieldErrors.contactNumber
+									? "border-red-300 focus:border-red-500"
+									: "border-gray-300 focus:border-primary-500"
+									}`}
 							/>
 							{fieldErrors.contactNumber && (
 								<p className="mt-1 text-sm text-red-600">
@@ -180,11 +193,10 @@ const UserForm: React.FC<UserFormProps> = ({
 								id="email"
 								value={formData.email || ""}
 								onChange={handleChange}
-								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${
-									fieldErrors.email
-										? "border-red-300 focus:border-red-500"
-										: "border-gray-300 focus:border-primary-500"
-								}`}
+								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${fieldErrors.email
+									? "border-red-300 focus:border-red-500"
+									: "border-gray-300 focus:border-primary-500"
+									}`}
 							/>
 							{fieldErrors.email && (
 								<p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
@@ -253,11 +265,10 @@ const UserForm: React.FC<UserFormProps> = ({
 								value={formData.identificationNumber || ""}
 								onChange={handleChange}
 								required
-								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${
-									fieldErrors.identificationNumber
-										? "border-red-300 focus:border-red-500"
-										: "border-gray-300 focus:border-primary-500"
-								}`}
+								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${fieldErrors.identificationNumber
+									? "border-red-300 focus:border-red-500"
+									: "border-gray-300 focus:border-primary-500"
+									}`}
 							/>
 							{fieldErrors.identificationNumber && (
 								<p className="mt-1 text-sm text-red-600">
