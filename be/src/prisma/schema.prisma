@@ -172,6 +172,7 @@ model User {
   accounts                UserAccount[]
   shareAccount            ShareAccount?
   notificationPreferences UserNotificationPreference[]
+  documents               UserDocument[]
 
   @@index([contactNumber])
   @@index([idNumber])
@@ -807,6 +808,24 @@ model TdsExemption {
   verifiedBy      AdminUser? @relation("VerifiedByAdmin", fields: [verifiedById], references: [id])
 
   @@map("tds_exemptions")
+}
+
+model UserDocument {
+  id           String   @id @default(uuid())
+  userId       String
+  documentType String // NATIONAL_ID, PASSPORT, DRIVING_LICENSE, OTHER
+  fileName     String
+  filePath     String // Relative path from uploads folder
+  fileUrl      String // Full URL to access the file
+  uploadDate   DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([documentType])
+  @@map("user_documents")
 }
 
 model TaxCertificate {
@@ -1601,8 +1620,8 @@ model LoanProvision {
 model FiscalYear {
   id          String   @id @default(uuid())
   name        String   @unique // e.g. "2080/81"
-  startDateBS String   // e.g. "2080-04-01"
-  endDateBS   String   // e.g. "2081-03-31"
+  startDateBS String // e.g. "2080-04-01"
+  endDateBS   String // e.g. "2081-03-31"
   startDateAD DateTime
   endDateAD   DateTime
   isCurrent   Boolean  @default(false)

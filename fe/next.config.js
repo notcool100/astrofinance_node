@@ -64,6 +64,11 @@ const nextConfig = {
   async rewrites() {
     return {
       beforeFiles: [
+        // Proxy uploads to backend server
+        {
+          source: '/uploads/:path*',
+          destination: `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace('/api', '')}/uploads/:path*`,
+        },
         {
           source: '/loans/types/new',
           destination: '/loans/types/new',

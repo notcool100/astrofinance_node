@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { User, CreateUserData, UpdateUserData } from "@/services/user.service";
 import Button from "@/components/common/Button";
 import DualDatePicker from "@/components/common/DualDatePicker";
+import DocumentUploadField from "@/components/common/DocumentUploadField";
 import { useTranslation } from 'next-i18next';
 
 interface UserFormProps {
@@ -35,6 +36,9 @@ const UserForm: React.FC<UserFormProps> = ({
 		isActive: user?.isActive !== undefined ? user.isActive : true,
 	});
 
+	// State for document uploads
+	const [documents, setDocuments] = useState<Record<string, File | null>>({});
+
 	const handleChange = (
 		e: React.ChangeEvent<
 			HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -65,6 +69,13 @@ const UserForm: React.FC<UserFormProps> = ({
 		}
 	};
 
+	const handleDocumentChange = (documentType: string, file: File | null) => {
+		setDocuments((prev) => ({
+			...prev,
+			[documentType]: file,
+		}));
+	};
+
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
@@ -78,7 +89,8 @@ const UserForm: React.FC<UserFormProps> = ({
 		}
 
 		setLocalErrors({});
-		onSubmit(formData);
+		// Pass both formData and documents to parent
+		onSubmit({ formData, documents });
 	};
 
 	return (
@@ -302,6 +314,56 @@ const UserForm: React.FC<UserFormProps> = ({
 							)}
 						</div>
 					</div>
+
+					{/* Document Uploads Section - Only for new users */}
+					{!isEditMode && (
+						<>
+							<div className="sm:col-span-6 border-t pt-6">
+								<h3 className="text-lg font-medium text-gray-900 mb-4">
+									{t('user:documents.title', 'Document Uploads')}
+								</h3>
+								<p className="text-sm text-gray-500 mb-4">
+									{t('user:documents.description', 'Upload identification documents for verification')}
+								</p>
+							</div>
+
+							{/* National ID / Citizenship */}
+							<div className="sm:col-span-3">
+								<DocumentUploadField
+									documentType="NATIONAL_ID"
+									label={t('user:documents.national_id', 'National ID / Citizenship')}
+									onFileChange={(file) => handleDocumentChange("NATIONAL_ID", file)}
+								/>
+							</div>
+
+							{/* Passport */}
+							<div className="sm:col-span-3">
+								<DocumentUploadField
+									documentType="PASSPORT"
+									label={t('user:documents.passport', 'Passport')}
+									onFileChange={(file) => handleDocumentChange("PASSPORT", file)}
+								/>
+							</div>
+
+							{/* Driving License */}
+							<div className="sm:col-span-3">
+								<DocumentUploadField
+									documentType="DRIVING_LICENSE"
+									label={t('user:documents.driving_license', 'Driving License')}
+									onFileChange={(file) => handleDocumentChange("DRIVING_LICENSE", file)}
+								/>
+							</div>
+
+							{/* Other Document */}
+							<div className="sm:col-span-3">
+								<DocumentUploadField
+									documentType="OTHER"
+									label={t('user:documents.other', 'Other Document')}
+									onFileChange={(file) => handleDocumentChange("OTHER", file)}
+								/>
+							</div>
+						</>
+					)}
 
 					{/* Status */}
 					<div className="sm:col-span-3">

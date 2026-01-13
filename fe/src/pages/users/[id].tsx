@@ -9,6 +9,7 @@ import Badge from '@/components/common/Badge';
 import Tabs from '@/components/common/Tabs';
 import Table from '@/components/common/Table';
 import UserAccounts from '@/components/modules/users/UserAccounts';
+import UserDocuments from '@/components/modules/users/UserDocuments';
 import { formatDate, formatCurrency } from '@/utils/dateUtils';
 import { getUserById, getUserLoans, getUserLoanApplications, User, UserLoan, UserLoanApplication } from '@/services/user.service';
 import { Column } from 'react-table';
@@ -181,6 +182,7 @@ const UserDetailPage: React.FC = () => {
 
   const tabs = [
     { id: 'details', label: 'User Details' },
+    { id: 'documents', label: 'Documents' },
     { id: 'accounts', label: 'Accounts' },
     { id: 'loans', label: 'Loans' },
     { id: 'applications', label: 'Loan Applications' },
@@ -312,6 +314,12 @@ const UserDetailPage: React.FC = () => {
                   </div>
                 )}
 
+                {activeTab === 'documents' && (
+                  <div className="px-4 py-5">
+                    {user && <UserDocuments userId={user.id} />}
+                  </div>
+                )}
+
                 {activeTab === 'loans' && (
                   <div className="px-4 py-5">
                     {loansLoading ? (
@@ -377,7 +385,7 @@ const UserDetailPage: React.FC = () => {
 export async function getServerSideProps({ locale }: { locale: string }) {
   return {
     props: {
-      ...(await import('next-i18next/serverSideTranslations').then(m => 
+      ...(await import('next-i18next/serverSideTranslations').then(m =>
         m.serverSideTranslations(locale, ['common', 'user', 'auth'])
       )),
     },

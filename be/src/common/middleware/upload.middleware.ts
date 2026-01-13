@@ -36,9 +36,40 @@ const storage = multer.diskStorage({
 		// Determine destination based on file type or route
 		let uploadPath = path.join(__dirname, "../../../uploads");
 
-		// Check for loan document uploads - includes various loan document route patterns
-		if (req.path.includes("/loan/") && req.path.includes("/documents/")) {
+		// Check for user document uploads - extract userId from URL path
+		// Path format: /api/user/users/:userId/documents or /:userId/documents/multiple
+		if (req.path.includes("/documents")) {
+			// Extract userId from the URL path
+			const pathParts = req.path.split("/");
+			const documentsIndex = pathParts.findIndex((part) => part === "documents");
+
+			if (documentsIndex > 0) {
+				// The userId should be the part before "documents"
+				const userId = pathParts[documentsIndex - 1];
+
+				// Validate that it looks like a UUID
+				const uuidRegex =
+					/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+				if (uuidRegex.test(userId)) {
+					// Default to profile category for user documents
+					const category = "profile";
+					const userCategoryPath = path.join(userId, category);
+					uploadPath = path.join(uploadPath, userCategoryPath);
+
+					// Create directory if it doesn't exist
+					if (!fs.existsSync(uploadPath)) {
+						fs.mkdirSync(uploadPath, { recursive: true });
+						console.log(`Created upload directory: ${uploadPath}`);
+					}
+				}
+			}
+		}
+		// Check for loan document uploads
+		else if (req.path.includes("/loan/") && req.path.includes("/documents/")) {
 			uploadPath = path.join(uploadPath, "loans/documents");
+			if (!fs.existsSync(uploadPath)) {
+				fs.mkdirSync(uploadPath, { recursive: true });
+			}
 		}
 
 		cb(null, uploadPath);
@@ -47,7 +78,10 @@ const storage = multer.diskStorage({
 		// Generate unique filename
 		const uniqueId = uuidv4();
 		const fileExt = path.extname(file.originalname);
-		const fileName = `${uniqueId}${fileExt}`;
+		// Try to get documentType from query or default to "document"
+		const documentType = "document";
+		const timestamp = Date.now();
+		const fileName = `${documentType}_${timestamp}_${uniqueId}${fileExt}`;
 		cb(null, fileName);
 	},
 });
@@ -84,7 +118,8 @@ export const upload = multer({
 	storage,
 	fileFilter,
 	limits: {
-		fileSize: 5 * 1024 * 1024, // 5MB
+		fileSize: 10 * 1024 * 1024, // 10MB
+		files: 10, // Max 10 files
 	},
 });
 
