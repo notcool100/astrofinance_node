@@ -1,5 +1,5 @@
 {
-    "name": "@astrofinance/nepali-date-converter",
+    "name": "@notcool100/nepali-date-converter",
     "version": "1.0.0",
     "description": "Accurate Bikram Sambat (BS) and Gregorian (AD) calendar converter for Nepal",
     "main": "dist/index.js",

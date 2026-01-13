@@ -17,14 +17,10 @@ export type { BsDate };
  */
 export function adToBs(adDate: Date): BsDate {
     // Get the reference point: BS 2000-01-01 = AD 1943-04-14
-    const referenceAd = new Date(
-        BS_AD_REFERENCE.adYear,
-        BS_AD_REFERENCE.adMonth - 1,
-        BS_AD_REFERENCE.adDay
-    );
-
-    // Calculate difference in days
-    const diffTime = adDate.getTime() - referenceAd.getTime();
+    // Use UTC dates to avoid timezone issues (historical timezone changes in Nepal)
+    const referenceAdInfo = BS_AD_REFERENCE;
+    const diffTime = Date.UTC(adDate.getFullYear(), adDate.getMonth(), adDate.getDate()) -
+        Date.UTC(referenceAdInfo.adYear, referenceAdInfo.adMonth - 1, referenceAdInfo.adDay);
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {

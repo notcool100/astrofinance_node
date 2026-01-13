@@ -3,7 +3,7 @@ import ReactDatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { CalendarIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { convertAdToBsString, convertBsToAdDate, formatBsForDisplay, BsDate } from '@/utils/dateUtils';
-import { parseBsDate, getMonthNames, getDaysInBsMonth, formatBsDate } from '@astrofinance/nepali-date-converter';
+import { parseBsDate, getMonthNames, getDaysInBsMonth, formatBsDate } from '@notcool100/nepali-date-converter';
 
 interface DualDatePickerProps {
     id?: string;
@@ -142,8 +142,8 @@ const DualDatePicker: React.FC<DualDatePickerProps> = ({
                     ref={ref}
                     id={id}
                     className={`block w-full pr-20 sm:text-sm rounded-md ${error
-                            ? 'border-red-300 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500'
-                            : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
+                        ? 'border-red-300 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500'
+                        : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
                         } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''} ${className}`}
                     value={value as string}
                     onClick={onClick}
@@ -193,8 +193,8 @@ const DualDatePicker: React.FC<DualDatePickerProps> = ({
                             onChange={(e) => handleBsDateComponentChange(parseInt(e.target.value), bsMonth, bsDay)}
                             disabled={disabled}
                             className={`block w-full rounded-md shadow-sm sm:text-sm ${error
-                                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                                    : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                                : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
                                 } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         >
                             {years.map((year) => (
@@ -218,8 +218,8 @@ const DualDatePicker: React.FC<DualDatePickerProps> = ({
                             }}
                             disabled={disabled}
                             className={`block w-full rounded-md shadow-sm sm:text-sm ${error
-                                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                                    : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                                : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
                                 } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         >
                             {monthNames.map((month, index) => (
@@ -238,8 +238,8 @@ const DualDatePicker: React.FC<DualDatePickerProps> = ({
                             onChange={(e) => handleBsDateComponentChange(bsYear, bsMonth, parseInt(e.target.value))}
                             disabled={disabled}
                             className={`block w-full rounded-md shadow-sm sm:text-sm ${error
-                                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                                    : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                                : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
                                 } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         >
                             {days.map((day) => (

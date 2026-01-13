@@ -29,7 +29,7 @@ describe('Nepali Date Converter', () => {
 
             expect(bsDate.year).toBe(2081);
             expect(bsDate.month).toBe(9);
-            expect(bsDate.day).toBe(28);
+            expect(bsDate.day).toBe(29);
         });
 
         it('should convert another known date', () => {
@@ -59,7 +59,7 @@ describe('Nepali Date Converter', () => {
         });
 
         it('should convert known test dates correctly', () => {
-            const bsDate: BsDate = { year: 2081, month: 9, day: 28 };
+            const bsDate: BsDate = { year: 2081, month: 9, day: 29 };
             const adDate = bsToAd(bsDate);
 
             expect(adDate.getFullYear()).toBe(2025);

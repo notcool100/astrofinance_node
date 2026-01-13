@@ -16,13 +16,13 @@ A lightweight, accurate TypeScript library for converting between Gregorian (AD)
 ## Installation
 
 ```bash
-npm install @astrofinance/nepali-date-converter
+npm install @notcool100/nepali-date-converter
 ```
 
 ## Usage
 
 ```typescript
-import { adToBs, bsToAd, formatBsDate } from '@astrofinance/nepali-date-converter';
+import { adToBs, bsToAd, formatBsDate } from '@notcool100/nepali-date-converter';
 
 // Convert AD to BS
 const adDate = new Date(2025, 0, 13); // January 13, 2025

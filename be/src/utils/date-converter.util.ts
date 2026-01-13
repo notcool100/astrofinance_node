@@ -6,7 +6,7 @@ import {
     parseBsDate,
     isBsDateValid,
     BsDate,
-} from '@astrofinance/nepali-date-converter';
+} from '@notcool100/nepali-date-converter';
 
 /**
  * Date conversion utility for backend services

@@ -5,7 +5,7 @@ import {
   formatBsDateWithMonth,
   parseBsDate,
   BsDate,
-} from '@astrofinance/nepali-date-converter';
+} from '@notcool100/nepali-date-converter';
 
 /**
  * Format a date string to a human-readable format

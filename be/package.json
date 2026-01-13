@@ -23,7 +23,7 @@
     "seed": "ts-node src/prisma/seed.ts"
   },
   "dependencies": {
-    "@astrofinance/nepali-date-converter": "link:../packages/nepali-date-converter",
+    "@notcool100/nepali-date-converter": "^1.0.0",
     "@prisma/client": "^4.14.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",

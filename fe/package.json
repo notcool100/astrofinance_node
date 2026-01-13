@@ -14,7 +14,7 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
-    "@astrofinance/nepali-date-converter": "link:../packages/nepali-date-converter",
+    "@notcool100/nepali-date-converter": "^1.0.0",
     "@chakra-ui/icons": "^2.2.4",
     "@chakra-ui/layout": "^2.3.1",
     "@chakra-ui/react": "^3.22.0",
