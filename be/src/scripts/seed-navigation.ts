@@ -8,10 +8,10 @@ async function seedNavigation() {
   try {
     // Check if navigation groups exist
     const existingGroups = await prisma.navigationGroup.count();
-    
+
     if (existingGroups === 0) {
       logger.info('No navigation groups found. Seeding navigation data...');
-      
+
       // Create navigation groups
       const groups = [
         { name: 'Dashboard', description: 'Dashboard and analytics', order: 1 },
@@ -21,12 +21,12 @@ async function seedNavigation() {
         { name: 'Reports', description: 'Reports and analytics', order: 5 },
         { name: 'Administration', description: 'System administration', order: 6 },
       ];
-      
+
       for (const group of groups) {
         await prisma.navigationGroup.create({ data: group });
         logger.info(`Created navigation group: ${group.name}`);
       }
-      
+
       // Get created groups
       const dashboardGroup = await prisma.navigationGroup.findFirst({ where: { name: 'Dashboard' } });
       const userGroup = await prisma.navigationGroup.findFirst({ where: { name: 'User Management' } });
@@ -34,7 +34,7 @@ async function seedNavigation() {
       const accountingGroup = await prisma.navigationGroup.findFirst({ where: { name: 'Accounting' } });
       const reportsGroup = await prisma.navigationGroup.findFirst({ where: { name: 'Reports' } });
       const adminGroup = await prisma.navigationGroup.findFirst({ where: { name: 'Administration' } });
-      
+
       // Create navigation items
       if (dashboardGroup) {
         await prisma.navigationItem.create({
@@ -46,7 +46,7 @@ async function seedNavigation() {
             groupId: dashboardGroup.id,
           }
         });
-        
+
         await prisma.navigationItem.create({
           data: {
             label: 'Analytics',
@@ -57,7 +57,7 @@ async function seedNavigation() {
           }
         });
       }
-      
+
       if (userGroup) {
         await prisma.navigationItem.create({
           data: {
@@ -68,7 +68,7 @@ async function seedNavigation() {
             groupId: userGroup.id,
           }
         });
-        
+
         await prisma.navigationItem.create({
           data: {
             label: 'Accounts',
@@ -79,7 +79,7 @@ async function seedNavigation() {
           }
         });
       }
-      
+
       if (loanGroup) {
         await prisma.navigationItem.create({
           data: {
@@ -90,7 +90,7 @@ async function seedNavigation() {
             groupId: loanGroup.id,
           }
         });
-        
+
         await prisma.navigationItem.create({
           data: {
             label: 'Active Loans',
@@ -100,7 +100,7 @@ async function seedNavigation() {
             groupId: loanGroup.id,
           }
         });
-        
+
         await prisma.navigationItem.create({
           data: {
             label: 'Loan Types',
@@ -111,7 +111,7 @@ async function seedNavigation() {
           }
         });
       }
-      
+
       if (accountingGroup) {
         await prisma.navigationItem.create({
           data: {
@@ -122,7 +122,7 @@ async function seedNavigation() {
             groupId: accountingGroup.id,
           }
         });
-        
+
         await prisma.navigationItem.create({
           data: {
             label: 'Journal Entries',
@@ -133,7 +133,7 @@ async function seedNavigation() {
           }
         });
       }
-      
+
       if (reportsGroup) {
         await prisma.navigationItem.create({
           data: {
@@ -144,7 +144,7 @@ async function seedNavigation() {
             groupId: reportsGroup.id,
           }
         });
-        
+
         await prisma.navigationItem.create({
           data: {
             label: 'Generate Reports',
@@ -155,7 +155,7 @@ async function seedNavigation() {
           }
         });
       }
-      
+
       if (adminGroup) {
         await prisma.navigationItem.create({
           data: {
@@ -166,7 +166,7 @@ async function seedNavigation() {
             groupId: adminGroup.id,
           }
         });
-        
+
         await prisma.navigationItem.create({
           data: {
             label: 'Roles & Permissions',
@@ -176,7 +176,7 @@ async function seedNavigation() {
             groupId: adminGroup.id,
           }
         });
-        
+
         await prisma.navigationItem.create({
           data: {
             label: 'Navigation Management',
@@ -186,7 +186,7 @@ async function seedNavigation() {
             groupId: adminGroup.id,
           }
         });
-        
+
         await prisma.navigationItem.create({
           data: {
             label: 'System Settings',
@@ -196,10 +196,20 @@ async function seedNavigation() {
             groupId: adminGroup.id,
           }
         });
+
+        await prisma.navigationItem.create({
+          data: {
+            label: 'Fiscal Years',
+            icon: 'calendar',
+            url: '/admin/fiscal-years',
+            order: 5,
+            groupId: adminGroup.id,
+          }
+        });
       }
-      
+
       logger.info('Navigation items created successfully');
-      
+
       // Assign navigation to Super Admin role
       const superAdmin = await prisma.role.findFirst({ where: { name: 'Super Admin' } });
       if (superAdmin) {
@@ -217,7 +227,7 @@ async function seedNavigation() {
     } else {
       logger.info(`Found ${existingGroups} navigation groups. Skipping navigation seeding.`);
     }
-    
+
   } catch (error) {
     logger.error('Error seeding navigation data:', error);
   } finally {

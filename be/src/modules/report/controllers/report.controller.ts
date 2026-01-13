@@ -6,6 +6,7 @@ import { AuditAction } from '@prisma/client';
 import { ApiError } from '../../../common/middleware/error.middleware';
 import { generateReport } from '../services/report.service';
 import { reportService } from '../services/excel-report.service';
+import { FiscalYearService } from '../../system/fiscal-year/services/fiscal-year.service';
 
 /**
  * Get all report templates
@@ -268,8 +269,18 @@ export const runReport = async (req: Request, res: Response) => {
 export const generateLoanPortfolioReport = async (req: Request, res: Response) => {
   try {
     const { startDate, endDate } = req.query;
-    const start = startDate ? new Date(startDate as string) : undefined;
-    const end = endDate ? new Date(endDate as string) : undefined;
+    let start = startDate ? new Date(startDate as string) : undefined;
+    let end = endDate ? new Date(endDate as string) : undefined;
+
+    // Handle fiscal year filter
+    if (req.query.fiscalYearId) {
+      const fiscalYearService = new FiscalYearService();
+      const fy = await fiscalYearService.getFiscalYearById(req.query.fiscalYearId as string);
+      if (fy) {
+        if (!startDate) start = new Date(fy.startDateAD);
+        if (!endDate) end = new Date(fy.endDateAD);
+      }
+    }
 
     await reportService.generateLoanReport(res, start, end);
   } catch (error) {
@@ -288,11 +299,23 @@ export const generateLoanPortfolioReport = async (req: Request, res: Response) =
 export const generateCollectionReport = async (req: Request, res: Response) => {
   try {
     const { startDate, endDate } = req.query;
-    if (!startDate || !endDate) {
-      throw new ApiError(400, 'startDate and endDate are required');
+
+    let start: Date | undefined = startDate ? new Date(startDate as string) : undefined;
+    let end: Date | undefined = endDate ? new Date(endDate as string) : undefined;
+
+    // Handle fiscal year filter
+    if (req.query.fiscalYearId) {
+      const fiscalYearService = new FiscalYearService();
+      const fy = await fiscalYearService.getFiscalYearById(req.query.fiscalYearId as string);
+      if (fy) {
+        if (!startDate) start = new Date(fy.startDateAD);
+        if (!endDate) end = new Date(fy.endDateAD);
+      }
     }
-    const start = new Date(startDate as string);
-    const end = new Date(endDate as string);
+
+    if (!start || !end) {
+      throw new ApiError(400, 'Fiscal Year OR (startDate and endDate) are required');
+    }
 
     await reportService.generateCollectionReport(res, start, end);
   } catch (error) {
