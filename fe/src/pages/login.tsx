@@ -10,7 +10,7 @@ const Login = () => {
   const router = useRouter();
   const { type } = router.query;
   const initialUserType = (type === 'admin' ? 'ADMIN' : type === 'staff' ? 'STAFF' : 'STAFF') as UserType;
-  
+
   const [userType, setUserType] = useState<UserType>(initialUserType);
   const { isAuthenticated, isAdmin, isStaff } = useAuth();
 
@@ -102,7 +102,7 @@ const Login = () => {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <LoginForm userType={userType === 'USER' ? undefined : userType} />
-          
+
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -111,15 +111,6 @@ const Login = () => {
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">Or</span>
               </div>
-            </div>
-            
-            <div className="mt-6 text-center">
-              <a 
-                href={userType === 'ADMIN' ? '/login?type=staff' : '/login?type=admin'} 
-                className="text-sm font-medium text-primary-600 hover:text-primary-500"
-              >
-                {userType === 'ADMIN' ? 'Go to Staff Login' : 'Go to Admin Login'}
-              </a>
             </div>
 
             <div className="mt-6">
@@ -130,7 +121,7 @@ const Login = () => {
                 {getSwitchButtonText()}
               </button>
             </div>
-            
+
             {userType !== 'USER' && (
               <div className="mt-4 text-center text-xs text-gray-500">
                 <span>

@@ -92,27 +92,29 @@ const LoginForm: React.FC<LoginFormProps> = ({ userType = 'STAFF' }) => {
         <label htmlFor="password" className="form-label">
           Password
         </label>
-        <div className="mt-1 relative">
-          <input
-            id="password"
-            type={showPassword ? 'text' : 'password'}
-            autoComplete="current-password"
-            className="form-input pr-10"
-            {...register('password')}
-          />
-          <button
-            type="button"
-            tabIndex={-1}
-            className="absolute inset-y-0 right-0 flex items-center px-2 focus:outline-none"
-            onClick={() => setShowPassword((prev) => !prev)}
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
-          >
-            {showPassword ? (
-              <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-            ) : (
-              <EyeIcon className="h-5 w-5 text-gray-400" />
-            )}
-          </button>
+        <div className="mt-1">
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              className="form-input pr-10"
+              {...register('password')}
+            />
+            <button
+              type="button"
+              tabIndex={-1}
+              className="absolute inset-y-0 right-0 flex items-center px-3 focus:outline-none"
+              onClick={() => setShowPassword((prev) => !prev)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? (
+                <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+              ) : (
+                <EyeIcon className="h-5 w-5 text-gray-400" />
+              )}
+            </button>
+          </div>
           {errors.password && (
             <p className="form-error">{errors.password.message}</p>
           )}
