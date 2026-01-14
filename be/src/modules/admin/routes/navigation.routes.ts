@@ -1,5 +1,5 @@
 import { Router, type Router as ExpressRouter } from 'express';
-import { 
+import {
   getAllNavigationGroups,
   getNavigationGroupById,
   createNavigationGroup,
@@ -14,9 +14,9 @@ import {
   getUserNavigation,
   updateRoleNavigation
 } from '../controllers/navigation.controller';
-import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
+import { authenticate, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
-import { 
+import {
   createNavigationGroupValidation,
   updateNavigationGroupValidation,
   createNavigationItemValidation,
@@ -27,26 +27,26 @@ import { updateRoleNavigationValidation } from '../validations/role.validation';
 const router: ExpressRouter = Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Navigation groups
 router.get('/groups', hasPermission('admin.view'), getAllNavigationGroups);
 router.get('/groups/:id', hasPermission('admin.view'), getNavigationGroupById);
 router.post(
-  '/groups', 
-  hasPermission('admin.create'), 
-  validate(createNavigationGroupValidation), 
+  '/groups',
+  hasPermission('admin.create'),
+  validate(createNavigationGroupValidation),
   createNavigationGroup
 );
 router.put(
-  '/groups/:id', 
-  hasPermission('admin.edit'), 
-  validate(updateNavigationGroupValidation), 
+  '/groups/:id',
+  hasPermission('admin.edit'),
+  validate(updateNavigationGroupValidation),
   updateNavigationGroup
 );
 router.delete(
-  '/groups/:id', 
-  hasPermission('admin.delete'), 
+  '/groups/:id',
+  hasPermission('admin.delete'),
   deleteNavigationGroup
 );
 
@@ -54,32 +54,32 @@ router.delete(
 router.get('/', hasPermission('admin.view'), getAllNavigationItems);
 router.get('/:id', hasPermission('admin.view'), getNavigationItemById);
 router.post(
-  '/', 
-  hasPermission('admin.create'), 
-  validate(createNavigationItemValidation), 
+  '/',
+  hasPermission('admin.create'),
+  validate(createNavigationItemValidation),
   createNavigationItem
 );
 router.put(
-  '/:id', 
-  hasPermission('admin.edit'), 
-  validate(updateNavigationItemValidation), 
+  '/:id',
+  hasPermission('admin.edit'),
+  validate(updateNavigationItemValidation),
   updateNavigationItem
 );
 router.delete(
-  '/:id', 
-  hasPermission('admin.delete'), 
+  '/:id',
+  hasPermission('admin.delete'),
   deleteNavigationItem
 );
 
 // Navigation structure
 router.get('/structure', hasPermission('admin.view'), getNavigationStructure);
-router.get('/user', authenticateAdmin, getUserNavigation);
+router.get('/user', authenticate, getUserNavigation);
 
 // Role navigation
 router.put(
-  '/roles/:id', 
-  hasPermission('admin.edit'), 
-  validate(updateRoleNavigationValidation), 
+  '/roles/:id',
+  hasPermission('admin.edit'),
+  validate(updateRoleNavigationValidation),
   updateRoleNavigation
 );
 

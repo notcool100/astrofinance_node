@@ -11,7 +11,7 @@ import {
 } from "../controllers/user.controller";
 import userDocumentRoutes from "./user-document.routes";
 import {
-  authenticateAdmin,
+  authenticate,
   hasPermission,
 } from "../../../common/middleware/auth.middleware";
 import { validate } from "../../../common/middleware/validation.middleware";
@@ -33,7 +33,7 @@ router.use((req, res, next) => {
 });
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Register document routes (they already have /:userId/documents in their definition)
 router.use(userDocumentRoutes);

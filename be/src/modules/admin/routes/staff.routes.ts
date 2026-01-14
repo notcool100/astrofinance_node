@@ -16,7 +16,7 @@ import {
   resetStaffPassword,
   deleteStaff
 } from '../controllers/staff.controller';
-import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
+import { authenticate, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import {
   createStaffValidation,
@@ -27,7 +27,7 @@ import {
 const router: ExpressRouter = Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Only Super Admin can access staff management
 const isSuperAdmin = (req: Request, res: Response, next: NextFunction) => {

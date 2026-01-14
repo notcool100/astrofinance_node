@@ -7,7 +7,7 @@ import {
   deleteLoanType,
   bulkUpdateLoanTypeStatus
 } from '../controllers/loan-type.controller';
-import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
+import { authenticate, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import { performanceMonitor } from '../../../common/middleware/performance.middleware';
 import { apiLimiter } from '../../../common/middleware/rate-limit.middleware';
@@ -30,7 +30,7 @@ router.use(performanceMonitor);
 router.use(sanitizeInput);
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Get all loan types
 router.get('/', hasPermission('loans.view'), getAllLoanTypes);

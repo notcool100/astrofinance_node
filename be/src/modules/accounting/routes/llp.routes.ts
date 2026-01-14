@@ -1,5 +1,5 @@
 import { Router, type Router as ExpressRouter } from "express";
-import { authenticateAdmin } from "../../../common/middleware/auth.middleware";
+import { authenticate } from "../../../common/middleware/auth.middleware";
 import * as llpController from "../controllers/llp.controller";
 
 const router: ExpressRouter = Router();
@@ -7,14 +7,14 @@ const router: ExpressRouter = Router();
 // Generate Provisions (Run manual job)
 router.post(
     "/generate",
-    authenticateAdmin,
+    authenticate,
     llpController.generateProvisions,
 );
 
 // Get Report
 router.get(
     "/report",
-    authenticateAdmin,
+    authenticate,
     llpController.getProvisionReport,
 );
 

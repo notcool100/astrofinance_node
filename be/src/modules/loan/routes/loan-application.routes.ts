@@ -6,7 +6,7 @@ import {
   updateLoanApplicationStatus, 
   uploadLoanDocument 
 } from '../controllers/loan-application.controller';
-import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
+import { authenticate, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import { 
   createLoanApplicationValidation, 
@@ -18,7 +18,7 @@ import {
 const router: ExpressRouter = Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Get all loan applications
 router.get(

@@ -13,7 +13,7 @@ import {
   rejectExpense, 
   deleteExpense 
 } from '../controllers/expense.controller';
-import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
+import { authenticate, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import { 
   createExpenseCategoryValidation, 
@@ -28,7 +28,7 @@ import {
 const router: ExpressRouter = Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Expense category routes
 router.get(

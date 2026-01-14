@@ -1,6 +1,6 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { login, logout, getProfile, changePassword } from '../controllers/auth.controller';
-import { authenticateAdmin } from '../../../common/middleware/auth.middleware';
+import { authenticate } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import { loginValidation, changePasswordValidation } from '../validations/auth.validation';
 
@@ -10,8 +10,8 @@ const router: ExpressRouter = Router();
 router.post('/login', validate(loginValidation), login);
 
 // Protected routes
-router.post('/logout', authenticateAdmin, logout);
-router.get('/profile', authenticateAdmin, getProfile);
-router.post('/change-password', authenticateAdmin, validate(changePasswordValidation), changePassword);
+router.post('/logout', authenticate, logout);
+router.get('/profile', authenticate, getProfile);
+router.post('/change-password', authenticate, validate(changePasswordValidation), changePassword);
 
 export default router;
