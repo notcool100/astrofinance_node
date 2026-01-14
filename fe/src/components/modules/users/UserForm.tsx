@@ -4,6 +4,7 @@ import Button from "@/components/common/Button";
 import DualDatePicker from "@/components/common/DualDatePicker";
 import DocumentUploadField from "@/components/common/DocumentUploadField";
 import { useTranslation } from 'next-i18next';
+import { toast } from "react-toastify";
 
 interface UserFormProps {
 	user?: User;
@@ -88,6 +89,11 @@ const UserForm: React.FC<UserFormProps> = ({
 			}
 		}
 
+		if (!formData.dateOfBirth) {
+			toast.error(t('user:validation.dob_required', "Date of Birth is required"));
+			return;
+		}
+
 		setLocalErrors({});
 		// Pass both formData and documents to parent
 		onSubmit({ formData, documents });
@@ -144,8 +150,16 @@ const UserForm: React.FC<UserFormProps> = ({
 								onChange={handleDualDateChange}
 								defaultCalendar="bs"
 								showBothDates={true}
-								className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${fieldErrors.dateOfBirth
+									? "border-red-300 focus:border-red-500"
+									: "border-gray-300 focus:border-primary-500"
+									}`}
 							/>
+							{fieldErrors.dateOfBirth && (
+								<p className="mt-1 text-sm text-red-600">
+									{fieldErrors.dateOfBirth}
+								</p>
+							)}
 						</div>
 					</div>
 
