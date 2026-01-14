@@ -7,12 +7,14 @@ import ProtectedRoute from '../../../components/common/ProtectedRoute';
 import Button from '../../../components/common/Button';
 import Card from '../../../components/common/Card';
 import financialReportService, { BalanceSheet } from '../../../services/financial-report.service';
+import FiscalYearSelect from '@/components/common/FiscalYearSelect';
 
 const BalanceSheetPage: React.FC = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [exportLoading, setExportLoading] = useState(false);
   const [balanceSheet, setBalanceSheet] = useState<BalanceSheet | null>(null);
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState<string | undefined>(undefined);
   // Initialize with today's date in YYYY-MM-DD format
   const [asOfDate, setAsOfDate] = useState<string>(() => {
     const today = new Date();
@@ -33,20 +35,20 @@ const BalanceSheetPage: React.FC = () => {
     setLoading(true);
     try {
       // Use a direct approach to fetch the data
-      const formattedDate = asOfDate.split('T')[0]; // Ensure we're using YYYY-MM-DD format
-      console.log('Fetching balance sheet for date:', formattedDate);
-      
+      const formattedDate = asOfDate ? asOfDate.split('T')[0] : '';
+      console.log('Fetching balance sheet for date:', formattedDate, 'FY:', selectedFiscalYear);
+
       // Call the service and get the data
-      const data = await financialReportService.getBalanceSheet(formattedDate);
+      const data = await financialReportService.getBalanceSheet(formattedDate || undefined, selectedFiscalYear);
       console.log('Balance sheet data received:', data);
-      
+
       if (!data) {
         console.error('No data returned from balance sheet API');
         toast.error('Failed to fetch balance sheet data');
         setLoading(false);
         return;
       }
-      
+
       // Calculate actual totals from the accounts regardless of what the API returns
       interface Account {
         id: string | number;
@@ -59,12 +61,12 @@ const BalanceSheetPage: React.FC = () => {
         if (!Array.isArray(accounts)) return 0;
         return accounts.reduce((sum, account) => sum + (Number(account.balance) || 0), 0);
       };
-      
+
       // Create a properly formatted balance sheet object
       const assetTotal = calculateTotal(data.assetAccounts);
       const liabilityTotal = calculateTotal(data.liabilityAccounts);
       const equityTotal = calculateTotal(data.equityAccounts);
-      
+
       const processedData = {
         asOfDate: data.asOfDate || formattedDate,
         assetAccounts: Array.isArray(data.assetAccounts) ? data.assetAccounts : [],
@@ -75,7 +77,7 @@ const BalanceSheetPage: React.FC = () => {
         totalEquity: equityTotal,
         liabilitiesAndEquity: liabilityTotal + equityTotal
       };
-      
+
       console.log('Processed balance sheet data:', processedData);
       setBalanceSheet(processedData);
     } catch (error) {
@@ -103,19 +105,21 @@ const BalanceSheetPage: React.FC = () => {
       const blob = await financialReportService.exportReport(
         'balance-sheet',
         'pdf',
-        { asOfDate }
+        { asOfDate, ...(selectedFiscalYear ? { fiscalYearId: selectedFiscalYear } : {}) }
       );
-      
+
+      const fileNameStr = selectedFiscalYear ? `balance-sheet-FY` : `balance-sheet-${asOfDate}`;
+
       // Create a download link and trigger it
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `balance-sheet-${asOfDate}.pdf`;
+      a.download = `${fileNameStr}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       toast.success('Balance sheet exported successfully');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to export balance sheet');
@@ -130,19 +134,21 @@ const BalanceSheetPage: React.FC = () => {
       const blob = await financialReportService.exportReport(
         'balance-sheet',
         'excel',
-        { asOfDate }
+        { asOfDate, ...(selectedFiscalYear ? { fiscalYearId: selectedFiscalYear } : {}) }
       );
-      
+
+      const fileNameStr = selectedFiscalYear ? `balance-sheet-FY` : `balance-sheet-${asOfDate}`;
+
       // Create a download link and trigger it
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `balance-sheet-${asOfDate}.xlsx`;
+      a.download = `${fileNameStr}.xlsx`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       toast.success('Balance sheet exported successfully');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to export balance sheet');
@@ -163,13 +169,13 @@ const BalanceSheetPage: React.FC = () => {
     try {
       // Handle ISO date format (e.g., "2025-08-01T00:00:00.000Z")
       const date = new Date(dateString);
-      
+
       // Check if date is valid
       if (isNaN(date.getTime())) {
         console.warn('Invalid date format:', dateString);
         return dateString; // Return original if invalid
       }
-      
+
       return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
@@ -222,24 +228,46 @@ const BalanceSheetPage: React.FC = () => {
               <h2 className="text-lg font-medium text-gray-900 mb-4">Report Parameters</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
+                  <FiscalYearSelect
+                    value={selectedFiscalYear}
+                    onChange={(val) => {
+                      setSelectedFiscalYear(val);
+                      // Clear date if FY is selected to avoid confusion? 
+                      // Or simply let fetched data override logic. 
+                      // Backend logic prioritizes FY over Date if FY is sent? 
+                      // Actually code checks: if (fy) override start/end. 
+                      // But Balance Sheet uses "asOfDate". 
+                      // Controller logic: if (fy && !asOfDate) asOfDate = fy.endDate. 
+                      // So if user selects FY, we should probably clear asOfDate or let user know FY takes precedence?
+                      // Let's clear manual date if FY selected for clarity.
+                      if (val) setAsOfDate('');
+                    }}
+                    label="Fiscal Year (Overrides Date)"
+                  />
+                </div>
+                <div>
                   <label htmlFor="asOfDate" className="block text-sm font-medium text-gray-700 mb-1">
-                    As of Date
+                    As of Date {selectedFiscalYear && <span className="text-xs text-gray-500">(Optional if FY selected)</span>}
                   </label>
                   <input
                     type="date"
                     id="asOfDate"
                     name="asOfDate"
                     value={asOfDate}
-                    onChange={handleDateChange}
+                    onChange={(e) => {
+                      handleDateChange(e);
+                      // If user picks specific date, maybe clear FY?
+                      if (e.target.value) setSelectedFiscalYear(undefined);
+                    }}
                     className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   />
                 </div>
-                <div className="md:col-span-2 flex items-end">
+                <div className="flex items-end">
                   <Button
                     variant="primary"
                     onClick={handleGenerateReport}
                     disabled={loading}
-                    className="w-full md:w-auto"
+                    className="w-full"
                   >
                     {loading ? 'Generating...' : 'Generate Report'}
                   </Button>
@@ -260,7 +288,7 @@ const BalanceSheetPage: React.FC = () => {
                   Balance Sheet as of {formatDate(balanceSheet.asOfDate)}
                 </h3>
               </div>
-              
+
               {/* Assets Section */}
               <div className="border-b border-gray-200">
                 <div className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -291,7 +319,7 @@ const BalanceSheetPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Liabilities Section */}
               <div className="border-b border-gray-200">
                 <div className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -322,7 +350,7 @@ const BalanceSheetPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Equity Section */}
               <div className="border-b border-gray-200">
                 <div className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -353,7 +381,7 @@ const BalanceSheetPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Total Liabilities and Equity */}
               <div className="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 font-bold bg-gray-100">
                 <dt className="text-sm text-gray-900">Total Liabilities and Equity</dt>
@@ -372,5 +400,17 @@ const BalanceSheetPage: React.FC = () => {
     </ProtectedRoute>
   );
 };
+
+
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+  return {
+    props: {
+      ...(await import('next-i18next/serverSideTranslations').then(m =>
+        m.serverSideTranslations(locale, ['common', 'user', 'auth'])
+      )),
+    },
+  };
+}
 
 export default BalanceSheetPage;

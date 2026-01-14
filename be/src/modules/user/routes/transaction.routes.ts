@@ -1,9 +1,9 @@
-import express from 'express';
+import express, { type Router as ExpressRouter } from 'express';
 import { authenticate, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validateRequest } from '../../../common/middleware/joi-validation.middleware';
-import { 
-  createTransactionSchema, 
-  getTransactionsByAccountSchema, 
+import {
+  createTransactionSchema,
+  getTransactionsByAccountSchema,
   getTransactionByIdSchema,
   cancelTransactionSchema
 } from '../validations/transaction.validation';
@@ -17,7 +17,7 @@ import {
   getAllTransactionsSummary
 } from '../controllers/transaction.controller';
 
-const router = express.Router();
+const router: ExpressRouter = express.Router();
 
 /**
  * @route POST /api/user/accounts/:accountId/transactions
@@ -58,6 +58,18 @@ router.get(
 );
 
 /**
+ * @route GET /api/user/transactions/summary
+ * @desc Get summary for all transactions or filtered by accountId
+ * @access Private (Admin, Staff)
+ */
+router.get(
+  '/transactions/summary',
+  authenticate,
+  hasPermission('usertransactions.view'),
+  getAllTransactionsSummary
+);
+
+/**
  * @route GET /api/user/transactions/:id
  * @desc Get a specific transaction by ID
  * @access Private (Admin, Staff)
@@ -81,18 +93,6 @@ router.post(
   hasPermission('usertransactions.cancel'), // Only admins can cancel transactions
   validateRequest(cancelTransactionSchema, 'body', ['id']),
   cancelTransaction
-);
-
-/**
- * @route GET /api/user/transactions/summary
- * @desc Get summary for all transactions or filtered by accountId
- * @access Private (Admin, Staff)
- */
-router.get(
-  '/transactions/summary',
-  authenticate,
-  hasPermission('usertransactions.view'),
-  getAllTransactionsSummary
 );
 
 /**

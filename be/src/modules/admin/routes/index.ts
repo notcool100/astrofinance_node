@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import authRoutes from './auth.routes';
 import adminUserRoutes from './admin-user.routes';
 import staffRoutes from './staff.routes';
@@ -7,7 +7,7 @@ import navigationRoutes from './navigation.routes';
 import dashboardRoutes from './dashboard.routes';
 import settingsRoutes from './settings.routes';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Auth routes
 router.use('/auth', authRoutes);

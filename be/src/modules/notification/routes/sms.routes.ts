@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { 
   getAllSmsTemplates, 
   getSmsTemplateById, 
@@ -17,7 +17,7 @@ import {
   sendTestSmsValidation 
 } from '../validations/sms.validation';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // All routes require authentication
 router.use(authenticateAdmin);

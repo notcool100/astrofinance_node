@@ -48,6 +48,9 @@ async function main() {
 	// Seed system settings
 	await seedSystemSettings();
 
+	// Seed account types
+	await seedAccountTypes();
+
 	console.log("Database seeding completed successfully!");
 }
 
@@ -86,6 +89,16 @@ async function cleanupDatabase() {
 		await prisma.staff.deleteMany({});
 		await prisma.role.deleteMany({});
 		await prisma.adminUser.deleteMany({});
+		// Clean up loan-related data first due to foreign key constraints
+		await prisma.loanPayment.deleteMany({});
+		await prisma.loanInstallment.deleteMany({});
+		await prisma.loanProvision.deleteMany({});
+		await prisma.loan.deleteMany({});
+		await prisma.loanDocument.deleteMany({});
+		await prisma.loanApplication.deleteMany({});
+		await prisma.loanCalculatorHistory.deleteMany({});
+		await prisma.loanCalculatorPreset.deleteMany({});
+
 		await prisma.loanType.deleteMany({});
 
 		// Check for any other dependencies on account_COA
@@ -110,7 +123,7 @@ async function seedAdminUsers() {
 	console.log("Seeding admin users...");
 
 	// Create default admin user
-	const passwordHash = await bcrypt.hash("admin@123", 12);
+	const passwordHash = await bcrypt.hash("admin123", 12);
 
 	const adminUser = await prisma.adminUser.create({
 		data: {
@@ -493,6 +506,26 @@ async function seedNavigation() {
 				groupId: accountingGroup.id,
 			},
 		});
+
+		await prisma.navigationItem.create({
+			data: {
+				label: "Share Management",
+				icon: "pie_chart",
+				url: "/admin/shares",
+				order: 5,
+				groupId: accountingGroup.id,
+			},
+		});
+
+		await prisma.navigationItem.create({
+			data: {
+				label: "Loan Loss Provisioning",
+				icon: "warning",
+				url: "/accounting/llp",
+				order: 6,
+				groupId: accountingGroup.id,
+			},
+		});
 	}
 
 	if (reportsGroup) {
@@ -570,6 +603,16 @@ async function seedNavigation() {
 
 		await prisma.navigationItem.create({
 			data: {
+				label: "Fiscal Years",
+				icon: "calendar_today",
+				url: "/admin/fiscal-years",
+				order: 5,
+				groupId: adminGroup.id,
+			},
+		});
+
+		await prisma.navigationItem.create({
+			data: {
 				label: "SMS Templates",
 				icon: "sms",
 				url: "/admin/sms",
@@ -584,6 +627,16 @@ async function seedNavigation() {
 				icon: "receipt",
 				url: "/tax-settings",
 				order: 6,
+				groupId: adminGroup.id,
+			},
+		});
+
+		await prisma.navigationItem.create({
+			data: {
+				label: "Account Types",
+				icon: "category",
+				url: "/admin/settings/account-types",
+				order: 7,
 				groupId: adminGroup.id,
 			},
 		});
@@ -918,6 +971,23 @@ async function seedChartOfAccounts() {
 			await prisma.account_COA.create({ data: account });
 			console.log(`Created liability sub-account: ${account.name}`);
 		}
+
+		// Create sub-accounts under Deposits
+		const depositsAccount = await prisma.account_COA.findFirst({
+			where: { accountCode: "2100" },
+		});
+		if (depositsAccount) {
+			await prisma.account_COA.create({
+				data: {
+					accountCode: "2101",
+					name: "Customer Deposits",
+					accountType: AccountType_COA.LIABILITY,
+					parentId: depositsAccount.id,
+					description: "Customer savings and deposit accounts"
+				},
+			});
+			console.log("Created Customer Deposits account (2101)");
+		}
 	}
 
 	if (income) {
@@ -945,6 +1015,23 @@ async function seedChartOfAccounts() {
 		for (const account of incomeSubAccounts) {
 			await prisma.account_COA.create({ data: account });
 			console.log(`Created income sub-account: ${account.name}`);
+		}
+
+		// Create sub-accounts under Interest Income
+		const interestIncomeAccount = await prisma.account_COA.findFirst({
+			where: { accountCode: "4100" },
+		});
+		if (interestIncomeAccount) {
+			await prisma.account_COA.create({
+				data: {
+					accountCode: "4101",
+					name: "Interest Income - Loans",
+					accountType: AccountType_COA.INCOME,
+					parentId: interestIncomeAccount.id,
+					description: "Interest earned from loans"
+				},
+			});
+			console.log("Created Interest Income - Loans account (4101)");
 		}
 	}
 
@@ -974,6 +1061,37 @@ async function seedChartOfAccounts() {
 			await prisma.account_COA.create({ data: account });
 			console.log(`Created expense sub-account: ${account.name}`);
 		}
+
+		// Create sub-account for Interest Expense
+		const personnelExpensesAccount = await prisma.account_COA.findFirst({
+			where: { accountCode: "5100" },
+		});
+		if (personnelExpensesAccount) {
+			await prisma.account_COA.create({
+				data: {
+					accountCode: "5101",
+					name: "Interest Expense",
+					accountType: AccountType_COA.EXPENSE,
+					parentId: expenses.id,
+					description: "Interest paid on customer deposits"
+				},
+			});
+			console.log("Created Interest Expense account (5101)");
+		}
+	}
+
+	// Add Share Capital account under Equity
+	if (equity) {
+		await prisma.account_COA.create({
+			data: {
+				accountCode: "3101",
+				name: "Share Capital",
+				accountType: AccountType_COA.EQUITY,
+				parentId: equity.id,
+				description: "Member share capital"
+			},
+		});
+		console.log("Created Share Capital account (3101)");
 	}
 }
 
@@ -1923,10 +2041,16 @@ async function seedSystemSettings() {
 	];
 
 	for (const category of categories) {
-		await prisma.settingCategory.create({ data: category });
-		console.log(`Created setting category: ${category.name}`);
-	}
+		// Check if category already exists
+		const existingCategory = await prisma.settingCategory.findUnique({
+			where: { name: category.name }
+		});
 
+		if (!existingCategory) {
+			await prisma.settingCategory.create({ data: category });
+			console.log(`Created setting category: ${category.name}`);
+		}
+	}
 	// Create default settings
 	const defaultSettings = [
 		// General Settings
@@ -2254,17 +2378,84 @@ async function seedSystemSettings() {
 	const { SettingDataType } = await import("@prisma/client");
 
 	for (const setting of defaultSettings) {
-		await prisma.systemSetting.create({
-			data: {
-				...setting,
-				dataType:
-					SettingDataType[setting.dataType as keyof typeof SettingDataType],
-			},
+		// Check if setting already exists
+		const existingSetting = await prisma.systemSetting.findUnique({
+			where: { key: setting.key }
 		});
-		console.log(`Created setting: ${setting.key}`);
+
+		if (!existingSetting) {
+			await prisma.systemSetting.create({
+				data: {
+					...setting,
+					dataType:
+						SettingDataType[setting.dataType as keyof typeof SettingDataType],
+				},
+			});
+			console.log(`Created setting: ${setting.key}`);
+		}
 	}
 
 	console.log("System settings seeded successfully");
+}
+
+async function seedAccountTypes() {
+	console.log("Seeding account types...");
+
+	const accountTypes = [
+		{
+			code: "SB",
+			name: "Sadharan Bachat",
+			description: "Regular savings account",
+			isActive: true,
+		},
+		{
+			code: "BB",
+			name: "Branch Bises Bachat",
+			description: "Special savings account with guardian",
+			isActive: true,
+		},
+		{
+			code: "FD",
+			name: "Fixed Deposit",
+			description: "Fixed deposit account with monthly deposits",
+			isActive: true,
+		},
+		{
+			code: "SH",
+			name: "Share",
+			description: "Share account",
+			isActive: true,
+		},
+		{
+			code: "LS",
+			name: "Loan Share",
+			description: "Loan share account",
+			isActive: true,
+		},
+	];
+
+	for (const accountType of accountTypes) {
+		try {
+			const existing = await prisma.accountTypeConfig.findUnique({
+				where: { code: accountType.code },
+			});
+
+			if (existing) {
+				const updated = await prisma.accountTypeConfig.update({
+					where: { code: accountType.code },
+					data: accountType,
+				});
+				console.log(`Updated account type: ${updated.name} (${updated.code})`);
+			} else {
+				const created = await prisma.accountTypeConfig.create({
+					data: accountType,
+				});
+				console.log(`Created account type: ${created.name} (${created.code})`);
+			}
+		} catch (error) {
+			console.error(`Error processing account type ${accountType.code}:`, error);
+		}
+	}
 }
 
 main()

@@ -41,6 +41,8 @@ model AdminUser {
   generatedStatements        UserAccountStatement[]   @relation("GeneratedByAdmin")
   performedTransactions      UserAccountTransaction[] @relation("PerformedByAdmin")
   createdUserAccounts        UserAccount[]            @relation("CreatedUserAccount")
+  createdShareTransactions   ShareTransaction[]       @relation("CreatedShareTransaction")
+  issuedShareCertificates    ShareCertificate[]       @relation("IssuedShareCertificate")
 
   @@index([username])
   @@index([email])
@@ -149,9 +151,10 @@ model User {
   id                      String                       @id @default(uuid())
   fullName                String
   dateOfBirth             DateTime
+  dateOfBirth_bs          String? // Bikram Sambat date (YYYY-MM-DD)
   gender                  String?
   contactNumber           String
-  email                   String?                      
+  email                   String?
   address                 String
   idType                  String
   idNumber                String
@@ -167,7 +170,9 @@ model User {
   tdsCalculations         TdsCalculation[]
   tdsExemptions           TdsExemption[]
   accounts                UserAccount[]
+  shareAccount            ShareAccount?
   notificationPreferences UserNotificationPreference[]
+  documents               UserDocument[]
 
   @@index([contactNumber])
   @@index([idNumber])
@@ -177,25 +182,32 @@ model User {
 }
 
 model UserAccount {
-  id                  String                   @id @default(uuid())
-  accountNumber       String                   @unique
-  userId              String
-  balance             Decimal                  @default(0) @db.Decimal(15, 2)
-  interestRate        Decimal                  @db.Decimal(5, 2)
-  openingDate         DateTime
-  lastTransactionDate DateTime?
-  status              AccountStatus            @default(ACTIVE)
-  createdById         String?
-  createdAt           DateTime                 @default(now())
-  updatedAt           DateTime                 @updatedAt
-  accountType         AccountType?
-  bbAccountDetails    BbAccountDetails?
-  mbAccountDetails    MbAccountDetails?
-  tdsCalculations     TdsCalculation[]
-  statements          UserAccountStatement[]
-  transactions        UserAccountTransaction[]
-  createdBy           AdminUser?               @relation("CreatedUserAccount", fields: [createdById], references: [id])
-  user                User                     @relation(fields: [userId], references: [id])
+  id                        String                   @id @default(uuid())
+  accountNumber             String                   @unique
+  userId                    String
+  balance                   Decimal                  @default(0) @db.Decimal(15, 2)
+  interestRate              Decimal                  @db.Decimal(5, 2)
+  accruedInterest           Decimal                  @default(0) @db.Decimal(15, 2) // NEW: Track daily accrual
+  lastInterestPostedDate    DateTime? // NEW: Track last capitalization
+  lastInterestPostedDate_bs String? // Bikram Sambat date (YYYY-MM-DD)
+  openingDate               DateTime
+  openingDate_bs            String? // Bikram Sambat date (YYYY-MM-DD)
+  lastTransactionDate       DateTime?
+  lastTransactionDate_bs    String? // Bikram Sambat date (YYYY-MM-DD)
+  status                    AccountStatus            @default(ACTIVE)
+  createdById               String?
+  createdAt                 DateTime                 @default(now())
+  updatedAt                 DateTime                 @updatedAt
+  accountType               String?
+  accountTypeConfigId       String?
+  accountTypeConfig         AccountTypeConfig?       @relation(fields: [accountTypeConfigId], references: [id])
+  bbAccountDetails          BbAccountDetails?
+  mbAccountDetails          MbAccountDetails?
+  tdsCalculations           TdsCalculation[]
+  statements                UserAccountStatement[]
+  transactions              UserAccountTransaction[]
+  createdBy                 AdminUser?               @relation("CreatedUserAccount", fields: [createdById], references: [id])
+  user                      User                     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([status])
@@ -205,21 +217,22 @@ model UserAccount {
 }
 
 model UserAccountTransaction {
-  id                String          @id @default(uuid())
-  accountId         String
-  amount            Decimal         @db.Decimal(15, 2)
-  transactionDate   DateTime        @default(now())
-  description       String?
-  referenceNumber   String?
-  runningBalance    Decimal         @db.Decimal(15, 2)
-  journalEntryId    String?
-  performedById     String?
-  transactionMethod String?
-  createdAt         DateTime        @default(now())
-  transactionType   TransactionType @default(DEPOSIT)
-  account           UserAccount     @relation(fields: [accountId], references: [id])
-  journalEntry      JournalEntry?   @relation(fields: [journalEntryId], references: [id])
-  performedBy       AdminUser?      @relation("PerformedByAdmin", fields: [performedById], references: [id])
+  id                 String          @id @default(uuid())
+  accountId          String
+  amount             Decimal         @db.Decimal(15, 2)
+  transactionDate    DateTime        @default(now())
+  transactionDate_bs String? // Bikram Sambat date (YYYY-MM-DD)
+  description        String?
+  referenceNumber    String?
+  runningBalance     Decimal         @db.Decimal(15, 2)
+  journalEntryId     String?
+  performedById      String?
+  transactionMethod  String?
+  createdAt          DateTime        @default(now())
+  transactionType    TransactionType @default(DEPOSIT)
+  account            UserAccount     @relation(fields: [accountId], references: [id])
+  journalEntry       JournalEntry?   @relation(fields: [journalEntryId], references: [id])
+  performedBy        AdminUser?      @relation("PerformedByAdmin", fields: [performedById], references: [id])
 
   @@index([accountId])
   @@index([transactionDate])
@@ -237,6 +250,7 @@ model BbAccountDetails {
   guardianIdType   String
   guardianIdNumber String
   maturityDate     DateTime?
+  maturityDate_bs  String? // Bikram Sambat date (YYYY-MM-DD)
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
   account          UserAccount @relation(fields: [accountId], references: [id])
@@ -251,6 +265,7 @@ model MbAccountDetails {
   termMonths           Int
   missedDeposits       Int         @default(0)
   maturityDate         DateTime
+  maturityDate_bs      String? // Bikram Sambat date (YYYY-MM-DD)
   createdAt            DateTime    @default(now())
   updatedAt            DateTime    @updatedAt
   account              UserAccount @relation(fields: [accountId], references: [id])
@@ -263,7 +278,9 @@ model UserAccountStatement {
   accountId           String
   statementNumber     String      @unique
   periodStartDate     DateTime
+  periodStartDate_bs  String? // Bikram Sambat date (YYYY-MM-DD)
   periodEndDate       DateTime
+  periodEndDate_bs    String? // Bikram Sambat date (YYYY-MM-DD)
   openingBalance      Decimal     @db.Decimal(15, 2)
   closingBalance      Decimal     @db.Decimal(15, 2)
   totalDeposits       Decimal     @default(0) @db.Decimal(15, 2)
@@ -363,7 +380,9 @@ model LoanApplication {
   purpose           String
   status            ApplicationStatus @default(PENDING)
   appliedDate       DateTime          @default(now())
+  appliedDate_bs    String? // Bikram Sambat date (YYYY-MM-DD)
   approvedDate      DateTime?
+  approvedDate_bs   String? // Bikram Sambat date (YYYY-MM-DD)
   approvedById      String?
   rejectionReason   String?
   createdAt         DateTime          @default(now())
@@ -388,8 +407,11 @@ model Loan {
   tenure               Int
   emiAmount            Decimal           @db.Decimal(15, 2)
   disbursementDate     DateTime?
+  disbursementDate_bs  String? // Bikram Sambat date (YYYY-MM-DD)
   firstPaymentDate     DateTime?
+  firstPaymentDate_bs  String? // Bikram Sambat date (YYYY-MM-DD)
   lastPaymentDate      DateTime?
+  lastPaymentDate_bs   String? // Bikram Sambat date (YYYY-MM-DD)
   totalInterest        Decimal           @db.Decimal(15, 2)
   totalAmount          Decimal           @db.Decimal(15, 2)
   processingFee        Decimal           @default(0) @db.Decimal(10, 2)
@@ -397,10 +419,12 @@ model Loan {
   outstandingInterest  Decimal           @db.Decimal(15, 2)
   status               LoanStatus        @default(ACTIVE)
   closureDate          DateTime?
+  closureDate_bs       String? // Bikram Sambat date (YYYY-MM-DD)
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
   installments         LoanInstallment[]
   payments             LoanPayment[]
+  provisions           LoanProvision[] // Added relation
   application          LoanApplication   @relation(fields: [applicationId], references: [id])
   loanType             LoanType          @relation(fields: [loanTypeId], references: [id])
   user                 User              @relation(fields: [userId], references: [id])
@@ -418,12 +442,14 @@ model LoanInstallment {
   loanId             String
   installmentNumber  Int
   dueDate            DateTime
+  dueDate_bs         String? // Bikram Sambat date (YYYY-MM-DD)
   principalAmount    Decimal           @db.Decimal(15, 2)
   interestAmount     Decimal           @db.Decimal(15, 2)
   totalAmount        Decimal           @db.Decimal(15, 2)
   paidAmount         Decimal           @default(0) @db.Decimal(15, 2)
   remainingPrincipal Decimal           @db.Decimal(15, 2)
   paymentDate        DateTime?
+  paymentDate_bs     String? // Bikram Sambat date (YYYY-MM-DD)
   status             InstallmentStatus @default(PENDING)
   lateFee            Decimal           @default(0) @db.Decimal(10, 2)
   createdAt          DateTime          @default(now())
@@ -444,6 +470,7 @@ model LoanPayment {
   loanId             String
   installmentId      String?
   paymentDate        DateTime
+  paymentDate_bs     String? // Bikram Sambat date (YYYY-MM-DD)
   amount             Decimal          @db.Decimal(15, 2)
   principalComponent Decimal          @db.Decimal(15, 2)
   interestComponent  Decimal          @db.Decimal(15, 2)
@@ -506,6 +533,7 @@ model JournalEntry {
   id                  String                   @id @default(uuid())
   entryNumber         String                   @unique
   entryDate           DateTime
+  entryDate_bs        String? // Bikram Sambat date (YYYY-MM-DD)
   narration           String
   reference           String?
   isRecurring         Boolean                  @default(false)
@@ -550,14 +578,17 @@ model JournalEntryLine {
 model DayBook {
   id                  String               @id @default(uuid())
   transactionDate     DateTime
+  transactionDate_bs  String? // Bikram Sambat date (YYYY-MM-DD)
   isReconciled        Boolean              @default(false)
   isClosed            Boolean              @default(false)
   systemCashBalance   Decimal              @db.Decimal(15, 2)
   physicalCashBalance Decimal?             @db.Decimal(15, 2)
   discrepancyAmount   Decimal?             @db.Decimal(15, 2)
   discrepancyNotes    String?
+  denominations       Json?
   closedById          String?
   closedAt            DateTime?
+  closedAt_bs         String? // Bikram Sambat date (YYYY-MM-DD)
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   bookNumber          String               @unique
@@ -781,6 +812,24 @@ model TdsExemption {
   @@map("tds_exemptions")
 }
 
+model UserDocument {
+  id           String   @id @default(uuid())
+  userId       String
+  documentType String // NATIONAL_ID, PASSPORT, DRIVING_LICENSE, OTHER
+  fileName     String
+  filePath     String // Relative path from uploads folder
+  fileUrl      String // Full URL to access the file
+  uploadDate   DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([documentType])
+  @@map("user_documents")
+}
+
 model TaxCertificate {
   id                String            @id @default(uuid())
   certificateNumber String            @unique
@@ -937,6 +986,72 @@ model ExpenseCategory {
   expenses                Expense[]
 
   @@map("expense_categories")
+}
+
+// ... existing Expense models ...
+
+model ShareAccount {
+  id           String             @id @default(uuid())
+  userId       String             @unique
+  shareCount   Int                @default(0)
+  totalAmount  Decimal            @default(0) @db.Decimal(15, 2)
+  isActive     Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  user         User               @relation(fields: [userId], references: [id])
+  transactions ShareTransaction[]
+  certificates ShareCertificate[]
+
+  @@map("share_accounts")
+}
+
+model ShareTransaction {
+  id              String               @id @default(uuid())
+  shareAccountId  String
+  transactionDate DateTime             @default(now())
+  transactionType ShareTransactionType
+  shareCount      Int
+  amount          Decimal              @db.Decimal(15, 2)
+  sharePrice      Decimal              @default(100) @db.Decimal(10, 2)
+  description     String?
+  certificateId   String?
+  createdById     String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  shareAccount    ShareAccount         @relation(fields: [shareAccountId], references: [id])
+  certificate     ShareCertificate?    @relation(fields: [certificateId], references: [id])
+  createdBy       AdminUser?           @relation("CreatedShareTransaction", fields: [createdById], references: [id])
+
+  @@index([shareAccountId])
+  @@index([transactionDate])
+  @@map("share_transactions")
+}
+
+model ShareCertificate {
+  id                String             @id @default(uuid())
+  certificateNumber String             @unique
+  shareAccountId    String
+  shareCount        Int
+  amount            Decimal            @db.Decimal(15, 2)
+  issuedDate        DateTime           @default(now())
+  status            CertificateStatus  @default(GENERATED)
+  issuedById        String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  shareAccount      ShareAccount       @relation(fields: [shareAccountId], references: [id])
+  transactions      ShareTransaction[]
+  issuedBy          AdminUser?         @relation("IssuedShareCertificate", fields: [issuedById], references: [id])
+
+  @@index([shareAccountId])
+  @@map("share_certificates")
+}
+
+enum ShareTransactionType {
+  PURCHASE
+  RETURN
+  DIVIDEND
+  TRANSFER_IN
+  TRANSFER_OUT
 }
 
 model Expense {
@@ -1485,4 +1600,51 @@ enum SettingDataType {
   EMAIL
   URL
   PHONE
+}
+
+// Loan Loss Provisioning Model
+model LoanProvision {
+  id               String   @id @default(uuid())
+  loanId           String
+  classification   String // GOOD, SUBSTANDARD, DOUBTFUL, BAD
+  overdueDays      Int
+  provisionPercent Decimal  @db.Decimal(5, 2) // 1, 25, 50, 100
+  provisionAmount  Decimal  @db.Decimal(15, 2)
+  provisionDate    DateTime @default(now())
+
+  loan Loan @relation(fields: [loanId], references: [id])
+
+  @@index([loanId])
+  @@index([classification])
+  @@map("loan_provisions")
+}
+
+model FiscalYear {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g. "2080/81"
+  startDateBS String // e.g. "2080-04-01"
+  endDateBS   String // e.g. "2081-03-31"
+  startDateAD DateTime
+  endDateAD   DateTime
+  isCurrent   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("fiscal_years")
+}
+
+model AccountTypeConfig {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userAccounts UserAccount[]
+
+  @@index([code])
+  @@index([isActive])
+  @@map("account_type_configs")
 }

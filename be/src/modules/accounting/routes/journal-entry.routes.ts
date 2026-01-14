@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { 
   getAllJournalEntries, 
   getJournalEntryById, 
@@ -14,7 +14,7 @@ import {
   getJournalEntriesValidation 
 } from '../validations/journal-entry.validation';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // All routes require authentication
 router.use(authenticateAdmin);

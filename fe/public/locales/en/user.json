@@ -1,0 +1,43 @@
+{
+    "title": "User Management",
+    "create_user": "Create User",
+    "update_user": "Update User",
+    "user_details": "User Details",
+    "fields": {
+        "full_name": "Full Name",
+        "date_of_birth": "Date of Birth",
+        "gender": "Gender",
+        "contact_number": "Contact Number",
+        "email": "Email",
+        "address": "Address",
+        "identification_type": "Identification Type",
+        "identification_number": "Identification Number",
+        "is_active": "Active"
+    },
+    "placeholders": {
+        "full_name": "Enter full name",
+        "contact_number": "e.g. 9800000000",
+        "email": "Enter email address",
+        "address": "Enter address"
+    },
+    "gender_options": {
+        "select": "Select Gender",
+        "male": "Male",
+        "female": "Female",
+        "other": "Other"
+    },
+    "id_type_options": {
+        "national_id": "National ID",
+        "passport": "Passport",
+        "driving_license": "Driving License",
+        "other": "Other"
+    },
+    "messages": {
+        "create_success": "User created successfully",
+        "update_success": "User updated successfully",
+        "delete_success": "User deleted successfully",
+        "create_error": "Failed to create user",
+        "update_error": "Failed to update user",
+        "delete_error": "Failed to delete user"
+    }
+}

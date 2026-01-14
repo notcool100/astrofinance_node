@@ -126,19 +126,28 @@ const LoanTypesPage: React.FC = () => {
                 <label htmlFor="show-inactive" className="mr-2 text-sm">
                   Show inactive loan types
                 </label>
-                <div className="relative inline-block w-10 mr-2 align-middle select-none">
+                <div className="relative inline-flex items-center mr-2">
                   <input
                     type="checkbox"
                     id="show-inactive"
                     checked={showInactive}
                     onChange={(e) => setShowInactive(e.target.checked)}
-                    className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                    className="sr-only peer"
                   />
+
                   <label
                     htmlFor="show-inactive"
-                    className="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"
+                    className="relative w-11 h-6 bg-gray-300 rounded-full cursor-pointer
+               transition-colors peer-checked:bg-blue-600"
                   ></label>
+
+                  <span
+                    className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full
+               transform transition-transform duration-300
+               peer-checked:translate-x-5 pointer-events-none"
+                  ></span>
                 </div>
+
               </div>
             </div>
 
@@ -274,5 +283,17 @@ const LoanTypesPage: React.FC = () => {
     </MainLayout>
   );
 };
+
+
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+  return {
+    props: {
+      ...(await import('next-i18next/serverSideTranslations').then(m => 
+        m.serverSideTranslations(locale, ['common', 'user', 'auth'])
+      )),
+    },
+  };
+}
 
 export default LoanTypesPage;

@@ -70,17 +70,17 @@ export const getTransactionsByAccount = async (
   const params = new URLSearchParams();
   params.append('page', page.toString());
   params.append('limit', limit.toString());
-  
+
   if (startDate) params.append('startDate', startDate);
   if (endDate) params.append('endDate', endDate);
   if (transactionType) params.append('transactionType', transactionType);
-  
-  const response = await apiService.get<{success: boolean, message: string, data: Transaction[], pagination: any}>(`/user/accounts/${accountId}/transactions?${params.toString()}`);
-  
+
+  const response = await apiService.get<{ success: boolean, message: string, data: Transaction[], pagination: any }>(`/user/accounts/${accountId}/transactions?${params.toString()}`);
+
   if (!response || !response.data) {
     return { data: [], pagination: { total: 0, page, limit, pages: 0 } };
   }
-  
+
   return {
     data: response.data,
     pagination: response.pagination || { total: 0, page, limit, pages: 0 }
@@ -88,7 +88,7 @@ export const getTransactionsByAccount = async (
 };
 
 export const getTransactionById = async (id: string): Promise<Transaction> => {
-  const response = await apiService.get<{success: boolean, message: string, data: Transaction}>(`/user/transactions/${id}`);
+  const response = await apiService.get<{ success: boolean, message: string, data: Transaction }>(`/user/transactions/${id}`);
   if (!response || !response.data) {
     throw new Error('Transaction not found');
   }
@@ -96,7 +96,7 @@ export const getTransactionById = async (id: string): Promise<Transaction> => {
 };
 
 export const createTransaction = async (data: CreateTransactionData): Promise<Transaction> => {
-  const response = await apiService.post<{success: boolean, message: string, data: Transaction}>(`/user/accounts/${data.accountId}/transactions`, data);
+  const response = await apiService.post<{ success: boolean, message: string, data: Transaction }>(`/user/accounts/${data.accountId}/transactions`, data);
   if (!response || !response.data) {
     throw new Error('Failed to create transaction');
   }
@@ -104,7 +104,7 @@ export const createTransaction = async (data: CreateTransactionData): Promise<Tr
 };
 
 export const cancelTransaction = async (data: CancelTransactionData): Promise<Transaction> => {
-  const response = await apiService.post<{success: boolean, message: string, data: Transaction}>(`/user/transactions/${data.id}/cancel`, { reason: data.reason });
+  const response = await apiService.post<{ success: boolean, message: string, data: Transaction }>(`/user/transactions/${data.id}/cancel`, { reason: data.reason });
   if (!response || !response.data) {
     throw new Error('Failed to cancel transaction');
   }
@@ -112,8 +112,8 @@ export const cancelTransaction = async (data: CancelTransactionData): Promise<Tr
 };
 
 export const getTransactionSummary = async (accountId: string): Promise<TransactionSummary> => {
-  const response = await apiService.get<{success: boolean, message: string, data: {summary: TransactionSummary}}>(`/user/accounts/${accountId}/transactions/summary`);
-  
+  const response = await apiService.get<{ success: boolean, message: string, data: { summary: TransactionSummary } }>(`/user/accounts/${accountId}/transactions/summary`);
+
   if (!response || !response.data || !response.data.summary) {
     return {
       totalDeposits: 0,
@@ -123,7 +123,7 @@ export const getTransactionSummary = async (accountId: string): Promise<Transact
       transactionCount: 0
     };
   }
-  
+
   return response.data.summary;
 };
 
@@ -139,19 +139,19 @@ export const getAllTransactions = async (
   const params = new URLSearchParams();
   params.append('page', page.toString());
   params.append('limit', limit.toString());
-  
+
   if (startDate) params.append('startDate', startDate);
   if (endDate) params.append('endDate', endDate);
   if (transactionType) params.append('transactionType', transactionType);
   if (accountId) params.append('accountId', accountId);
   if (accountNumber) params.append('accountNumber', accountNumber);
-  
-  const response = await apiService.get<{success: boolean, message: string, data: Transaction[], pagination: any}>(`/user/transactions?${params.toString()}`);
-  
+
+  const response = await apiService.get<{ success: boolean, message: string, data: Transaction[], pagination: any }>(`/user/transactions?${params.toString()}`);
+
   if (!response || !response.data) {
     return { data: [], pagination: { total: 0, page, limit, pages: 0 } };
   }
-  
+
   return {
     data: response.data,
     pagination: response.pagination || { total: 0, page, limit, pages: 0 }
@@ -162,9 +162,9 @@ export const getAllTransactionsSummary = async (accountId?: string, accountNumbe
   const params = new URLSearchParams();
   if (accountId) params.append('accountId', accountId);
   if (accountNumber) params.append('accountNumber', accountNumber);
-  
-  const response = await apiService.get<{success: boolean, message: string, data: {summary: TransactionSummary}}>(`/user/transactions/summary?${params.toString()}`);
-  
+
+  const response = await apiService.get<{ success: boolean, message: string, data: { summary: TransactionSummary } }>(`/user/transactions/summary?${params.toString()}`);
+
   if (!response || !response.data || !response.data.summary) {
     return {
       totalDeposits: 0,
@@ -174,16 +174,16 @@ export const getAllTransactionsSummary = async (accountId?: string, accountNumbe
       transactionCount: 0
     };
   }
-  
+
   return response.data.summary;
 };
 
 export const getAccountById = async (accountId: string) => {
-  const response = await apiService.get<{success: boolean, message: string, data: any}>(`/user/accounts/${accountId}`);
-  if (!response || !response.data) {
+  const response = await apiService.get<any>(`/user/accounts/${accountId}`);
+  if (!response) {
     throw new Error('Account not found');
   }
-  return response.data;
+  return response;
 };
 
 const transactionService = {

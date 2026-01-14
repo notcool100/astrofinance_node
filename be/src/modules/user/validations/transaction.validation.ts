@@ -37,6 +37,9 @@ export const createTransactionSchema = Joi.object({
   transactionDate: Joi.date().iso().max('now').messages({
     'date.base': 'Transaction date must be a valid date',
     'date.max': 'Transaction date cannot be in the future'
+  }),
+  transactionDate_bs: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).messages({
+    'string.pattern.base': 'BS date must be in YYYY-MM-DD format'
   })
 });
 

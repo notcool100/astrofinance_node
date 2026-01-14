@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { 
   getAllLoans, 
   getLoanById, 
@@ -18,7 +18,7 @@ import {
   getLoansValidation
 } from '../validations/loan.validation';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // All routes require authentication
 router.use(authenticateAdmin);

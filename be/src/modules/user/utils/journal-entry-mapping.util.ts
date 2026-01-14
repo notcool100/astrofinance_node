@@ -4,53 +4,55 @@ import prisma from "../../../config/database";
 
 /**
  * User transaction types to chart of accounts mapping
- * This defines which accounts should be debited/credited for each user transaction type
+ * Using actual account CODES from the database
  */
 export const USER_TRANSACTION_ACCOUNT_MAPPING = {
 	DEPOSIT: {
-		debitAccount: "CASH", // Cash account
-		creditAccount: "USER_DEPOSITS", // User deposits liability account
+		debitAccount: "1101", // Cash in Hand
+		creditAccount: "2101", // Customer Deposits
 	},
 	WITHDRAWAL: {
-		debitAccount: "USER_DEPOSITS", // User deposits liability account
-		creditAccount: "CASH", // Cash account
+		debitAccount: "2101", // Customer Deposits
+		creditAccount: "1101", // Cash in Hand
 	},
 	INTEREST_CREDIT: {
-		debitAccount: "INTEREST_EXPENSE", // Interest expense account
-		creditAccount: "USER_DEPOSITS", // User deposits liability account
+		debitAccount: "5101", // Interest Expense
+		creditAccount: "2101", // Customer Deposits
 	},
 	FEE_DEBIT: {
-		debitAccount: "USER_DEPOSITS", // User deposits liability account
-		creditAccount: "FEE_INCOME", // Fee income account
+		debitAccount: "2101", // Customer Deposits
+		creditAccount: "4200", // Fee Income
 	},
 	ADJUSTMENT: {
-		debitAccount: "CASH", // Cash account (for positive adjustments)
-		creditAccount: "ADJUSTMENT_INCOME", // Adjustment income account
+		debitAccount: "1101", // Cash in Hand
+		creditAccount: "4300", // Other Income
 	},
 	TRANSFER_IN: {
-		debitAccount: "CASH", // Cash account
-		creditAccount: "USER_DEPOSITS", // User deposits liability account
+		debitAccount: "2101", // Customer Deposits (from source)
+		creditAccount: "2101", // Customer Deposits (to destination)
 	},
 	TRANSFER_OUT: {
-		debitAccount: "USER_DEPOSITS", // User deposits liability account
-		creditAccount: "CASH", // Cash account
+		debitAccount: "2101", // Customer Deposits
+		creditAccount: "2101", // Customer Deposits
 	},
 };
 
 /**
- * Get default account ID by account code
+ * Get account ID by account code
  */
-export const getDefaultAccountIdByCode = async (
+export const getAccountIdByCode = async (
 	accountCode: string,
 ): Promise<string | null> => {
-	const account = await prisma.account_COA.findFirst({
-		where: {
-			name: accountCode, // Using name instead of code since code field doesn't exist
-			isActive: true,
-		},
+	const account = await prisma.account_COA.findUnique({
+		where: { accountCode },
 	});
 
-	return account?.id || null;
+	if (account && account.isActive) {
+		return account.id;
+	}
+
+	console.error(`Account not found or inactive: ${accountCode}`);
+	return null;
 };
 
 /**
@@ -85,15 +87,19 @@ export const createJournalEntryForUserTransaction = async (
 		transaction.transactionType,
 	);
 
-	// Get account IDs
+	if (!accountMapping) {
+		throw new Error(`No account mapping found for transaction type: ${transaction.transactionType}`);
+	}
+
+	// Get account IDs by CODE
 	const [debitAccountId, creditAccountId] = await Promise.all([
-		getDefaultAccountIdByCode(accountMapping.debitAccount),
-		getDefaultAccountIdByCode(accountMapping.creditAccount),
+		getAccountIdByCode(accountMapping.debitAccount),
+		getAccountIdByCode(accountMapping.creditAccount),
 	]);
 
 	if (!debitAccountId || !creditAccountId) {
 		throw new Error(
-			`Required accounts not found: ${accountMapping.debitAccount} or ${accountMapping.creditAccount}`,
+			`Required accounts not found: ${accountMapping.debitAccount} (debit) or ${accountMapping.creditAccount} (credit). Please run 'npx prisma db seed' to create the required accounts.`,
 		);
 	}
 
@@ -103,25 +109,22 @@ export const createJournalEntryForUserTransaction = async (
 			? transaction.amount
 			: Number(transaction.amount.toString());
 
-	// Use the amount directly since transaction amounts are already in rupees
-	// and journal entries should also be in rupees (no conversion needed)
-	const journalAmount = amountValue;
+	const journalAmount = Math.abs(amountValue);
 
 	// Determine debit and credit amounts based on transaction type
-	let debitAmount = 0;
-	let creditAmount = 0;
+	let debitAmount = journalAmount;
+	let creditAmount = journalAmount;
 
 	if (transaction.transactionType === TransactionType.ADJUSTMENT) {
 		// For adjustments, amount can be positive or negative
-		if (journalAmount > 0) {
-			debitAmount = journalAmount;
+		if (amountValue < 0) {
+			// Negative adjustment - swap debit and credit
+			debitAmount = 0;
+			creditAmount = journalAmount;
 		} else {
-			creditAmount = Math.abs(journalAmount);
+			debitAmount = journalAmount;
+			creditAmount = journalAmount;
 		}
-	} else {
-		// For other transaction types, use the mapping
-		debitAmount = journalAmount;
-		creditAmount = journalAmount;
 	}
 
 	const journalEntry = await prisma.journalEntry.create({
@@ -155,5 +158,6 @@ export const createJournalEntryForUserTransaction = async (
 		},
 	});
 
+	console.log(`Created journal entry ${journalEntry.entryNumber} for transaction ${transaction.id}`);
 	return journalEntry.id;
 };

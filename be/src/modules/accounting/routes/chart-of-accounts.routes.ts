@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { 
   getAllAccounts, 
   getAccountById, 
@@ -15,7 +15,7 @@ import {
   getAccountsValidation 
 } from '../validations/chart-of-accounts.validation';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // All routes require authentication
 router.use(authenticateAdmin);

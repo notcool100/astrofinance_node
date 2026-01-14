@@ -9,6 +9,7 @@ import Badge from '@/components/common/Badge';
 import Tabs from '@/components/common/Tabs';
 import Table from '@/components/common/Table';
 import UserAccounts from '@/components/modules/users/UserAccounts';
+import UserDocuments from '@/components/modules/users/UserDocuments';
 import { formatDate, formatCurrency } from '@/utils/dateUtils';
 import { getUserById, getUserLoans, getUserLoanApplications, User, UserLoan, UserLoanApplication } from '@/services/user.service';
 import { Column } from 'react-table';
@@ -110,8 +111,8 @@ const UserDetailPage: React.FC = () => {
         <Badge
           color={
             value === 'ACTIVE' ? 'green' :
-            value === 'CLOSED' ? 'gray' :
-            value === 'DEFAULTED' ? 'red' : 'yellow'
+              value === 'CLOSED' ? 'gray' :
+                value === 'DEFAULTED' ? 'red' : 'yellow'
           }
           text={value}
         />
@@ -159,8 +160,8 @@ const UserDetailPage: React.FC = () => {
         <Badge
           color={
             value === 'PENDING' ? 'yellow' :
-            value === 'APPROVED' ? 'green' :
-            value === 'REJECTED' ? 'red' : 'blue'
+              value === 'APPROVED' ? 'green' :
+                value === 'REJECTED' ? 'red' : 'blue'
           }
           text={value}
         />
@@ -181,6 +182,7 @@ const UserDetailPage: React.FC = () => {
 
   const tabs = [
     { id: 'details', label: 'User Details' },
+    { id: 'documents', label: 'Documents' },
     { id: 'accounts', label: 'Accounts' },
     { id: 'loans', label: 'Loans' },
     { id: 'applications', label: 'Loan Applications' },
@@ -236,12 +238,6 @@ const UserDetailPage: React.FC = () => {
                         Edit
                       </Button>
                     </Link>
-                    <Link href={`/users/${user.id}/reset-password`}>
-                      <Button variant="outline" className="flex items-center">
-                        <KeyIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                        Reset Password
-                      </Button>
-                    </Link>
                   </div>
                 </div>
 
@@ -264,7 +260,7 @@ const UserDetailPage: React.FC = () => {
                       </div>
                       <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt className="text-sm font-medium text-gray-500">Date of birth</dt>
-                        <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{formatDate(user.dateOfBirth)}</dd>
+                        <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user.dateOfBirth ? formatDate(user.dateOfBirth) : 'Not provided'}</dd>
                       </div>
                       <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt className="text-sm font-medium text-gray-500">Gender</dt>
@@ -288,11 +284,11 @@ const UserDetailPage: React.FC = () => {
                           <Badge
                             color={
                               user.userType === 'SB' ? 'blue' :
-                              user.userType === 'BB' ? 'green' : 'purple'
+                                user.userType === 'BB' ? 'green' : 'purple'
                             }
                             text={
                               user.userType === 'SB' ? 'Savings Bank' :
-                              user.userType === 'BB' ? 'Business Banking' : 'Mobile Banking'
+                                user.userType === 'BB' ? 'Business Banking' : 'Mobile Banking'
                             }
                           />
                         </dd>
@@ -315,6 +311,12 @@ const UserDetailPage: React.FC = () => {
                         <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{formatDate(user.updatedAt)}</dd>
                       </div>
                     </dl>
+                  </div>
+                )}
+
+                {activeTab === 'documents' && (
+                  <div className="px-4 py-5">
+                    {user && <UserDocuments userId={user.id} />}
                   </div>
                 )}
 
@@ -377,5 +379,17 @@ const UserDetailPage: React.FC = () => {
     </ProtectedRoute>
   );
 };
+
+
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+  return {
+    props: {
+      ...(await import('next-i18next/serverSideTranslations').then(m =>
+        m.serverSideTranslations(locale, ['common', 'user', 'auth'])
+      )),
+    },
+  };
+}
 
 export default UserDetailPage;

@@ -1,16 +1,16 @@
-import express from 'express';
+import express, { type Router as ExpressRouter } from 'express';
 import * as authController from './controllers/auth.controller';
 import * as navigationController from './controllers/navigation.controller';
 import { authenticate, hasPermission } from '../../common/middleware/auth.middleware';
 import { validateRequest } from '../../common/middleware/yup-validation.middleware';
 import { loginSchema, changePasswordSchema } from './validators/auth.validator';
-import { 
-  createNavigationItemSchema, 
+import {
+  createNavigationItemSchema,
   updateNavigationItemSchema,
-  assignNavigationToRoleSchema 
+  assignNavigationToRoleSchema
 } from './validators/navigation.validator';
 
-const router = express.Router();
+const router: ExpressRouter = express.Router();
 
 // Auth routes
 router.post('/auth/login', validateRequest(loginSchema), authController.login);

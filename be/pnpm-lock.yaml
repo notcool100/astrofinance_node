@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@notcool100/nepali-date-converter':
+        specifier: ^1.0.0
+        version: 1.0.0
       '@prisma/client':
         specifier: ^4.14.0
         version: 4.16.2(prisma@4.16.2)
@@ -465,6 +468,9 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
+
+  '@notcool100/nepali-date-converter@1.0.0':
+    resolution: {integrity: sha512-p/XzVr/gbM2L9DovoA81u3yDOkjyVU6Xb917c3J55rKnqgM/VVsvbm5b0+/o/Yqpd960zwMxgwEmATx/H0lr7w==}
 
   '@prisma/client@4.16.2':
     resolution: {integrity: sha512-qCoEyxv1ZrQ4bKy39GnylE8Zq31IRmm8bNhNbZx7bF2cU5aiCCnSa93J2imF88MBjn7J9eUQneNxUQVJdl/rPQ==}
@@ -3252,6 +3258,8 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
+
+  '@notcool100/nepali-date-converter@1.0.0': {}
 
   '@prisma/client@4.16.2(prisma@4.16.2)':
     dependencies:

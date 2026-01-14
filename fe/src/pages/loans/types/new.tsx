@@ -29,15 +29,15 @@ const NewLoanTypePage: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     code: '',
-      interestType: 'DIMINISHING',
+    interestType: 'DIMINISHING',
     minAmount: 1000,
     maxAmount: 50000,
     minTenure: 3,
     maxTenure: 12,
     interestRate: 0,
-      processingFeePercent: 0,
-      lateFeeAmount: 0,
-      isActive: true,
+    processingFeePercent: 0,
+    lateFeeAmount: 0,
+    isActive: true,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -114,7 +114,7 @@ const NewLoanTypePage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-    createMutation.mutate(formData);
+      createMutation.mutate(formData);
     }
   };
 
@@ -128,23 +128,23 @@ const NewLoanTypePage: React.FC = () => {
 
   return (
     <ProtectedRoute>
-    <MainLayout title="Create New Loan Type">
+      <MainLayout title="Create New Loan Type">
         <div className="container mx-auto px-4">
           <div className="mt-4 mb-4">
-          <Button
+            <Button
               variant="outline"
-            onClick={() => router.back()}
+              onClick={() => router.back()}
               icon={<ArrowLeftIcon className="h-5 w-5 mr-2" />}
               className="mb-4"
-          >
-            Back to Loan Types
-          </Button>
-          
+            >
+              Back to Loan Types
+            </Button>
+
             <h1 className="text-2xl font-semibold mb-1">Create New Loan Type</h1>
             <p className="text-gray-600">Define a new loan product with its terms and conditions</p>
           </div>
 
-        <Card>
+          <Card>
             <div className="card-body">
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -152,7 +152,7 @@ const NewLoanTypePage: React.FC = () => {
                   <div className="md:col-span-2">
                     <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
                   </div>
-                  
+
                   <div>
                     <label className="form-label">Loan Type Code *</label>
                     <input
@@ -289,52 +289,72 @@ const NewLoanTypePage: React.FC = () => {
                     {errors.lateFeeAmount && <p className="form-error">{errors.lateFeeAmount}</p>}
                   </div>
 
-                  {/* Status */}
                   <div className="md:col-span-2">
                     <div className="flex items-center mt-6">
                       <label htmlFor="isActive" className="mr-2 text-sm">
                         Active
                       </label>
-                      <div className="relative inline-block w-10 mr-2 align-middle select-none">
+                      <div className="relative inline-flex items-center mr-2">
                         <input
                           type="checkbox"
                           id="isActive"
                           checked={formData.isActive}
                           onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                          className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                          className="sr-only peer"
                         />
+
                         <label
                           htmlFor="isActive"
-                          className="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"
+                          className="relative w-11 h-6 bg-gray-300 rounded-full cursor-pointer
+               transition-colors peer-checked:bg-green-600"
                         ></label>
+
+                        <span
+                          className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full
+               transform transition-transform duration-300
+               peer-checked:translate-x-5 pointer-events-none"
+                        ></span>
                       </div>
+
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-end gap-4 mt-8">
-                <Button
+                  <Button
                     type="button"
                     variant="outline"
-                  onClick={() => router.back()}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
+                    onClick={() => router.back()}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
                     variant="primary"
                     disabled={createMutation.isLoading}
-                >
+                  >
                     {createMutation.isLoading ? 'Creating...' : 'Create Loan Type'}
-                </Button>
+                  </Button>
                 </div>
-            </form>
+              </form>
             </div>
-        </Card>
+          </Card>
         </div>
-    </MainLayout>
+      </MainLayout>
     </ProtectedRoute>
   );
 };
+
+
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+  return {
+    props: {
+      ...(await import('next-i18next/serverSideTranslations').then(m => 
+        m.serverSideTranslations(locale, ['common', 'user', 'auth'])
+      )),
+    },
+  };
+}
 
 export default NewLoanTypePage;

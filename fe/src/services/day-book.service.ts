@@ -13,6 +13,7 @@ export interface DayBook {
 	physicalCashBalance?: number;
 	discrepancyAmount?: number;
 	discrepancyNotes?: string;
+	denominations?: Record<string, number>;
 	closedById?: string;
 	closedAt?: string;
 	createdAt: string;
@@ -93,6 +94,7 @@ export interface CreateTransactionData {
 export interface ReconcileDayBookData {
 	physicalCashBalance: number;
 	discrepancyNotes?: string;
+	denominations?: Record<string, number>;
 }
 
 export interface DayBookFilters {

@@ -1,8 +1,8 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { getProfile, updateProfile, updatePassword } from '../controllers/profile.controller';
 import { authenticateStaff } from '../../../common/middleware/auth.middleware';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Profile routes (all protected)
 router.get('/', authenticateStaff, getProfile);

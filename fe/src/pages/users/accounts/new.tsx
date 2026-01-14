@@ -50,7 +50,7 @@ const NewAccountPage: React.FC = () => {
 	const fetchUsers = async () => {
 		try {
 			setLoading(true);
-			const response = await getAllUsers(1, 100, "", "true");
+			const response = await getAllUsers(1, 100, "", "active");
 			setUsers(response.data);
 			setFilteredUsers(response.data);
 		} catch (error) {
@@ -179,5 +179,17 @@ const NewAccountPage: React.FC = () => {
 		</ProtectedRoute>
 	);
 };
+
+
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+	return {
+		props: {
+			...(await import('next-i18next/serverSideTranslations').then(m =>
+				m.serverSideTranslations(locale, ['common', 'user', 'auth'])
+			)),
+		},
+	};
+}
 
 export default NewAccountPage;

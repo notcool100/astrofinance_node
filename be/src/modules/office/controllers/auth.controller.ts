@@ -19,6 +19,11 @@ export const login = async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body;
 
+    // Disable caching for login response
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+
     // First try to find an admin user
     const adminUser = await prisma.adminUser.findFirst({
       where: {
@@ -40,7 +45,7 @@ export const login = async (req: Request, res: Response) => {
     // If admin user found, verify password
     if (adminUser) {
       const isPasswordValid = await bcrypt.compare(password, adminUser.passwordHash);
-      
+
       if (!isPasswordValid) {
         throw new ApiError(401, 'Invalid username or password');
       }
@@ -48,7 +53,7 @@ export const login = async (req: Request, res: Response) => {
       // Update last login timestamp
       await prisma.adminUser.update({
         where: { id: adminUser.id },
-        data: { 
+        data: {
           lastLogin: new Date(),
           failedLoginAttempts: 0
         }
@@ -57,7 +62,7 @@ export const login = async (req: Request, res: Response) => {
       // Get user permissions and navigation items
       const permissions = await getUserPermissions(adminUser.id, 'ADMIN');
       const navigationItems = await getUserNavigation(adminUser.id, 'ADMIN');
-      
+
       // Debug log
       logger.debug(`Admin login: Found ${permissions.length} permissions and ${navigationItems.length} navigation items`);
 
@@ -73,8 +78,8 @@ export const login = async (req: Request, res: Response) => {
 
       // Generate JWT token
       const token = jwt.sign(
-        { 
-          id: adminUser.id, 
+        {
+          id: adminUser.id,
           username: adminUser.username,
           email: adminUser.email,
           userType: 'ADMIN'
@@ -101,7 +106,7 @@ export const login = async (req: Request, res: Response) => {
         },
         token
       };
-      
+
       // Debug log
       logger.debug(`Admin login response: ${JSON.stringify({
         ...response,
@@ -111,7 +116,7 @@ export const login = async (req: Request, res: Response) => {
           permissions: `${response.user.permissions.length} permissions`
         }
       })}`);
-      
+
       // Return user data and token
       return res.json(response);
     }
@@ -142,21 +147,21 @@ export const login = async (req: Request, res: Response) => {
       }
 
       const isPasswordValid = await bcrypt.compare(password, staffUser.passwordHash);
-      
+
       if (!isPasswordValid) {
         // Increment failed login attempts
         await prisma.staff.update({
           where: { id: staffUser.id },
           data: { failedLoginAttempts: { increment: 1 } }
         });
-        
+
         throw new ApiError(401, 'Invalid username or password');
       }
 
       // Reset failed login attempts and update last login time
       await prisma.staff.update({
         where: { id: staffUser.id },
-        data: { 
+        data: {
           failedLoginAttempts: 0,
           lastLogin: new Date()
         }
@@ -165,7 +170,7 @@ export const login = async (req: Request, res: Response) => {
       // Get user permissions and navigation items
       const permissions = await getUserPermissions(staffUser.id, 'STAFF');
       const navigationItems = await getUserNavigation(staffUser.id, 'STAFF');
-      
+
       // Debug log
       logger.debug(`Staff login: Found ${permissions.length} permissions and ${navigationItems.length} navigation items`);
 
@@ -181,8 +186,8 @@ export const login = async (req: Request, res: Response) => {
 
       // Generate JWT token
       const token = jwt.sign(
-        { 
-          id: staffUser.id, 
+        {
+          id: staffUser.id,
           employeeId: staffUser.employeeId,
           email: staffUser.email,
           userType: 'STAFF'
@@ -377,7 +382,7 @@ export const changePassword = async (req: Request, res: Response) => {
 
       // Verify current password
       const isPasswordValid = await bcrypt.compare(currentPassword, adminUser.passwordHash);
-      
+
       if (!isPasswordValid) {
         throw new ApiError(401, 'Current password is incorrect');
       }
@@ -388,7 +393,7 @@ export const changePassword = async (req: Request, res: Response) => {
       // Update password
       await prisma.adminUser.update({
         where: { id: userId },
-        data: { 
+        data: {
           passwordHash,
           passwordChangedAt: new Date()
         }
@@ -416,7 +421,7 @@ export const changePassword = async (req: Request, res: Response) => {
 
       // Verify current password
       const isPasswordValid = await bcrypt.compare(currentPassword, staffUser.passwordHash || '');
-      
+
       if (!isPasswordValid) {
         throw new ApiError(401, 'Current password is incorrect');
       }
@@ -427,7 +432,7 @@ export const changePassword = async (req: Request, res: Response) => {
       // Update password
       await prisma.staff.update({
         where: { id: userId },
-        data: { 
+        data: {
           passwordHash,
           // passwordChangedAt: new Date()
         }

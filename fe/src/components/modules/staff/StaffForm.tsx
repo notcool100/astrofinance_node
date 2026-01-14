@@ -130,6 +130,11 @@ const StaffForm: React.FC<StaffFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.dateOfBirth) {
+      toast.error('Date of Birth is required');
+      return;
+    }
+
     // Create a copy of the form data
     const submissionData = { ...formData };
     

@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 // Load environment variables first, before any other imports
 dotenv.config();
 
-import express from "express";
+import express, { type Express } from "express";
 import cors from "cors";
 import morgan from "morgan";
 import path from "path";
@@ -24,9 +24,11 @@ import expenseRoutes from "./modules/expense/routes";
 import taxRoutes from "./modules/tax/routes";
 import notificationRoutes from "./modules/notification/routes";
 import reportRoutes from "./modules/report/routes";
+import shareRoutes from "./modules/share/routes/share.routes";
+import systemRoutes from "./modules/system/routes";
 
 // Create Express app
-const app = express();
+const app: Express = express();
 const port = process.env.PORT || 5000;
 
 // Check critical environment variables
@@ -43,15 +45,15 @@ logger.info(`Server starting in ${process.env.NODE_ENV} mode`);
 const corsOptions =
 	process.env.NODE_ENV === "production"
 		? {
-				origin: "http://82.180.144.91:4000",
-				methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-				credentials: true,
-			}
+			origin: ["http://82.180.144.91:4000", "http://82.180.144.91:3000"],
+			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+			credentials: true,
+		}
 		: {
-				origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
-				methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-				credentials: true,
-			};
+			origin: ["http://localhost:3000", "http://127.0.0.1:3000", "http://82.180.144.91:3000", "http://82.180.144.91:4000"],
+			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+			credentials: true,
+		};
 
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -83,6 +85,8 @@ app.use("/api/expense", expenseRoutes);
 app.use("/api/tax", taxRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/report", reportRoutes);
+app.use("/api/share", shareRoutes);
+app.use("/api/system", systemRoutes);
 
 // Error handling middleware
 app.use(notFound);

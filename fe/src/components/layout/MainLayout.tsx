@@ -6,15 +6,20 @@ import {
   UserCircleIcon,
   BellIcon,
 } from '@heroicons/react/24/outline';
+import Modal from '@/components/common/Modal';
+import Button from '@/components/common/Button';
+import LanguageSwitcher from '@/components/common/LanguageSwitcher';
+import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import DynamicNavigation from './DynamicNavigation';
 
+
 interface UserNavigationItem {
   name: string;
   href: string;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
 interface MainLayoutProps {
@@ -28,22 +33,34 @@ function classNames(...classes: string[]) {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children, title = 'Dashboard' }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
   const router = useRouter();
   const { user, logout, isAdmin, isStaff, isOfficeUser } = useAuth();
+  const { t } = useTranslation('common');
 
   // Determine profile and settings URLs based on user type
   let profileUrl = '/profile';
   let settingsUrl = '/settings';
-  
+
   if (isOfficeUser) {
     profileUrl = '/office/profile';
     settingsUrl = '/office/settings';
   }
 
+  const handleSignOutClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsSignOutModalOpen(true);
+  };
+
+  const confirmSignOut = () => {
+    setIsSignOutModalOpen(false);
+    logout();
+  };
+
   const userNavigationMenu: UserNavigationItem[] = [
-    { name: 'Your Profile', href: profileUrl },
-    { name: 'Settings', href: settingsUrl },
-    { name: 'Sign out', href: '#', onClick: logout },
+    { name: t('navigation.profile'), href: profileUrl },
+    { name: t('navigation.settings'), href: settingsUrl },
+    { name: t('navigation.logout'), href: '#', onClick: handleSignOutClick },
   ];
 
   return (
@@ -93,7 +110,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title = 'Dashboard' }
                     </button>
                   </div>
                 </Transition.Child>
-                
+
                 <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-primary-700 px-6 pb-4">
                   <div className="flex h-16 shrink-0 items-center">
                     <Link href={isOfficeUser ? '/office/dashboard' : '/dashboard'} className="flex items-center">
@@ -160,6 +177,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title = 'Dashboard' }
               {/* Separator */}
               <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" aria-hidden="true" />
 
+              {/* Language Switcher */}
+              <LanguageSwitcher />
+
               {/* Profile dropdown */}
               <Menu as="div" className="relative">
                 <Menu.Button className="-m-1.5 flex items-center p-1.5">
@@ -208,6 +228,34 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title = 'Dashboard' }
           {children}
         </main>
       </div>
+
+      <Modal
+        isOpen={isSignOutModalOpen}
+        onClose={() => setIsSignOutModalOpen(false)}
+        title="Confirm Sign Out"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">
+            Are you sure you want to sign out? You will need to log in again to access your account.
+          </p>
+          <div className="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+            <Button
+              variant="danger"
+              onClick={confirmSignOut}
+              className="w-full sm:col-start-2"
+            >
+              Sign out
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setIsSignOutModalOpen(false)}
+              className="mt-3 w-full sm:col-start-1 sm:mt-0"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

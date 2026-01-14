@@ -131,10 +131,12 @@ class FinancialReportService {
 		accountId: string,
 		startDate?: string,
 		endDate?: string,
+		fiscalYearId?: string,
 	): Promise<AccountBalance> {
 		const params = new URLSearchParams();
 		if (startDate) params.append("startDate", startDate);
 		if (endDate) params.append("endDate", endDate);
+		if (fiscalYearId) params.append("fiscalYearId", fiscalYearId);
 
 		const response = await api.get(
 			`/accounting/reports/accounts/${accountId}/balance?${params.toString()}`,
@@ -145,9 +147,10 @@ class FinancialReportService {
 	/**
 	 * Get trial balance
 	 */
-	async getTrialBalance(asOfDate?: string): Promise<TrialBalance> {
+	async getTrialBalance(asOfDate?: string, fiscalYearId?: string): Promise<TrialBalance> {
 		const params = new URLSearchParams();
 		if (asOfDate) params.append("asOfDate", asOfDate);
+		if (fiscalYearId) params.append("fiscalYearId", fiscalYearId);
 
 		try {
 			// Make a direct axios call to ensure we get the raw response
@@ -175,10 +178,12 @@ class FinancialReportService {
 	async getIncomeStatement(
 		startDate?: string,
 		endDate?: string,
+		fiscalYearId?: string,
 	): Promise<IncomeStatement> {
 		const params = new URLSearchParams();
 		if (startDate) params.append("startDate", startDate);
 		if (endDate) params.append("endDate", endDate);
+		if (fiscalYearId) params.append("fiscalYearId", fiscalYearId);
 
 		try {
 			// Make a direct axios call to ensure we get the raw response
@@ -203,9 +208,10 @@ class FinancialReportService {
 	/**
 	 * Get balance sheet
 	 */
-	async getBalanceSheet(asOfDate?: string): Promise<BalanceSheet> {
+	async getBalanceSheet(asOfDate?: string, fiscalYearId?: string): Promise<BalanceSheet> {
 		const params = new URLSearchParams();
 		if (asOfDate) params.append("asOfDate", asOfDate);
+		if (fiscalYearId) params.append("fiscalYearId", fiscalYearId);
 
 		try {
 			// Make a direct axios call to ensure we get the raw response
@@ -234,11 +240,13 @@ class FinancialReportService {
 		accountId?: string,
 		startDate?: string,
 		endDate?: string,
+		fiscalYearId?: string,
 	): Promise<GeneralLedger> {
 		const params = new URLSearchParams();
 		if (accountId) params.append("accountId", accountId);
 		if (startDate) params.append("startDate", startDate);
 		if (endDate) params.append("endDate", endDate);
+		if (fiscalYearId) params.append("fiscalYearId", fiscalYearId);
 
 		try {
 			// Make a direct axios call to ensure we get the raw response

@@ -1,0 +1,43 @@
+{
+    "title": "प्रयोगकर्ता व्यवस्थापन",
+    "create_user": "प्रयोगकर्ता सिर्जना गर्नुहोस्",
+    "update_user": "प्रयोगकर्ता अद्यावधिक गर्नुहोस्",
+    "user_details": "प्रयोगकर्ता विवरण",
+    "fields": {
+        "full_name": "पूरा नाम",
+        "date_of_birth": "जन्म मिति",
+        "gender": "लिङ्ग",
+        "contact_number": "सम्पर्क नम्बर",
+        "email": "इमेल",
+        "address": "ठेगाना",
+        "identification_type": "परिचय पत्रको प्रकार",
+        "identification_number": "परिचय पत्र नम्बर",
+        "is_active": "सक्रिय"
+    },
+    "placeholders": {
+        "full_name": "पूरा नाम प्रविष्ट गर्नुहोस्",
+        "contact_number": "उदा: 9800000000",
+        "email": "इमेल ठेगाना प्रविष्ट गर्नुहोस्",
+        "address": "ठेगाना प्रविष्ट गर्नुहोस्"
+    },
+    "gender_options": {
+        "select": "लिङ्ग चयन गर्नुहोस्",
+        "male": "पुरुष",
+        "female": "महिला",
+        "other": "अन्य"
+    },
+    "id_type_options": {
+        "national_id": "राष्ट्रिय परिचय पत्र",
+        "passport": "राहदानी",
+        "driving_license": "सवारी चालक अनुमतिपत्र",
+        "other": "अन्य"
+    },
+    "messages": {
+        "create_success": "प्रयोगकर्ता सफलतापूर्वक सिर्जना गरियो",
+        "update_success": "प्रयोगकर्ता सफलतापूर्वक अद्यावधिक गरियो",
+        "delete_success": "प्रयोगकर्ता सफलतापूर्वक मेटाइयो",
+        "create_error": "प्रयोगकर्ता सिर्जना गर्न असफल",
+        "update_error": "प्रयोगकर्ता अद्यावधिक गर्न असफल",
+        "delete_error": "प्रयोगकर्ता मेटाउन असफल"
+    }
+}

@@ -6,32 +6,79 @@ import MainLayout from "@/components/layout/MainLayout";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
 import Button from "@/components/common/Button";
 import UserForm from "@/components/modules/users/UserForm";
-import {
-	createUser,
-	CreateUserData,
-	UpdateUserData,
-} from "@/services/user.service";
+import userService from "@/services/user.service";
 import { toast } from "react-toastify";
+import { useTranslation } from "next-i18next";
 
 const CreateUserPage: React.FC = () => {
 	const router = useRouter();
+	const { t } = useTranslation(["user", "common"]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-	const handleSubmit = async (data: CreateUserData | UpdateUserData) => {
-		// Since we're in create mode, we can safely cast to CreateUserData
-		const createData = data as CreateUserData;
+	const handleSubmit = async (data: any) => {
 		try {
 			setIsSubmitting(true);
 			setError(null);
 			setFieldErrors({});
 
-			const newUser = await createUser(createData);
-			toast.success("User created successfully");
+			// Create the user first
+			const createdUser = await userService.create(data.formData);
+			toast.success(t("user:user_created_successfully"));
+
+			console.log("=== Document Upload Debug (Frontend) ===");
+			console.log("data.documents:", data.documents);
+			console.log("Object.keys(data.documents).length:", Object.keys(data.documents || {}).length);
+
+			// Upload documents if any
+			if (data.documents && Object.keys(data.documents).length > 0) {
+				const documentsToUpload = Object.entries(data.documents).filter(
+					([_, file]) => file !== null,
+				) as [string, File][];
+
+				console.log("documentsToUpload:", documentsToUpload);
+				console.log("documentsToUpload.length:", documentsToUpload.length);
+
+				if (documentsToUpload.length > 0) {
+					const formData = new FormData();
+					documentsToUpload.forEach(([documentType, file]) => {
+						formData.append("documents", file);
+						formData.append("documentTypes", documentType);
+					});
+					formData.append("category", "profile");
+
+					console.log("FormData created, calling uploadMultipleDocuments...");
+					console.log("userId:", createdUser.id);
+
+					try {
+						const response = await userService.uploadMultipleDocuments(createdUser.id, formData);
+						console.log("Upload response:", response);
+						toast.success(
+							t(
+								"user:documents_uploaded_successfully",
+								"Documents uploaded successfully",
+							),
+						);
+					} catch (error: any) {
+						console.error("Document upload error:", error);
+						// Just log the error, don't fail user creation
+						toast.warning(
+							t(
+								"user:user_created_but_documents_failed",
+								"User created successfully, but some documents failed to upload",
+							),
+						);
+					}
+				} else {
+					console.log("No documents to upload (all null)");
+				}
+			} else {
+				console.log("No documents object or empty");
+			}
 
 			// Redirect to the user details page
-			router.push(`/users/${newUser.id}`);
+			router.push(`/users/${createdUser.id}`);
 		} catch (err: any) {
 			console.error("Error creating user:", err);
 
@@ -43,15 +90,18 @@ const CreateUserPage: React.FC = () => {
 				});
 				setFieldErrors(validationErrors);
 				setError("Please fix the validation errors below.");
+			} else if (err.fieldErrors) {
+				setFieldErrors(err.fieldErrors);
+				setError(err.message || t("user:create_user_error"));
 			} else {
 				setError(
 					err.response?.data?.message ||
-						"Failed to create user. Please try again.",
+					t("user:create_user_error", "Failed to create user. Please try again."),
 				);
 				setFieldErrors({});
 			}
 
-			toast.error("Failed to create user");
+			toast.error(err.message || t("user:create_user_error"));
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -113,5 +163,15 @@ const CreateUserPage: React.FC = () => {
 		</ProtectedRoute>
 	);
 };
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+	return {
+		props: {
+			...(await import("next-i18next/serverSideTranslations").then((m) =>
+				m.serverSideTranslations(locale, ["common", "user"]),
+			)),
+		},
+	};
+}
 
 export default CreateUserPage;

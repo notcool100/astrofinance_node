@@ -9,7 +9,7 @@ export const createDayBookValidation = [
     .withMessage('Transaction date is required')
     .isISO8601()
     .withMessage('Transaction date must be a valid date'),
-  
+
   body('openingBalance')
     .optional()
     .isFloat({ min: 0 })
@@ -25,17 +25,22 @@ export const reconcileDayBookValidation = [
     .withMessage('Day book ID is required')
     .isUUID()
     .withMessage('Day book ID must be a valid UUID'),
-  
+
   body('physicalCashBalance')
     .notEmpty()
     .withMessage('Physical cash balance is required')
     .isFloat({ min: 0 })
     .withMessage('Physical cash balance must be a positive number'),
-  
+
   body('discrepancyNotes')
     .optional()
     .isLength({ max: 500 })
-    .withMessage('Discrepancy notes cannot exceed 500 characters')
+    .withMessage('Discrepancy notes cannot exceed 500 characters'),
+
+  body('denominations')
+    .optional()
+    .isObject()
+    .withMessage('Denominations must be a valid object')
 ];
 
 /**
@@ -57,27 +62,27 @@ export const getDayBooksValidation = [
     .optional()
     .isISO8601()
     .withMessage('Start date must be a valid date'),
-  
+
   query('endDate')
     .optional()
     .isISO8601()
     .withMessage('End date must be a valid date'),
-  
+
   query('isReconciled')
     .optional()
     .isBoolean()
     .withMessage('isReconciled must be a boolean'),
-  
+
   query('isClosed')
     .optional()
     .isBoolean()
     .withMessage('isClosed must be a boolean'),
-  
+
   query('page')
     .optional()
     .isInt({ min: 1 })
     .withMessage('Page must be a positive integer'),
-  
+
   query('limit')
     .optional()
     .isInt({ min: 1, max: 100 })
@@ -93,7 +98,7 @@ export const addTransactionValidation = [
     .withMessage('Day book ID is required')
     .isUUID()
     .withMessage('Day book ID must be a valid UUID'),
-  
+
   body('transactionType')
     .notEmpty()
     .withMessage('Transaction type is required')
@@ -113,39 +118,39 @@ export const addTransactionValidation = [
       'OTHER_EXPENSE'
     ])
     .withMessage('Invalid transaction type'),
-  
+
   body('amount')
     .notEmpty()
     .withMessage('Amount is required')
     .isFloat({ min: 0.01 })
     .withMessage('Amount must be greater than 0'),
-  
+
   body('description')
     .notEmpty()
     .withMessage('Description is required')
     .isLength({ min: 3, max: 500 })
     .withMessage('Description must be between 3 and 500 characters'),
-  
+
   body('referenceNumber')
     .optional()
     .isLength({ max: 50 })
     .withMessage('Reference number cannot exceed 50 characters'),
-  
+
   body('counterparty')
     .optional()
     .isLength({ max: 200 })
     .withMessage('Counterparty cannot exceed 200 characters'),
-  
+
   body('paymentMethod')
     .optional()
     .isIn(['CASH', 'CHEQUE', 'BANK_TRANSFER', 'ONLINE', 'CARD', 'OTHER'])
     .withMessage('Invalid payment method'),
-  
+
   body('debitAccountId')
     .optional()
     .isUUID()
     .withMessage('Debit account ID must be a valid UUID'),
-  
+
   body('creditAccountId')
     .optional()
     .isUUID()
@@ -161,7 +166,7 @@ export const getDayBookTransactionsValidation = [
     .withMessage('Day book ID is required')
     .isUUID()
     .withMessage('Day book ID must be a valid UUID'),
-  
+
   query('transactionType')
     .optional()
     .isIn([
@@ -180,22 +185,22 @@ export const getDayBookTransactionsValidation = [
       'OTHER_EXPENSE'
     ])
     .withMessage('Invalid transaction type'),
-  
+
   query('startDate')
     .optional()
     .isISO8601()
     .withMessage('Start date must be a valid date'),
-  
+
   query('endDate')
     .optional()
     .isISO8601()
     .withMessage('End date must be a valid date'),
-  
+
   query('page')
     .optional()
     .isInt({ min: 1 })
     .withMessage('Page must be a positive integer'),
-  
+
   query('limit')
     .optional()
     .isInt({ min: 1, max: 100 })

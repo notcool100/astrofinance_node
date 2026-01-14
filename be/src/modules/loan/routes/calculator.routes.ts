@@ -1,33 +1,33 @@
-import { Router } from 'express';
-import { 
-  calculateLoanEMI, 
+import { Router, type Router as ExpressRouter } from 'express';
+import {
+  calculateLoanEMI,
   generateAmortizationSchedule,
   compareInterestCalculationMethods
 } from '../controllers/calculator.controller';
-import { authenticateAdmin } from '../../../common/middleware/auth.middleware';
+import { authenticate } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
-import { 
-  calculateEMIValidation, 
+import {
+  calculateEMIValidation,
   generateAmortizationScheduleValidation,
   compareInterestMethodsValidation
 } from '../validations/calculator.validation';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Calculate EMI
 router.post(
-  '/emi', 
-  validate(calculateEMIValidation), 
+  '/emi',
+  validate(calculateEMIValidation),
   calculateLoanEMI
 );
 
 // Generate amortization schedule
 router.post(
-  '/schedule', 
-  validate(generateAmortizationScheduleValidation), 
+  '/schedule',
+  validate(generateAmortizationScheduleValidation),
   generateAmortizationSchedule
 );
 

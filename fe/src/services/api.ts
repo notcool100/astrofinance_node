@@ -72,7 +72,7 @@ const request = async <T>(config: AxiosRequestConfig): Promise<T> => {
 				console.error("Server error response:", serverError.response.data);
 				throw new Error(
 					serverError.response.data?.error?.message ||
-						"An unexpected error occurred",
+					"An unexpected error occurred",
 				);
 			}
 		}
@@ -99,6 +99,27 @@ export const apiService = {
 				"Content-Type": "multipart/form-data",
 			},
 		}),
+	download: async (url: string, params?: any, fileName?: string) => {
+		try {
+			const response = await api({
+				method: "GET",
+				url,
+				params,
+				responseType: "blob",
+			});
+			const href = URL.createObjectURL(response.data);
+			const link = document.createElement("a");
+			link.href = href;
+			link.setAttribute("download", fileName || "download.xlsx");
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			URL.revokeObjectURL(href);
+		} catch (error) {
+			console.error("Download error:", error);
+			throw error;
+		}
+	},
 };
 
 export default apiService;

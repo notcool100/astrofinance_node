@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import { InterestType } from '../utils/loan.utils';
 import logger from '../../../config/logger';
 import { ApiError } from '../../../common/middleware/error.middleware';
-import { 
-  calculateEMI, 
+import {
+  calculateEMI,
   generateRepaymentSchedule,
   compareInterestMethods
 } from '../utils/loan.utils';
@@ -13,12 +13,16 @@ import {
  */
 export const calculateLoanEMI = async (req: Request, res: Response) => {
   try {
-    const { 
-      principal, 
-      interestRate, 
-      tenure, 
-      interestType 
+    const {
+      principal: principalRaw,
+      interestRate: interestRateRaw,
+      tenure: tenureRaw,
+      interestType
     } = req.body;
+
+    const principal = Number(principalRaw);
+    const interestRate = Number(interestRateRaw);
+    const tenure = Number(tenureRaw);
 
     // Validate interest type
     if (!Object.values(InterestType).includes(interestType as InterestType)) {
@@ -64,14 +68,18 @@ export const calculateLoanEMI = async (req: Request, res: Response) => {
  */
 export const generateAmortizationSchedule = async (req: Request, res: Response) => {
   try {
-    const { 
-      principal, 
-      interestRate, 
-      tenure, 
-      interestType, 
-      disbursementDate = new Date(), 
-      firstPaymentDate 
+    const {
+      principal: principalRaw,
+      interestRate: interestRateRaw,
+      tenure: tenureRaw,
+      interestType,
+      disbursementDate = new Date(),
+      firstPaymentDate
     } = req.body;
+
+    const principal = Number(principalRaw);
+    const interestRate = Number(interestRateRaw);
+    const tenure = Number(tenureRaw);
 
     // Validate interest type
     if (!Object.values(InterestType).includes(interestType as InterestType)) {
@@ -124,10 +132,10 @@ export const generateAmortizationSchedule = async (req: Request, res: Response) 
  */
 export const compareInterestCalculationMethods = async (req: Request, res: Response) => {
   try {
-    const { 
-      principal, 
-      interestRate, 
-      tenure 
+    const {
+      principal,
+      interestRate,
+      tenure
     } = req.body;
 
     // Compare flat and diminishing interest methods

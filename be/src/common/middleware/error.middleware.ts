@@ -6,7 +6,7 @@ import logger from '../../config/logger';
 // Custom error class for API errors
 export class ApiError extends Error {
   statusCode: number;
-  
+
   constructor(statusCode: number, message: string) {
     super(message);
     this.statusCode = statusCode;
@@ -22,7 +22,7 @@ export const errorHandler = (
   next: NextFunction
 ) => {
   // Log the error
-  logger.error(`${err.name}: ${err.message}`, { 
+  logger.error(`${err.name}: ${err.message}`, {
     stack: err.stack,
     path: req.path,
     method: req.method
@@ -44,7 +44,7 @@ export const errorHandler = (
         error: `A ${field.join(', ')} with this value already exists.`
       });
     }
-    
+
     // Handle record not found
     if (err.code === 'P2025') {
       return res.status(404).json({
@@ -73,7 +73,7 @@ export const errorHandler = (
         return { field: 'unknown', message: e.msg };
       }
     });
-    
+
     return res.status(400).json({
       error: 'Validation failed',
       details: formattedErrors
@@ -90,8 +90,8 @@ export const errorHandler = (
   // Default error response
   const statusCode = res.statusCode !== 200 ? res.statusCode : 500;
   res.status(statusCode).json({
-    error: process.env.NODE_ENV === 'production' 
-      ? 'An unexpected error occurred' 
+    error: process.env.NODE_ENV === 'production'
+      ? 'An unexpected error occurred'
       : err.message,
     stack: process.env.NODE_ENV === 'production' ? undefined : err.stack
   });

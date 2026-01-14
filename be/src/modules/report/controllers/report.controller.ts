@@ -5,6 +5,8 @@ import { createAuditLog } from '../../../common/utils/audit.util';
 import { AuditAction } from '@prisma/client';
 import { ApiError } from '../../../common/middleware/error.middleware';
 import { generateReport } from '../services/report.service';
+import { reportService } from '../services/excel-report.service';
+import { FiscalYearService } from '../../system/fiscal-year/services/fiscal-year.service';
 
 /**
  * Get all report templates
@@ -12,14 +14,14 @@ import { generateReport } from '../services/report.service';
 export const getAllReportTemplates = async (req: Request, res: Response) => {
   try {
     const { category } = req.query;
-    
+
     // Build filter conditions
     const where: any = {};
-    
+
     if (category) {
       where.category = category;
     }
-    
+
     const templates = await prisma.reportTemplate.findMany({
       where,
       orderBy: {
@@ -62,13 +64,13 @@ export const getReportTemplateById = async (req: Request, res: Response) => {
  */
 export const createReportTemplate = async (req: Request, res: Response) => {
   try {
-    const { 
-      name, 
-      description, 
-      category, 
-      query, 
-      parameters, 
-      isActive = true 
+    const {
+      name,
+      description,
+      category,
+      query,
+      parameters,
+      isActive = true
     } = req.body;
 
     // Check if template with same name already exists
@@ -117,13 +119,13 @@ export const createReportTemplate = async (req: Request, res: Response) => {
 export const updateReportTemplate = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { 
-      name, 
-      description, 
-      category, 
-      query, 
-      parameters, 
-      isActive 
+    const {
+      name,
+      description,
+      category,
+      query,
+      parameters,
+      isActive
     } = req.body;
 
     // Check if report template exists
@@ -258,5 +260,69 @@ export const runReport = async (req: Request, res: Response) => {
     logger.error(`Generate report error: ${error}`);
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, 'Failed to generate report');
+  }
+};
+
+/**
+ * Generate Loan Portfolio Excel Report
+ */
+export const generateLoanPortfolioReport = async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate } = req.query;
+    let start = startDate ? new Date(startDate as string) : undefined;
+    let end = endDate ? new Date(endDate as string) : undefined;
+
+    // Handle fiscal year filter
+    if (req.query.fiscalYearId) {
+      const fiscalYearService = new FiscalYearService();
+      const fy = await fiscalYearService.getFiscalYearById(req.query.fiscalYearId as string);
+      if (fy) {
+        if (!startDate) start = new Date(fy.startDateAD);
+        if (!endDate) end = new Date(fy.endDateAD);
+      }
+    }
+
+    await reportService.generateLoanReport(res, start, end);
+  } catch (error) {
+    logger.error(`Generate loan portfolio report error: ${error}`);
+    // If headers are already sent (streaming started), we can't send JSON error
+    if (!res.headersSent) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(500, 'Failed to generate loan portfolio report');
+    }
+  }
+};
+
+/**
+ * Generate Collection Excel Report
+ */
+export const generateCollectionReport = async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    let start: Date | undefined = startDate ? new Date(startDate as string) : undefined;
+    let end: Date | undefined = endDate ? new Date(endDate as string) : undefined;
+
+    // Handle fiscal year filter
+    if (req.query.fiscalYearId) {
+      const fiscalYearService = new FiscalYearService();
+      const fy = await fiscalYearService.getFiscalYearById(req.query.fiscalYearId as string);
+      if (fy) {
+        if (!startDate) start = new Date(fy.startDateAD);
+        if (!endDate) end = new Date(fy.endDateAD);
+      }
+    }
+
+    if (!start || !end) {
+      throw new ApiError(400, 'Fiscal Year OR (startDate and endDate) are required');
+    }
+
+    await reportService.generateCollectionReport(res, start, end);
+  } catch (error) {
+    logger.error(`Generate collection report error: ${error}`);
+    if (!res.headersSent) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(500, 'Failed to generate collection report');
+    }
   }
 };

@@ -2,14 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import Button from "@/components/common/Button";
-import DatePicker from "@/components/common/DatePicker";
+import DualDatePicker from "@/components/common/DualDatePicker";
 import {
 	createAccount,
 	updateAccount,
-	Account,
+	UserAccount as Account,
 	CreateAccountData,
 	UpdateAccountData,
 } from "@/services/user.service";
+import accountTypeService, { AccountType } from "@/services/account-type.service";
 
 interface AccountFormProps {
 	userId?: string;
@@ -26,9 +27,11 @@ const AccountForm: React.FC<AccountFormProps> = ({
 }) => {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const [accountType, setAccountType] = useState<
-		"SB" | "BB" | "FD" | "SH" | "LS"
-	>(account?.accountType || "SB");
+	const [accountTypes, setAccountTypes] = useState<AccountType[]>([]);
+	const [loadingTypes, setLoadingTypes] = useState(true);
+	const [accountType, setAccountType] = useState<string>(
+		account?.accountType || ""
+	);
 	const [interestRate, setInterestRate] = useState(
 		account?.interestRate?.toString() || "",
 	);
@@ -36,11 +39,14 @@ const AccountForm: React.FC<AccountFormProps> = ({
 	const [openingDate, setOpeningDate] = useState<Date>(
 		account?.openingDate ? new Date(account.openingDate) : new Date(),
 	);
+	const [openingDateBs, setOpeningDateBs] = useState<string | null>(
+		(account as any)?.openingDate_bs || null,
+	);
 	const [status, setStatus] = useState<
 		"ACTIVE" | "INACTIVE" | "CLOSED" | "FROZEN"
 	>(
 		(account?.status as "ACTIVE" | "INACTIVE" | "CLOSED" | "FROZEN") ||
-			"ACTIVE",
+		"ACTIVE",
 	);
 
 	// BB Account details
@@ -64,6 +70,9 @@ const AccountForm: React.FC<AccountFormProps> = ({
 			? new Date(account.bbAccountDetails.maturityDate)
 			: null,
 	);
+	const [bbMaturityDateBs, setBbMaturityDateBs] = useState<string | null>(
+		(account?.bbAccountDetails as any)?.maturityDate_bs || null,
+	);
 
 	// MB Account details
 	const [monthlyDepositAmount, setMonthlyDepositAmount] = useState(
@@ -80,18 +89,44 @@ const AccountForm: React.FC<AccountFormProps> = ({
 			? new Date(account.mbAccountDetails.maturityDate)
 			: null,
 	);
+	const [mbMaturityDateBs, setMbMaturityDateBs] = useState<string | null>(
+		(account?.mbAccountDetails as any)?.maturityDate_bs || null,
+	);
 
 	// Validation states
 	const [errors, setErrors] = useState<Record<string, string>>({});
 
+	// Load account types on component mount
+	useEffect(() => {
+		loadAccountTypes();
+	}, []);
+
+	const loadAccountTypes = async () => {
+		try {
+			setLoadingTypes(true);
+			const types = await accountTypeService.getAllAccountTypes();
+			setAccountTypes(types);
+			// Set default account type if not provided
+			if (!account && types.length > 0) {
+				setAccountType(types[0].id);
+			}
+		} catch (error) {
+			console.error("Error loading account types:", error);
+			toast.error("Failed to load account types");
+		} finally {
+			setLoadingTypes(false);
+		}
+	};
+
 	// Calculate maturity date when term months change
 	useEffect(() => {
-		if (accountType === "FD" && termMonths) {
+		const selectedType = accountTypes.find(t => t.id === accountType);
+		if (selectedType?.code === "FD" && termMonths) {
 			const date = new Date(openingDate);
 			date.setMonth(date.getMonth() + parseInt(termMonths));
 			setMbMaturityDate(date);
 		}
-	}, [termMonths, openingDate, accountType]);
+	}, [termMonths, openingDate, accountType, accountTypes]);
 
 	const validate = (): boolean => {
 		const newErrors: Record<string, string> = {};
@@ -106,8 +141,12 @@ const AccountForm: React.FC<AccountFormProps> = ({
 			newErrors.balance = "Balance cannot be negative";
 		}
 
+		// Find the selected account type to check for legacy types
+		const selectedType = accountTypes.find(t => t.id === accountType);
+		const typeCode = selectedType?.code;
+
 		// Validate BB account details if applicable
-		if (accountType === "BB" && userId) {
+		if (typeCode === "BB" && userId) {
 			if (guardianName && guardianName.length < 3) {
 				newErrors.guardianName = "Guardian name must be at least 3 characters";
 			}
@@ -119,7 +158,7 @@ const AccountForm: React.FC<AccountFormProps> = ({
 		}
 
 		// Validate MB account details if applicable
-		if (accountType === "BB" && userId) {
+		if (typeCode === "FD" && userId) {
 			if (monthlyDepositAmount && parseFloat(monthlyDepositAmount) <= 0) {
 				newErrors.monthlyDepositAmount =
 					"Monthly deposit amount must be positive";
@@ -206,8 +245,12 @@ const AccountForm: React.FC<AccountFormProps> = ({
 					balance: balance ? parseFloat(balance) : 0,
 				};
 
+				// Find the selected account type to check for legacy types
+				const selectedType = accountTypes.find(t => t.id === accountType);
+				const typeCode = selectedType?.code;
+
 				// Add BB account details if applicable
-				if (accountType === "BB" && guardianName) {
+				if (typeCode === "BB" && guardianName) {
 					createData.bbAccountDetails = {
 						guardianName,
 						guardianRelation,
@@ -221,7 +264,7 @@ const AccountForm: React.FC<AccountFormProps> = ({
 				}
 
 				// Add MB account details if applicable
-				if (accountType === "FD" && monthlyDepositAmount) {
+				if (typeCode === "FD" && monthlyDepositAmount) {
 					createData.mbAccountDetails = {
 						monthlyDepositAmount: parseFloat(monthlyDepositAmount),
 						depositDay: parseInt(depositDay),
@@ -279,15 +322,19 @@ const AccountForm: React.FC<AccountFormProps> = ({
 									id="accountType"
 									name="accountType"
 									value={accountType}
-									onChange={(e) => setAccountType(e.target.value as any)}
-									disabled={isEdit}
+									onChange={(e) => setAccountType(e.target.value)}
+									disabled={isEdit || loadingTypes}
 									className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
 								>
-									<option value="SB">Sadharan Bachat</option>
-									<option value="BB">Branch Bises Bachat</option>
-									<option value="FD">Fixed Deposit</option>
-									<option value="SH">Share</option>
-									<option value="LS">Loan Share</option>
+									{loadingTypes ? (
+										<option value="">Loading account types...</option>
+									) : (
+										accountTypes.map((type) => (
+											<option key={type.code} value={type.code}>
+												{type.name}
+											</option>
+										))
+									)}
 								</select>
 							</div>
 
@@ -325,10 +372,15 @@ const AccountForm: React.FC<AccountFormProps> = ({
 								>
 									Opening Date
 								</label>
-								<DatePicker
-									selected={openingDate}
-									onChange={(date) => date && setOpeningDate(date)}
+								<DualDatePicker
+									selectedAd={openingDate}
+									selectedBs={openingDateBs}
+									onChange={(ad, bs) => {
+										if (ad) setOpeningDate(ad);
+										setOpeningDateBs(bs);
+									}}
 									disabled={isEdit}
+									defaultCalendar="bs"
 									className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
 								/>
 							</div>
@@ -376,10 +428,10 @@ const AccountForm: React.FC<AccountFormProps> = ({
 										onChange={(e) =>
 											setStatus(
 												e.target.value as
-													| "ACTIVE"
-													| "INACTIVE"
-													| "CLOSED"
-													| "FROZEN",
+												| "ACTIVE"
+												| "INACTIVE"
+												| "CLOSED"
+												| "FROZEN",
 											)
 										}
 										className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
@@ -511,11 +563,16 @@ const AccountForm: React.FC<AccountFormProps> = ({
 										>
 											Maturity Date (Optional)
 										</label>
-										<DatePicker
-											selected={bbMaturityDate}
-											onChange={(date) => setBbMaturityDate(date)}
-											className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+										<DualDatePicker
+											selectedAd={bbMaturityDate}
+											selectedBs={bbMaturityDateBs}
+											onChange={(ad, bs) => {
+												setBbMaturityDate(ad);
+												setBbMaturityDateBs(bs);
+											}}
+											defaultCalendar="bs"
 											minDate={new Date()}
+											className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
 										/>
 									</div>
 								</div>
@@ -611,12 +668,17 @@ const AccountForm: React.FC<AccountFormProps> = ({
 										>
 											Maturity Date
 										</label>
-										<DatePicker
-											selected={mbMaturityDate}
-											onChange={(date) => setMbMaturityDate(date)}
-											className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+										<DualDatePicker
+											selectedAd={mbMaturityDate}
+											selectedBs={mbMaturityDateBs}
+											onChange={(ad, bs) => {
+												setMbMaturityDate(ad);
+												setMbMaturityDateBs(bs);
+											}}
+											defaultCalendar="bs"
 											minDate={new Date()}
 											disabled
+											className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
 										/>
 										<p className="mt-1 text-xs text-gray-500">
 											Calculated based on term months

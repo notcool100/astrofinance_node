@@ -7,6 +7,7 @@ import {
 	CheckCircleIcon,
 	PlusIcon,
 	TrashIcon,
+	PrinterIcon,
 } from "@heroicons/react/24/outline";
 import { toast } from "react-toastify";
 import MainLayout from "../../../../components/layout/MainLayout";
@@ -21,6 +22,8 @@ import dayBookService, {
 	DayBookTransactionType,
 	PaymentMethod,
 } from "../../../../services/day-book.service";
+import { DayBookDenomination } from "../../../../components/accounting/DayBookDenomination";
+import DayBookPrint from "../../../../components/accounting/DayBookPrint";
 
 const DayBookDetailPage: React.FC = () => {
 	const router = useRouter();
@@ -30,9 +33,15 @@ const DayBookDetailPage: React.FC = () => {
 	const [summary, setSummary] = useState<DayBookSummary | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [reconcileModalOpen, setReconcileModalOpen] = useState(false);
-	const [reconcileData, setReconcileData] = useState({
+	const [printOpen, setPrintOpen] = useState(false);
+	const [reconcileData, setReconcileData] = useState<{
+		physicalCashBalance: string;
+		discrepancyNotes: string;
+		denominations: Record<string, number>;
+	}>({
 		physicalCashBalance: "",
 		discrepancyNotes: "",
+		denominations: {},
 	});
 	const [reconcileErrors, setReconcileErrors] = useState<
 		Record<string, string>
@@ -101,6 +110,7 @@ const DayBookDetailPage: React.FC = () => {
 		setReconcileData({
 			physicalCashBalance: "",
 			discrepancyNotes: "",
+			denominations: {},
 		});
 		setReconcileErrors({});
 		setReconcileModalOpen(true);
@@ -121,6 +131,23 @@ const DayBookDetailPage: React.FC = () => {
 			setReconcileErrors((prev) => {
 				const newErrors = { ...prev };
 				delete newErrors[name];
+				return newErrors;
+			});
+		}
+	};
+
+	const handleTotalChange = (total: number, denominations: Record<string, number>) => {
+		setReconcileData(prev => ({
+			...prev,
+			physicalCashBalance: total.toString(),
+			denominations
+		}));
+
+		// Clear error if exists
+		if (reconcileErrors.physicalCashBalance) {
+			setReconcileErrors((prev) => {
+				const newErrors = { ...prev };
+				delete newErrors.physicalCashBalance;
 				return newErrors;
 			});
 		}
@@ -155,6 +182,7 @@ const DayBookDetailPage: React.FC = () => {
 			await dayBookService.reconcileDayBook(dayBook.id, {
 				physicalCashBalance: parseFloat(reconcileData.physicalCashBalance),
 				discrepancyNotes: reconcileData.discrepancyNotes || undefined,
+				denominations: reconcileData.denominations,
 			});
 
 			toast.success("Day book reconciled successfully");
@@ -244,6 +272,15 @@ const DayBookDetailPage: React.FC = () => {
 							</h1>
 						</div>
 						<div className="flex space-x-2">
+							<Button
+								variant="secondary"
+								className="flex items-center"
+								onClick={() => setPrintOpen(true)}
+							>
+								<PrinterIcon className="h-5 w-5 mr-1" />
+								Print
+							</Button>
+
 							{!dayBook.isReconciled && !dayBook.isClosed && (
 								<Button
 									variant="primary"
@@ -309,7 +346,7 @@ const DayBookDetailPage: React.FC = () => {
 											</dt>
 											<dd className="mt-1 text-sm sm:mt-0 sm:col-span-2">
 												{dayBook.discrepancyAmount !== null &&
-												dayBook.discrepancyAmount !== undefined ? (
+													dayBook.discrepancyAmount !== undefined ? (
 													<span
 														className={
 															dayBook.discrepancyAmount < 0
@@ -573,39 +610,10 @@ const DayBookDetailPage: React.FC = () => {
 												</h3>
 
 												<div className="mb-4">
-													<label
-														htmlFor="physicalCashBalance"
-														className="block text-sm font-medium text-gray-700 mb-1"
-													>
-														Physical Cash Balance *
-													</label>
-													<div className="relative rounded-md shadow-sm">
-														<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-															<span className="text-gray-500 sm:text-sm">
-																Rs
-															</span>
-														</div>
-														<input
-															type="number"
-															name="physicalCashBalance"
-															id="physicalCashBalance"
-															step="0.01"
-															min="0"
-															value={reconcileData.physicalCashBalance}
-															onChange={handleReconcileChange}
-															placeholder="0.00"
-															className={`block w-full pl-8 pr-12 border ${
-																reconcileErrors.physicalCashBalance
-																	? "border-red-300"
-																	: "border-gray-300"
-															} rounded-md py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-														/>
-														<div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-															<span className="text-gray-500 sm:text-sm">
-																USD
-															</span>
-														</div>
-													</div>
+													<DayBookDenomination
+														onTotalChange={handleTotalChange}
+														initialDenominations={reconcileData.denominations}
+													/>
 													{reconcileErrors.physicalCashBalance && (
 														<p className="mt-1 text-sm text-red-600">
 															{reconcileErrors.physicalCashBalance}
@@ -686,10 +694,29 @@ const DayBookDetailPage: React.FC = () => {
 							</div>
 						</div>
 					)}
+					{printOpen && dayBook && summary && (
+						<DayBookPrint
+							dayBook={dayBook}
+							summary={summary}
+							onClose={() => setPrintOpen(false)}
+						/>
+					)}
 				</div>
 			</MainLayout>
-		</ProtectedRoute>
+		</ProtectedRoute >
 	);
 };
+
+
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+  return {
+    props: {
+      ...(await import('next-i18next/serverSideTranslations').then(m => 
+        m.serverSideTranslations(locale, ['common', 'user', 'auth'])
+      )),
+    },
+  };
+}
 
 export default DayBookDetailPage;
