@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as centerController from './center.controller';
 
-const router = Router();
+const router: Router = Router();
 
 router.post('/', centerController.createCenter);
 router.get('/', centerController.getCenters);
