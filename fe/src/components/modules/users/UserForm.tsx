@@ -81,7 +81,10 @@ const UserForm: React.FC<UserFormProps> = ({
 		e.preventDefault();
 
 		// Validate email
-		if (formData.email) {
+		if (!formData.email) {
+			setLocalErrors({ ...localErrors, email: t('common:validation.required', "Email is required") });
+			return;
+		} else {
 			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 			if (!emailRegex.test(formData.email)) {
 				setLocalErrors({ ...localErrors, email: t('common:validation.email') });
@@ -233,7 +236,7 @@ const UserForm: React.FC<UserFormProps> = ({
 							htmlFor="email"
 							className="block text-sm font-medium text-gray-700"
 						>
-							{t('user:fields.email')} ({t('common:optional')})
+							{t('user:fields.email')}
 						</label>
 						<div className="mt-1">
 							<input
@@ -242,6 +245,7 @@ const UserForm: React.FC<UserFormProps> = ({
 								id="email"
 								value={formData.email || ""}
 								onChange={handleChange}
+								required
 								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${fieldErrors.email || localErrors.email
 									? "border-red-300 focus:border-red-500"
 									: "border-gray-300 focus:border-primary-500"
