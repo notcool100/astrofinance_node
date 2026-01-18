@@ -12,7 +12,8 @@
         "address": "Address",
         "identification_type": "Identification Type",
         "identification_number": "Identification Number",
-        "is_active": "Active"
+        "is_active": "Active",
+        "group": "Group"
     },
     "placeholders": {
         "full_name": "Enter full name",

@@ -26,6 +26,9 @@ import notificationRoutes from "./modules/notification/routes";
 import reportRoutes from "./modules/report/routes";
 import shareRoutes from "./modules/share/routes/share.routes";
 import systemRoutes from "./modules/system/routes";
+import centerRoutes from "./modules/center/center.routes";
+import groupRoutes from "./modules/group/group.routes";
+import syncRoutes from "./modules/sync/sync.routes";
 
 // Create Express app
 const app: Express = express();
@@ -87,6 +90,9 @@ app.use("/api/notification", notificationRoutes);
 app.use("/api/report", reportRoutes);
 app.use("/api/share", shareRoutes);
 app.use("/api/system", systemRoutes);
+app.use("/api/centers", centerRoutes);
+app.use("/api/groups", groupRoutes);
+app.use("/api/sync", syncRoutes);
 
 // Error handling middleware
 app.use(notFound);
