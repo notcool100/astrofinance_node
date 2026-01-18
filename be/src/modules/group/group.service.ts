@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../../config/database';
 
 export const createGroup = async (data: any) => {
     return await prisma.group.create({
