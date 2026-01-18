@@ -172,7 +172,11 @@ model User {
   accounts                UserAccount[]
   shareAccount            ShareAccount?
   notificationPreferences UserNotificationPreference[]
+  groupId                 String?
+  group                   Group?                       @relation(fields: [groupId], references: [id])
   documents               UserDocument[]
+  collectionEntries       CollectionEntry[]
+  attendance              CollectionAttendance[]
 
   @@index([contactNumber])
   @@index([idNumber])
@@ -206,6 +210,7 @@ model UserAccount {
   tdsCalculations           TdsCalculation[]
   statements                UserAccountStatement[]
   transactions              UserAccountTransaction[]
+  collectionEntries         CollectionEntry[]
   createdBy                 AdminUser?               @relation("CreatedUserAccount", fields: [createdById], references: [id])
   user                      User                     @relation(fields: [userId], references: [id])
 
@@ -1211,6 +1216,8 @@ model Staff {
   performanceReviews  PerformanceReview[]
   documents           StaffDocument[]
   roles               StaffRole[]
+  centers             Center[]
+  collectionSessions  CollectionSession[]
 
   @@map("staff")
 }
@@ -1600,6 +1607,94 @@ enum SettingDataType {
   EMAIL
   URL
   PHONE
+}
+
+model Center {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  address     String?
+  meetingDay  Int?     // 1=Sunday, 7=Saturday
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  staffId     String?
+  
+  staff       Staff?   @relation(fields: [staffId], references: [id])
+  groups      Group[]
+  sessions    CollectionSession[]
+
+  @@map("centers")
+}
+
+model CollectionAttendance {
+  id          String   @id @default(uuid())
+  sessionId   String
+  userId      String
+  status      String   // PRESENT, ABSENT, LATE, EXCUSED
+  notes       String?
+  createdAt   DateTime @default(now())
+  offlineId   String?  // ID from mobile
+  
+  session     CollectionSession @relation(fields: [sessionId], references: [id])
+  user        User              @relation(fields: [userId], references: [id])
+  
+  @@map("collection_attendance")
+}
+
+model Group {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  centerId    String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  center      Center   @relation(fields: [centerId], references: [id])
+  users       User[]
+
+  @@map("groups")
+}
+
+model CollectionSession {
+  id          String   @id @default(uuid())
+  staffId     String
+  centerId    String
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  status      String   @default("OPEN") // OPEN, SUBMITTED, PROCESSED
+  offlineId   String?  // ID generated on mobile for duplicate check
+  latitude    Decimal? @db.Decimal(10, 8) // GPS
+  longitude   Decimal? @db.Decimal(11, 8) // GPS
+  
+  staff       Staff    @relation(fields: [staffId], references: [id])
+  center      Center   @relation(fields: [centerId], references: [id])
+  entries     CollectionEntry[]
+  attendance  CollectionAttendance[]
+  
+  @@map("collection_sessions")
+}
+
+model CollectionEntry {
+  id                String   @id @default(uuid())
+  sessionId         String
+  userId            String
+  accountId         String?
+  transactionType   String   // DEPOSIT, LOAN_REPAYMENT
+  amount            Decimal  @db.Decimal(15, 2)
+  notes             String?
+  collectedAt       DateTime @default(now())
+  isSynced          Boolean  @default(false)
+  offlineId         String?  // ID generated on mobile
+  latitude          Decimal? @db.Decimal(10, 8) // GPS
+  longitude         Decimal? @db.Decimal(11, 8) // GPS
+  
+  session           CollectionSession @relation(fields: [sessionId], references: [id])
+  user              User              @relation(fields: [userId], references: [id])
+  account           UserAccount?      @relation(fields: [accountId], references: [id])
+  
+  @@map("collection_entries")
 }
 
 // Loan Loss Provisioning Model

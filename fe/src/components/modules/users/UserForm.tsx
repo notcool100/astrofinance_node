@@ -35,10 +35,28 @@ const UserForm: React.FC<UserFormProps> = ({
 		identificationNumber: user?.idNumber || "",
 		identificationType: user?.idType || "NATIONAL_ID",
 		isActive: user?.isActive !== undefined ? user.isActive : true,
+		groupId: (user as any)?.groupId || "",
 	});
 
 	// State for document uploads
 	const [documents, setDocuments] = useState<Record<string, File | null>>({});
+
+	// Groups state
+	const [groups, setGroups] = React.useState<any[]>([]);
+
+	React.useEffect(() => {
+		// Fetch groups for dropdown
+		import("@/services/group.service").then(({ getAllGroups }) => {
+			getAllGroups().then((res) => {
+				if (Array.isArray(res)) {
+					setGroups(res);
+				} else {
+					console.error("Groups response is not an array:", res);
+					setGroups([]);
+				}
+			}).catch(console.error);
+		});
+	}, []);
 
 	const handleChange = (
 		e: React.ChangeEvent<
@@ -256,6 +274,32 @@ const UserForm: React.FC<UserFormProps> = ({
 									{fieldErrors.email || localErrors.email}
 								</p>
 							)}
+						</div>
+					</div>
+
+					{/* Group Assignment */}
+					<div className="sm:col-span-3">
+						<label
+							htmlFor="groupId"
+							className="block text-sm font-medium text-gray-700"
+						>
+							{t('user:fields.group', 'Group')} ({t('common:optional')})
+						</label>
+						<div className="mt-1">
+							<select
+								id="groupId"
+								name="groupId"
+								value={(formData as any).groupId || ""}
+								onChange={handleChange}
+								className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+							>
+								<option value="">{t('user:group_options.select', 'Select a Group')}</option>
+								{groups.map((group) => (
+									<option key={group.id} value={group.id}>
+										{group.name} ({group.code})
+									</option>
+								))}
+							</select>
 						</div>
 					</div>
 

@@ -56,4 +56,14 @@ const Custom500: React.FC = () => {
 	);
 };
 
+export async function getStaticProps({ locale }: { locale: string }) {
+	return {
+		props: {
+			...(await import('next-i18next/serverSideTranslations').then(m =>
+				m.serverSideTranslations(locale, ['common', 'auth', 'user'])
+			)),
+		},
+	};
+}
+
 export default Custom500;
