@@ -28,8 +28,6 @@ model AdminUser {
   createdBudgets             Budget[]                 @relation("CreatedByAdmin")
   closedDayBooks             DayBook[]                @relation("ClosedByAdmin")
   createdDayBookTransactions DayBookTransaction[]     @relation("CreatedDayBookTransaction")
-  approvedJournalEntries     JournalEntry[]           @relation("ApprovedByAdmin")
-  createdJournalEntries      JournalEntry[]           @relation("CreatedByAdmin")
   approvedLoans              LoanApplication[]        @relation("ApprovedByAdmin")
   verifiedDocuments          LoanDocument[]           @relation("VerifiedByAdmin")
   receivedPayments           LoanPayment[]            @relation("ReceivedByAdmin")
@@ -551,8 +549,8 @@ model JournalEntry {
   updatedAt           DateTime                 @updatedAt
   dayBookId           String?
   dayBookTransactions DayBookTransaction[]     @relation("DayBookTransactionJournalEntry")
-  approvedBy          AdminUser?               @relation("ApprovedByAdmin", fields: [approvedById], references: [id])
-  createdBy           AdminUser?               @relation("CreatedByAdmin", fields: [createdById], references: [id])
+  approvedBy          Staff?                   @relation("ApprovedByStaff", fields: [approvedById], references: [id])
+  createdBy           Staff?                   @relation("CreatedByStaff", fields: [createdById], references: [id])
   dayBook             DayBook?                 @relation("DayBookJournalEntries", fields: [dayBookId], references: [id])
   journalEntryLines   JournalEntryLine[]
   accountTransactions UserAccountTransaction[]
@@ -1193,31 +1191,33 @@ model AuditLog {
 }
 
 model Staff {
-  id                  String              @id @default(uuid())
-  employeeId          String              @unique
-  firstName           String
-  lastName            String
-  email               String              @unique
-  phone               String
-  address             String
-  dateOfBirth         DateTime
-  joinDate            DateTime
-  department          String
-  position            String
-  status              StaffStatus         @default(ACTIVE)
-  profileImage        String?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  failedLoginAttempts Int                 @default(0)
-  lastLogin           DateTime?
-  passwordHash        String?
-  attendance          Attendance[]
-  leaves              Leave[]
-  performanceReviews  PerformanceReview[]
-  documents           StaffDocument[]
-  roles               StaffRole[]
-  centers             Center[]
-  collectionSessions  CollectionSession[]
+  id                      String              @id @default(uuid())
+  employeeId              String              @unique
+  firstName               String
+  lastName                String
+  email                   String              @unique
+  phone                   String
+  address                 String
+  dateOfBirth             DateTime
+  joinDate                DateTime
+  department              String
+  position                String
+  status                  StaffStatus         @default(ACTIVE)
+  profileImage            String?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  failedLoginAttempts     Int                 @default(0)
+  lastLogin               DateTime?
+  passwordHash            String?
+  attendance              Attendance[]
+  leaves                  Leave[]
+  performanceReviews      PerformanceReview[]
+  documents               StaffDocument[]
+  roles                   StaffRole[]
+  centers                 Center[]
+  collectionSessions      CollectionSession[]
+  journalEntriesCreated   JournalEntry[]      @relation("CreatedByStaff")
+  journalEntriesApproved  JournalEntry[]      @relation("ApprovedByStaff")
 
   @@map("staff")
 }
