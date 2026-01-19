@@ -7,7 +7,7 @@ import {
   deleteAccount, 
   getAccountStructure 
 } from '../controllers/chart-of-accounts.controller';
-import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
+import { authenticate, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import { 
   createAccountValidation, 
@@ -18,7 +18,7 @@ import {
 const router: ExpressRouter = Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Get all accounts
 router.get(

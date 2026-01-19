@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Router as ExpressRouter } from "express";
 import {
     getAllAccountTypes,
     getAccountTypeById,
@@ -13,7 +13,7 @@ import {
 } from "../validations/account-type.validation";
 import { validate } from "../../../common/middleware/validation.middleware";
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 /**
  * @route GET /api/user/account-types

@@ -6,7 +6,7 @@ import {
   updateCalculatorPreset,
   deleteCalculatorPreset
 } from '../controllers/calculator-preset.controller';
-import { authenticateAdmin } from '../../../common/middleware/auth.middleware';
+import { authenticate } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import { 
   createCalculatorPresetValidation,
@@ -16,7 +16,7 @@ import {
 const router: ExpressRouter = Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Get all presets for a user
 router.get('/user/:userId', getUserCalculatorPresets);

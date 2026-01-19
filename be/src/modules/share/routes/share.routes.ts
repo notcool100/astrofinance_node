@@ -1,6 +1,6 @@
 import { Router, type Router as ExpressRouter } from "express";
 import { check } from "express-validator";
-import { authenticateAdmin } from "../../../common/middleware/auth.middleware";
+import { authenticate } from "../../../common/middleware/auth.middleware";
 import { validate } from "../../../common/middleware/validation.middleware";
 import * as shareController from "../controllers/share.controller";
 
@@ -9,21 +9,21 @@ const router: ExpressRouter = Router();
 // Get All Share Accounts
 router.get(
     "/",
-    authenticateAdmin,
+    authenticate,
     shareController.getAllShareAccounts,
 );
 
 // Get Share Account
 router.get(
     "/:userId",
-    authenticateAdmin,
+    authenticate,
     shareController.getShareAccount,
 );
 
 // Issue Shares
 router.post(
     "/issue",
-    authenticateAdmin,
+    authenticate,
     [
         check("userId", "User ID is required").not().isEmpty(),
         check("shareCount", "Share count must be a positive integer").isInt({ min: 1 }),
@@ -36,7 +36,7 @@ router.post(
 // Return Shares
 router.post(
     "/return",
-    authenticateAdmin,
+    authenticate,
     [
         check("userId", "User ID is required").not().isEmpty(),
         check("shareCount", "Share count must be a positive integer").isInt({ min: 1 }),

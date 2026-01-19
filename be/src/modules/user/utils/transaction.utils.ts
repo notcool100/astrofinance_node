@@ -1,4 +1,4 @@
-import { PrismaClient, TransactionType, AccountType } from "@prisma/client";
+import { PrismaClient, TransactionType } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 import { createJournalEntryForUserTransaction } from "./journal-entry-mapping.util";
 
@@ -29,8 +29,8 @@ export const calculateInterest = async (accountId: string): Promise<number> => {
 	let interestAmount = new Decimal(0);
 
 	switch (account.accountType) {
-		case AccountType.SB:
-		case AccountType.BB:
+		case "SB":
+		case "BB":
 			// Simple interest calculation for savings accounts (monthly)
 			// (balance * interestRate / 100) / 12
 			interestAmount = balance
@@ -39,7 +39,7 @@ export const calculateInterest = async (accountId: string): Promise<number> => {
 				.div(new Decimal(12));
 			break;
 
-		case AccountType.FD:
+		case "FD":
 			// For fixed deposits, interest might be calculated differently
 			// This is a simplified version
 			interestAmount = balance

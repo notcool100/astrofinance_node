@@ -177,6 +177,7 @@ export const createUser = async (req: Request, res: Response) => {
 				dateOfBirth_bs: dobDates.bsDate,
 				gender,
 				isActive,
+				groupId: req.body.groupId,
 				userType: "SB", // Default to SB (Savings Bank) user type
 			},
 		});
@@ -268,10 +269,10 @@ export const updateUser = async (req: Request, res: Response) => {
 				address: address || undefined,
 				idNumber: identificationNumber || undefined,
 				idType: identificationType || undefined,
-				dateOfBirth: dobDates?.adDate || undefined,
 				dateOfBirth_bs: dobDates?.bsDate || undefined,
 				gender: gender || undefined,
 				isActive: isActive !== undefined ? isActive : undefined,
+				groupId: req.body.groupId || undefined,
 			},
 		});
 

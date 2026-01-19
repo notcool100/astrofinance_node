@@ -5,7 +5,7 @@ import {
   verifyLoanDocument,
   deleteLoanDocument
 } from '../controllers/loan-document.controller';
-import { authenticateAdmin } from '../../../common/middleware/auth.middleware';
+import { authenticate } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import { upload } from '../../../common/middleware/upload.middleware';
 import { 
@@ -16,7 +16,7 @@ import {
 const router: ExpressRouter = Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Get all documents for a loan application
 router.get('/application/:applicationId', getLoanDocuments);

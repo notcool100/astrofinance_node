@@ -17,7 +17,7 @@ interface LoginFormData {
 
 // Schema for login validation
 const loginSchema = yup.object().shape({
-  username: yup.string().required('Username or Employee ID is required'),
+  username: yup.string().required('Username is required'),
   password: yup.string().required('Password is required'),
 });
 
@@ -71,7 +71,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ userType = 'STAFF' }) => {
 
       <div>
         <label htmlFor="username" className="form-label">
-          {userType === 'ADMIN' ? 'Username' : 'Employee ID or Email'}
+          {userType === 'ADMIN' ? 'Username' : 'Email'}
         </label>
         <div className="mt-1">
           <input
@@ -79,7 +79,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ userType = 'STAFF' }) => {
             type="text"
             autoComplete="username"
             className="form-input"
-            placeholder={userType === 'ADMIN' ? 'Enter your username' : 'Enter your employee ID or email'}
+            placeholder={userType === 'ADMIN' ? 'Enter your username' : 'Enter your email'}
             {...register('username')}
           />
           {errors.username && (

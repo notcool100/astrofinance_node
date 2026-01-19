@@ -206,6 +206,26 @@ async function seedNavigation() {
             groupId: adminGroup.id,
           }
         });
+
+        await prisma.navigationItem.create({
+          data: {
+            label: 'Centers',
+            icon: 'store',
+            url: '/admin/centers',
+            order: 6,
+            groupId: adminGroup.id,
+          }
+        });
+
+        await prisma.navigationItem.create({
+          data: {
+            label: 'Groups',
+            icon: 'groups',
+            url: '/admin/groups',
+            order: 7,
+            groupId: adminGroup.id,
+          }
+        });
       }
 
       logger.info('Navigation items created successfully');

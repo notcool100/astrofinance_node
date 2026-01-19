@@ -12,7 +12,7 @@ import {
   getDayBookTransactions,
   deleteDayBookTransaction
 } from '../controllers/daybook-transaction.controller';
-import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
+import { authenticate, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import { 
   createDayBookValidation, 
@@ -27,7 +27,7 @@ import {
 const router: ExpressRouter = Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Get all day books
 router.get(

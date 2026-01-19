@@ -35,10 +35,28 @@ const UserForm: React.FC<UserFormProps> = ({
 		identificationNumber: user?.idNumber || "",
 		identificationType: user?.idType || "NATIONAL_ID",
 		isActive: user?.isActive !== undefined ? user.isActive : true,
+		groupId: (user as any)?.groupId || "",
 	});
 
 	// State for document uploads
 	const [documents, setDocuments] = useState<Record<string, File | null>>({});
+
+	// Groups state
+	const [groups, setGroups] = React.useState<any[]>([]);
+
+	React.useEffect(() => {
+		// Fetch groups for dropdown
+		import("@/services/group.service").then(({ getAllGroups }) => {
+			getAllGroups().then((res) => {
+				if (Array.isArray(res)) {
+					setGroups(res);
+				} else {
+					console.error("Groups response is not an array:", res);
+					setGroups([]);
+				}
+			}).catch(console.error);
+		});
+	}, []);
 
 	const handleChange = (
 		e: React.ChangeEvent<
@@ -81,7 +99,10 @@ const UserForm: React.FC<UserFormProps> = ({
 		e.preventDefault();
 
 		// Validate email
-		if (formData.email) {
+		if (!formData.email) {
+			setLocalErrors({ ...localErrors, email: t('common:validation.required', "Email is required") });
+			return;
+		} else {
 			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 			if (!emailRegex.test(formData.email)) {
 				setLocalErrors({ ...localErrors, email: t('common:validation.email') });
@@ -233,7 +254,7 @@ const UserForm: React.FC<UserFormProps> = ({
 							htmlFor="email"
 							className="block text-sm font-medium text-gray-700"
 						>
-							{t('user:fields.email')} ({t('common:optional')})
+							{t('user:fields.email')}
 						</label>
 						<div className="mt-1">
 							<input
@@ -242,6 +263,7 @@ const UserForm: React.FC<UserFormProps> = ({
 								id="email"
 								value={formData.email || ""}
 								onChange={handleChange}
+								required
 								className={`block w-full rounded-md shadow-sm focus:ring-primary-500 sm:text-sm ${fieldErrors.email || localErrors.email
 									? "border-red-300 focus:border-red-500"
 									: "border-gray-300 focus:border-primary-500"
@@ -252,6 +274,32 @@ const UserForm: React.FC<UserFormProps> = ({
 									{fieldErrors.email || localErrors.email}
 								</p>
 							)}
+						</div>
+					</div>
+
+					{/* Group Assignment */}
+					<div className="sm:col-span-3">
+						<label
+							htmlFor="groupId"
+							className="block text-sm font-medium text-gray-700"
+						>
+							{t('user:fields.group', 'Group')} ({t('common:optional')})
+						</label>
+						<div className="mt-1">
+							<select
+								id="groupId"
+								name="groupId"
+								value={(formData as any).groupId || ""}
+								onChange={handleChange}
+								className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+							>
+								<option value="">{t('user:group_options.select', 'Select a Group')}</option>
+								{groups.map((group) => (
+									<option key={group.id} value={group.id}>
+										{group.name} ({group.code})
+									</option>
+								))}
+							</select>
 						</div>
 					</div>
 

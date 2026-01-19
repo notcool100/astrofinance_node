@@ -1,5 +1,5 @@
 import { Router, type Router as ExpressRouter } from "express";
-import { authenticateAdmin } from "../../../common/middleware/auth.middleware";
+import { authenticate } from "../../../common/middleware/auth.middleware";
 import * as interestController from "../controllers/interest.controller";
 
 const router: ExpressRouter = Router();
@@ -7,14 +7,14 @@ const router: ExpressRouter = Router();
 // Trigger Daily Interest Calculation manually (or via cron webhook)
 router.post(
     "/daily",
-    authenticateAdmin,
+    authenticate,
     interestController.triggerDailyInterest,
 );
 
 // Trigger Quarterly Interest Posting manually
 router.post(
     "/quarterly",
-    authenticateAdmin,
+    authenticate,
     interestController.triggerQuarterlyPosting,
 );
 

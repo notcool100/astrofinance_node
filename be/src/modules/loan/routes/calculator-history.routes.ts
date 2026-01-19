@@ -5,14 +5,14 @@ import {
   getUserCalculationStats,
   clearUserCalculationHistory
 } from '../controllers/calculator-history.controller';
-import { authenticateAdmin } from '../../../common/middleware/auth.middleware';
+import { authenticate } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import { recordCalculationValidation } from '../validations/calculator-history.validation';
 
 const router: ExpressRouter = Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Get calculation history for a user
 router.get('/user/:userId', getUserCalculationHistory);

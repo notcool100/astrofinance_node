@@ -6,7 +6,7 @@ import {
   updateJournalEntryStatus, 
   deleteJournalEntry 
 } from '../controllers/journal-entry.controller';
-import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
+import { authenticate, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import { 
   createJournalEntryValidation, 
@@ -17,7 +17,7 @@ import {
 const router: ExpressRouter = Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Get all journal entries
 router.get(

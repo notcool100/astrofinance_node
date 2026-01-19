@@ -11,7 +11,7 @@ import {
 } from "../controllers/user.controller";
 import { getUserAccounts } from "../controllers/account.controller";
 import {
-	authenticateAdmin,
+	authenticate,
 	hasPermission,
 } from "../../../common/middleware/auth.middleware";
 import { validate } from "../../../common/middleware/validation.middleware";
@@ -28,7 +28,7 @@ import { getUserAccountsValidation } from "../validations/account.validation";
 const router: ExpressRouter = Router();
 
 // Enable authentication for admin operations
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Get all users
 router.get(

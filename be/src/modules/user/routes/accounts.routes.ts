@@ -1,17 +1,17 @@
 import { Router, type Router as ExpressRouter } from 'express';
-import { 
-  getUserAccounts, 
-  getAccountById, 
-  createAccount, 
-  updateAccount, 
+import {
+  getUserAccounts,
+  getAccountById,
+  createAccount,
+  updateAccount,
   closeAccount,
   getAllAccounts
 } from '../controllers/account.controller';
-import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
+import { authenticate, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
-import { 
-  createAccountValidation, 
-  updateAccountValidation, 
+import {
+  createAccountValidation,
+  updateAccountValidation,
   getUserAccountsValidation,
   getAccountByIdValidation
 } from '../validations/account.validation';
@@ -19,18 +19,18 @@ import {
 const router: ExpressRouter = Router();
 
 // Temporarily disable authentication for testing
-// router.use(authenticateAdmin);
+// router.use(authenticate);
 
 // Get all accounts (admin function)
 router.get(
-  '/', 
+  '/',
   // hasPermission('accounts.view'), 
   getAllAccounts
 );
 
 // Get account by ID
 router.get(
-  '/:id', 
+  '/:id',
   // hasPermission('accounts.view'), 
   validate(getAccountByIdValidation),
   getAccountById
@@ -38,32 +38,32 @@ router.get(
 
 // Create new account
 router.post(
-  '/', 
+  '/',
   // hasPermission('accounts.create'), 
-  validate(createAccountValidation), 
+  validate(createAccountValidation),
   createAccount
 );
 
 // Update account
 router.put(
-  '/:id', 
+  '/:id',
   // hasPermission('accounts.edit'), 
-  validate(updateAccountValidation), 
+  validate(updateAccountValidation),
   updateAccount
 );
 
 // Close account
 router.post(
-  '/:id/close', 
+  '/:id/close',
   // hasPermission('accounts.edit'), 
   closeAccount
 );
 
 // Get user accounts
 router.get(
-  '/user/:userId', 
+  '/user/:userId',
   // hasPermission('accounts.view'), 
-  validate(getUserAccountsValidation), 
+  validate(getUserAccountsValidation),
   getUserAccounts
 );
 

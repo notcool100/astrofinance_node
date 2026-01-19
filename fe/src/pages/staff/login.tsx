@@ -10,7 +10,7 @@ import { UserCircleIcon, KeyIcon } from '@heroicons/react/24/outline';
 
 // Form validation schema
 const schema = yup.object().shape({
-  username: yup.string().required('Employee ID or email is required'),
+  username: yup.string().required('email is required'),
   password: yup.string().required('Password is required'),
 });
 
@@ -23,7 +23,7 @@ const StaffLogin = () => {
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const {
     register,
     handleSubmit,
@@ -31,11 +31,11 @@ const StaffLogin = () => {
   } = useForm<FormData>({
     resolver: yupResolver(schema),
   });
-  
+
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       await login(data, 'STAFF');
     } catch (error: any) {
@@ -45,7 +45,7 @@ const StaffLogin = () => {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <AuthLayout title="Staff Login">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -55,7 +55,7 @@ const StaffLogin = () => {
             Enter your credentials to access the staff portal
           </p>
         </div>
-        
+
         <div className="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           {error && (
             <div className="mb-4 rounded-md bg-red-50 p-4">
@@ -81,11 +81,11 @@ const StaffLogin = () => {
               </div>
             </div>
           )}
-          
+
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Employee ID or Email
+                Email
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -95,12 +95,11 @@ const StaffLogin = () => {
                   id="username"
                   type="text"
                   autoComplete="username"
-                  className={`block w-full pl-10 sm:text-sm rounded-md ${
-                    errors.username
-                      ? 'border-red-300 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500'
-                      : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
-                  }`}
-                  placeholder="Enter your employee ID or email"
+                  className={`block w-full pl-10 sm:text-sm rounded-md ${errors.username
+                    ? 'border-red-300 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
+                    }`}
+                  placeholder="Enter your email"
                   {...register('username')}
                 />
               </div>
@@ -108,7 +107,7 @@ const StaffLogin = () => {
                 <p className="mt-2 text-sm text-red-600">{errors.username.message}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -121,11 +120,10 @@ const StaffLogin = () => {
                   id="password"
                   type="password"
                   autoComplete="current-password"
-                  className={`block w-full pl-10 sm:text-sm rounded-md ${
-                    errors.password
-                      ? 'border-red-300 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500'
-                      : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
-                  }`}
+                  className={`block w-full pl-10 sm:text-sm rounded-md ${errors.password
+                    ? 'border-red-300 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
+                    }`}
                   placeholder="Enter your password"
                   {...register('password')}
                 />
@@ -134,7 +132,7 @@ const StaffLogin = () => {
                 <p className="mt-2 text-sm text-red-600">{errors.password.message}</p>
               )}
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
@@ -147,7 +145,7 @@ const StaffLogin = () => {
                   Remember me
                 </label>
               </div>
-              
+
               <div className="text-sm">
                 <Link
                   href="/forgot-password"
@@ -157,7 +155,7 @@ const StaffLogin = () => {
                 </Link>
               </div>
             </div>
-            
+
             <div>
               <Button
                 type="submit"
@@ -169,7 +167,7 @@ const StaffLogin = () => {
               </Button>
             </div>
           </form>
-          
+
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -179,7 +177,7 @@ const StaffLogin = () => {
                 <span className="px-2 bg-white text-gray-500">Or</span>
               </div>
             </div>
-            
+
             <div className="mt-6 grid grid-cols-1 gap-3">
               <Link href="/login" className="w-full">
                 <Button
@@ -190,7 +188,7 @@ const StaffLogin = () => {
                   User Login
                 </Button>
               </Link>
-              
+
               <Link href="/admin/login" className="w-full">
                 <Button
                   type="button"
@@ -213,7 +211,7 @@ const StaffLogin = () => {
 export async function getServerSideProps({ locale }: { locale: string }) {
   return {
     props: {
-      ...(await import('next-i18next/serverSideTranslations').then(m => 
+      ...(await import('next-i18next/serverSideTranslations').then(m =>
         m.serverSideTranslations(locale, ['common', 'user', 'auth'])
       )),
     },

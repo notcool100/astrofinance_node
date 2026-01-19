@@ -12,7 +12,7 @@ import {
   deleteTaxRate, 
   calculateTax 
 } from '../controllers/tax.controller';
-import { authenticateAdmin, hasPermission } from '../../../common/middleware/auth.middleware';
+import { authenticate, hasPermission } from '../../../common/middleware/auth.middleware';
 import { validate } from '../../../common/middleware/validation.middleware';
 import { 
   createTaxTypeValidation, 
@@ -27,7 +27,7 @@ import {
 const router: ExpressRouter = Router();
 
 // All routes require authentication
-router.use(authenticateAdmin);
+router.use(authenticate);
 
 // Tax type routes
 router.get(

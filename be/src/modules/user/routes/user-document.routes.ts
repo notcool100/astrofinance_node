@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response, NextFunction, type Router as ExpressRouter } from "express";
 import { upload } from "../../../common/middleware/upload.middleware";
 import { validate } from "../../../common/middleware/validation.middleware";
 import {
@@ -13,7 +13,7 @@ import {
 	deleteDocumentValidation,
 } from "../validations/user-document.validation";
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 /**
  * @route   POST /api/user/users/:userId/documents

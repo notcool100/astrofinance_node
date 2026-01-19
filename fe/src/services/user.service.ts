@@ -14,9 +14,11 @@ export interface User {
 	idType?: string;
 	userType?: string;
 	isActive: boolean;
+	groupId?: string;
 	createdAt: string;
 	updatedAt: string;
 }
+
 
 export interface CreateUserData {
 	fullName: string;
@@ -29,6 +31,7 @@ export interface CreateUserData {
 	identificationNumber?: string;
 	identificationType?: string;
 	isActive?: boolean;
+	groupId?: string;
 }
 
 export interface UpdateUserData {
@@ -42,6 +45,7 @@ export interface UpdateUserData {
 	identificationNumber?: string;
 	identificationType?: string;
 	isActive?: boolean;
+	groupId?: string;
 }
 
 export interface UserDocument {
