@@ -211,7 +211,25 @@ stages:
         
         echo "Backend deployed to /var/www/astrofinance/backend-dev"
       displayName: 'Extract Backend Build'
+    - script: |
+        if [ "$(whoami)" = "astroagent" ]; then
+          export PATH=$PATH:/home/astroagent/.nvm/versions/node/v24.4.1/bin
+          cd /var/www/astrofinance/backend-dev
 
+          # Install prod deps (or full deps if you need)
+          npm install -g pnpm
+          pnpm install --frozen-lockfile
+
+          # Regenerate prisma client on the server
+          pnpm prisma:generate
+
+          # Optional but recommended if you use migrations
+          # pnpm prisma:migrate:deploy
+        else
+          echo "Not running as astroagent"
+          exit 1
+        fi
+      displayName: 'Install deps + Generate Prisma on VPS'
     - script: |
         # Check if we're running as the astroagent user
         if [ "$(whoami)" = "astroagent" ]; then

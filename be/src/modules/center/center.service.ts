@@ -1,5 +1,6 @@
-import prisma from '../../config/database';
-
+// import prisma from '../../config/database';
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 export const createCenter = async (data: any) => {
     return await prisma.center.create({
         data,
