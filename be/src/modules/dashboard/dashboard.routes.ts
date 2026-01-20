@@ -3,7 +3,7 @@ import * as adminDashboardController from './controllers/admin-dashboard.control
 import * as branchDashboardController from './controllers/branch-dashboard.controller';
 import { authenticate } from '../../common/middleware/auth.middleware';
 
-const router = Router();
+const router: Router = Router();
 
 // All dashboard routes require authentication
 router.use(authenticate);
