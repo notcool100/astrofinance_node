@@ -84,7 +84,8 @@ async function cleanupDatabase() {
 		await prisma.collectionSession.deleteMany({});
 
 		// Now proceed with the rest of the cleanup
-		await prisma.adminUserRole.deleteMany({});
+		// Deleted AdminUserRole delete call
+
 		await prisma.rolePermission.deleteMany({});
 		await prisma.roleNavigation.deleteMany({});
 		await prisma.navigationItem.deleteMany({});
@@ -94,7 +95,8 @@ async function cleanupDatabase() {
 		await prisma.staffDocument.deleteMany({});
 		await prisma.staff.deleteMany({});
 		await prisma.role.deleteMany({});
-		await prisma.adminUser.deleteMany({});
+		// Deleted AdminUser delete call
+
 		// Clean up loan-related data first due to foreign key constraints
 		await prisma.loanPayment.deleteMany({});
 		await prisma.loanInstallment.deleteMany({});
@@ -126,51 +128,84 @@ async function cleanupDatabase() {
 }
 
 async function seedAdminUsers() {
-	console.log("Seeding admin users...");
+	console.log("Seeding staff users (formerly admin)...");
 
-	// Create default admin user
+	// Create default admin user (as Staff)
 	const passwordHash = await bcrypt.hash("admin123", 12);
 
-	const adminUser = await prisma.adminUser.create({
+	const adminStaff = await prisma.staff.create({
 		data: {
+			employeeId: "ADMIN001",
 			username: "admin",
 			email: "admin@astrofinance.com",
 			passwordHash,
-			fullName: "System Administrator",
-			isActive: true,
+			firstName: "System",
+			lastName: "Administrator",
+			phone: "9800000000",
+			address: "Headquarters",
+			dateOfBirth: new Date("1990-01-01"),
+			joinDate: new Date(),
+			department: "Administration",
+			position: "System Administrator",
+			status: "ACTIVE"
 		},
 	});
 
-	console.log(`Created admin user: ${adminUser.username}`);
+	console.log(`Created admin staff: ${adminStaff.username}`);
 
 	// Create additional admin users
 	const users = [
 		{
+			employeeId: "MGR001",
 			username: "manager",
 			email: "manager@astrofinance.com",
 			passwordHash,
-			fullName: "Branch Manager",
-			isActive: true,
+			firstName: "Branch",
+			lastName: "Manager",
+			phone: "9800000001",
+			address: "Branch Office",
+			dateOfBirth: new Date("1985-05-15"),
+			joinDate: new Date(),
+			department: "Management",
+			position: "Branch Manager",
+			status: "ACTIVE"
 		},
 		{
+			employeeId: "ACC001",
 			username: "accountant",
 			email: "accountant@astrofinance.com",
 			passwordHash,
-			fullName: "System Accountant",
-			isActive: true,
+			firstName: "System",
+			lastName: "Accountant",
+			phone: "9800000002",
+			address: "Headquarters",
+			dateOfBirth: new Date("1988-08-20"),
+			joinDate: new Date(),
+			department: "Finance",
+			position: "Senior Accountant",
+			status: "ACTIVE"
 		},
 		{
+			employeeId: "LN001",
 			username: "loan_officer",
 			email: "loan@astrofinance.com",
 			passwordHash,
-			fullName: "Loan Officer",
-			isActive: true,
+			firstName: "Loan",
+			lastName: "Officer",
+			phone: "9800000003",
+			address: "Branch Office",
+			dateOfBirth: new Date("1992-03-10"),
+			joinDate: new Date(),
+			department: "Loans",
+			position: "Loan Officer",
+			status: "ACTIVE"
 		},
 	];
 
 	for (const user of users) {
-		await prisma.adminUser.create({ data: user });
-		console.log(`Created admin user: ${user.username}`);
+		// CAST status to StaffStatus
+		await prisma.staff.create({ data: { ...user, status: "ACTIVE" as StaffStatus } });
+		console.log(`Created staff user: ${user.username}`);
 	}
 }
 
@@ -278,58 +313,58 @@ async function seedRolesAndPermissions() {
 		console.log("Assigned all permissions to Super Admin");
 	}
 
-	// Assign admin user to Super Admin role
-	const admin = await prisma.adminUser.findFirst({
+	// Assign admin staff to Super Admin role
+	const adminStaff = await prisma.staff.findFirst({
 		where: { username: "admin" },
 	});
-	if (admin && superAdmin) {
-		await prisma.adminUserRole.create({
+	if (adminStaff && superAdmin) {
+		await prisma.staffRole.create({
 			data: {
-				adminUserId: admin.id,
+				staffId: adminStaff.id,
 				roleId: superAdmin.id,
 			},
 		});
-		console.log("Assigned admin user to Super Admin role");
+		console.log("Assigned admin staff to Super Admin role");
 	}
 
 	// Assign other users to their respective roles
-	const manager = await prisma.adminUser.findFirst({
+	const manager = await prisma.staff.findFirst({
 		where: { username: "manager" },
 	});
 	if (manager && branchManager) {
-		await prisma.adminUserRole.create({
+		await prisma.staffRole.create({
 			data: {
-				adminUserId: manager.id,
+				staffId: manager.id,
 				roleId: branchManager.id,
 			},
 		});
-		console.log("Assigned manager user to Branch Manager role");
+		console.log("Assigned manager staff to Branch Manager role");
 	}
 
-	const accountantUser = await prisma.adminUser.findFirst({
+	const accountantUser = await prisma.staff.findFirst({
 		where: { username: "accountant" },
 	});
 	if (accountantUser && accountant) {
-		await prisma.adminUserRole.create({
+		await prisma.staffRole.create({
 			data: {
-				adminUserId: accountantUser.id,
+				staffId: accountantUser.id,
 				roleId: accountant.id,
 			},
 		});
-		console.log("Assigned accountant user to Accountant role");
+		console.log("Assigned accountant staff to Accountant role");
 	}
 
-	const loanOfficerUser = await prisma.adminUser.findFirst({
+	const loanOfficerUser = await prisma.staff.findFirst({
 		where: { username: "loan_officer" },
 	});
 	if (loanOfficerUser && loanOfficer) {
-		await prisma.adminUserRole.create({
+		await prisma.staffRole.create({
 			data: {
-				adminUserId: loanOfficerUser.id,
+				staffId: loanOfficerUser.id,
 				roleId: loanOfficer.id,
 			},
 		});
-		console.log("Assigned loan_officer user to Loan Officer role");
+		console.log("Assigned loan_officer staff to Loan Officer role");
 	}
 }
 
